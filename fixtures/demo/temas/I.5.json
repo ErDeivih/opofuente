@@ -1,0 +1,106 @@
+{
+  "node_path": "I.5",
+  "title": "El procedimiento administrativo (Ley 39/2015)",
+  "source": {
+    "label": "Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas (texto consolidado)",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-10565"
+  },
+  "sections": [
+    {
+      "heading": "Objeto, ámbito y principios",
+      "body": "La **Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas**, regula el procedimiento administrativo común y los derechos de los interesados frente a todas las Administraciones Públicas: la Administración General del Estado, las de las comunidades autónomas, las entidades locales y el sector público institucional. No es una ley de organización, sino de **relaciones «ad extra»** entre la Administración y la ciudadanía.\n\nSus principios son la **legalidad, eficacia, economía, celeridad, objetividad, transparencia, cooperación, contradicción, impulso de oficio, simplificación, buena fe y confianza legítima**. La Administración está obligada a dictar resolución expresa y a notificarla en todos los procedimientos, con independencia de que se haya producido silencio.\n\nLa ley apuesta por la **Administración electrónica**: las personas físicas pueden elegir el canal de relación, pero están obligadas a relacionarse electrónicamente las personas jurídicas, las entidades sin personalidad jurídica, quienes ejerzan una actividad profesional con colegiación obligatoria, los empleados públicos y otros sujetos (artículo 14). Los actos se notifican preferentemente por medios electrónicos, y existen un registro electrónico general y un archivo electrónico de documentos.\n\nLa regulación del procedimiento común corresponde al Estado (artículo 149.1.18 CE), sin perjuicio de las especialidades que dicten las comunidades autónomas para la aplicación de su Derecho sustantivo. La Ley 39/2015 se completa con la Ley 40/2015, de régimen jurídico del sector público, y con la normativa específica de cada procedimiento."
+    },
+    {
+      "heading": "Los interesados y sus derechos",
+      "body": "Son **interesados** en el procedimiento (artículo 4): quienes lo promuevan como titulares de derechos o intereses legítimos individuales o colectivos; quienes, sin haberlo iniciado, tengan derechos que puedan resultar afectados por la decisión; y quienes tengan intereses legítimos que puedan resultar afectados y se personen antes de la resolución definitiva. Las asociaciones y organizaciones representativas de intereses económicos y sociales son titulares de intereses legítimos colectivos en los términos de la ley.\n\nEl interesado puede actuar por medio de **representante**. La representación se presume para los actos de mero trámite y debe acreditarse para formular solicitudes, recursos, desistimientos, renuncias y alegaciones.\n\nEl artículo 53 reconoce los **derechos del interesado**: conocer el estado de la tramitación y el sentido del silencio, identificar a las autoridades y al órgano competente, obtener copia de los documentos, formular alegaciones y aportar documentos, no presentar documentos que ya estén en poder de la Administración, obtener resolución expresa y notificada y acceder a la información pública en los términos de la Ley 19/2013.\n\nLos interesados tienen también **deberes**: aportar los datos y documentos necesarios, relacionarse por medios electrónicos cuando estén obligados, comparecer cuando sean citados y colaborar con la Administración. El procedimiento se impulsa de oficio, sin que sea necesario que el interesado recuerde cada trámite."
+    },
+    {
+      "heading": "Fases del procedimiento y plazos",
+      "body": "El procedimiento se compone de **iniciación, instrucción y terminación**. La iniciación puede ser **de oficio** (por acuerdo del órgano competente, bien por propia iniciativa, orden superior, petición razonada de otro órgano o denuncia) o **a solicitud del interesado**, que presenta una solicitud con sus datos, los hechos, las razones, la petición, el lugar y la fecha y la firma. Si la solicitud no reúne los requisitos, se requiere al interesado para que los subsane en **diez días**, con advertencia de que se le tendrá por desistido si no lo hace.\n\nEn la **instrucción** se practican las pruebas, se solicitan los informes preceptivos y los necesarios y se da audiencia. El trámite de **audiencia** es anterior a la propuesta de resolución y dura entre **diez y quince días**; puede prescindirse de él cuando no figuren en el procedimiento ni se tengan en cuenta otros hechos, alegaciones o pruebas distintas de las del interesado. La **información pública** se abre cuando la naturaleza del procedimiento lo exige, con un plazo mínimo de **veinte días**.\n\nLa **terminación** se estudia en el apartado siguiente. La tabla resume las fases y sus plazos más característicos.",
+      "table": {
+        "columns": ["Fase", "Contenido esencial", "Plazo característico"],
+        "rows": [
+          ["Iniciación", "Acuerdo de oficio o solicitud del interesado; subsanación de defectos", "10 días para subsanar la solicitud"],
+          ["Instrucción", "Prueba e informes preceptivos y necesarios", "El que fije la norma del procedimiento"],
+          ["Audiencia", "Alegaciones y documentos antes de la propuesta de resolución", "Entre 10 y 15 días"],
+          ["Información pública", "Anuncio en el diario oficial y alegaciones de cualquier persona", "Mínimo 20 días"],
+          ["Terminación", "Resolución expresa, desistimiento, renuncia o caducidad", "El plazo máximo para resolver"]
+        ]
+      }
+    },
+    {
+      "heading": "Terminación, silencio y cómputo de plazos",
+      "body": "Ponen fin al procedimiento la **resolución**, el **desistimiento**, la **renuncia** al derecho cuando no esté prohibida, la **caducidad** y la imposibilidad material de continuar por causas sobrevenidas; la resolución que declare estas circunstancias debe ser motivada (artículo 84).\n\nLa **resolución** decide todas las cuestiones planteadas y las conexas, debe ser **congruente** con la petición y no puede agravar la situación inicial del solicitante (artículo 88). Debe estar **motivada** en los casos en que limite derechos o intereses legítimos.\n\nLa Administración está obligada a resolver y notificar siempre (artículo 21). El plazo máximo lo fija la norma del procedimiento y no puede superar **seis meses** salvo que una ley o el Derecho de la Unión establezcan otro; si la norma no fija plazo, es de **tres meses**. El plazo se cuenta desde el acuerdo de iniciación, si el procedimiento es de oficio, o desde la entrada de la solicitud en el registro, si es a solicitud del interesado.\n\nEl **silencio administrativo** se rige por las reglas siguientes:\n\n- En los procedimientos **a solicitud del interesado**, el silencio es con carácter general **estimatorio**, salvo que una ley o una norma de la Unión establezcan otra cosa. Es desestimatorio, en todo caso, en los procedimientos de derecho de petición, en los que impliquen transferencia de facultades sobre el dominio público o el servicio público, en los que puedan dañar el medio ambiente, en los de responsabilidad patrimonial y en los de impugnación y revisión de oficio a solicitud del interesado.\n- En los procedimientos **iniciados de oficio**, si del procedimiento pudieran derivarse derechos u otras situaciones favorables, los interesados que hayan comparecido pueden entender **desestimadas** sus pretensiones; si la Administración ejercita potestades sancionadoras o de intervención, se produce la **caducidad** del procedimiento (artículo 25).\n\nLa estimación por silencio es un acto administrativo finalizador del procedimiento; la desestimación solo sirve para permitir la interposición del recurso. El silencio puede acreditarse por cualquier medio de prueba admitido en Derecho, incluido el certificado que expide el órgano competente (artículo 24).\n\nSobre el **cómputo** (artículo 30): los plazos por días se entienden por **días hábiles**, excluyendo sábados, domingos y festivos; los de meses y años se cuentan de fecha a fecha desde el día siguiente a la notificación o publicación; si el último día es inhábil, el plazo se prorroga al primer día hábil siguiente."
+    },
+    {
+      "heading": "Los recursos administrativos",
+      "body": "Los actos administrativos pueden impugnarse mediante **recursos administrativos** o directamente ante la jurisdicción contencioso-administrativa. Los recursos son:\n\n- **Recurso de alzada**: se interpone ante el **órgano superior jerárquico** del que dictó el acto, contra los actos que no agotan la vía administrativa. El plazo es de **un mes** si el acto es expreso y en cualquier momento si es presunto; la Administración tiene **tres meses** para resolver y, si no lo hace, el recurso se entiende desestimado.\n- **Recurso de reposición**: es **potestativo** y se interpone ante el **mismo órgano** que dictó el acto, contra los actos que ponen fin a la vía administrativa, antes de acudir a la jurisdicción contencioso-administrativa. El plazo es de **un mes** tanto para interponerlo como para resolverlo; si no se resuelve en plazo, se entiende desestimado.\n- **Recurso extraordinario de revisión**: se interpone contra actos firmes y solo en los supuestos tasados de la ley (error de hecho que resulte de los propios documentos, aparición de documentos decisivos, documentos o testimonios declarados falsos por sentencia firme o conducta punible declarada judicialmente).\n\nLa interposición de un recurso **no suspende** la ejecución del acto impugnado, salvo que una disposición lo establezca o que el órgano competente acuerde la suspensión.\n\nAl margen de los recursos, la Administración puede **revisar de oficio** sus actos nulos (artículo 106), declarar **lesivos** para el interés público los actos favorables para impugnarlos ante la jurisdicción (artículo 107), revocar los actos de gravamen (artículo 109) y rectificar los errores materiales o de hecho."
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Una vecina presenta el 10 de marzo en el registro del ayuntamiento una solicitud de ayuda al alquiler. La ordenanza municipal no fija plazo para resolver y el ayuntamiento no contesta. El 20 de julio recibe una resolución que deniega la ayuda y, además, una notificación de sanción de tráfico sin indicar los recursos ni el plazo para interponerlos.\n\n**Resolución.**\n\n- El plazo máximo para resolver, al no fijarlo la norma del procedimiento, es de **tres meses** (artículo 21.3): venció el 10 de junio. Como no se notificó resolución en plazo, la solicitud se entiende **estimada por silencio** (artículo 24), salvo que concurra alguno de los supuestos excepcionales de sentido desestimatorio.\n- La resolución posterior solo puede ser **confirmatoria** del silencio estimado (artículo 24.3.a). Si deniega la ayuda, la vecina puede impugnarla y hacer valer el silencio; también puede pedir el **certificado** acreditativo del silencio.\n- Si la solicitud se hubiera entendido desestimada, podría interponer **recurso de alzada** en el mes siguiente o, si el acto agota la vía, **reposición** potestativa.\n- La notificación defectuosa de la sanción no impide impugnarla, y el procedimiento sancionador debe resolverse de forma expresa. Si no se resuelve en plazo, se produce la **caducidad**, no la estimación.\n\n**Conclusión.** Hay que distinguir el silencio **estimatorio** de la solicitud (regla general) de la **caducidad** en los procedimientos de gravamen, y comprobar siempre el plazo máximo aplicable y el contenido de las notificaciones."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué ley regula el procedimiento administrativo común de las Administraciones Públicas?",
+      "options": ["La Ley 39/2015, de 1 de octubre", "La Ley 40/2015, de 1 de octubre", "La Ley 7/1985, de 2 de abril", "La Ley 19/2013, de 9 de diciembre"],
+      "correct": "a",
+      "explanation": "La Ley 39/2015 regula el procedimiento administrativo común; la Ley 40/2015 regula el régimen jurídico del sector público y la Ley 19/2013 la transparencia y el acceso a la información."
+    },
+    {
+      "stem": "En los procedimientos iniciados a solicitud del interesado, ¿qué sentido tiene el silencio administrativo?",
+      "options": ["Siempre desestimatorio", "Con carácter general estimatorio, salvo las excepciones legales", "Siempre estimatorio", "Depende del órgano que deba resolver"],
+      "correct": "b",
+      "explanation": "El artículo 24 establece el silencio estimatorio como regla general, con excepciones legales como el derecho de petición, el dominio público, el medio ambiente o la responsabilidad patrimonial."
+    },
+    {
+      "stem": "Si la norma que regula el procedimiento no fija plazo máximo para resolver, ¿de cuánto tiempo dispone la Administración?",
+      "options": ["Un mes", "Dos meses", "Tres meses", "Seis meses"],
+      "correct": "c",
+      "explanation": "El artículo 21.3 fija en tres meses el plazo máximo cuando la norma del procedimiento no establece otro."
+    },
+    {
+      "stem": "¿Qué plazo hay para interponer el recurso de alzada contra un acto expreso?",
+      "options": ["Diez días", "Quince días", "Veinte días", "Un mes"],
+      "correct": "d",
+      "explanation": "El artículo 122 concede un mes para interponer la alzada si el acto es expreso; si el acto es presunto puede interponerse en cualquier momento."
+    },
+    {
+      "stem": "¿Ante qué órgano se interpone el recurso de alzada?",
+      "options": ["Ante el órgano superior jerárquico del que dictó el acto", "Ante el mismo órgano que dictó el acto", "Ante el ministro correspondiente en todo caso", "Directamente ante el juez"],
+      "correct": "a",
+      "explanation": "El artículo 121 configura la alzada como recurso ante el órgano superior jerárquico del que dictó el acto impugnado."
+    },
+    {
+      "stem": "¿Qué recurso puede interponerse, con carácter potestativo, contra un acto que pone fin a la vía administrativa antes de acudir a la jurisdicción?",
+      "options": ["El recurso de alzada", "El recurso de reposición", "El recurso extraordinario de revisión", "La cuestión prejudicial"],
+      "correct": "b",
+      "explanation": "El recurso de reposición es potestativo, se interpone ante el mismo órgano que dictó el acto y permite después acudir a la jurisdicción contencioso-administrativa."
+    },
+    {
+      "stem": "¿Qué duración tiene el trámite de audiencia antes de la propuesta de resolución?",
+      "options": ["Entre cinco y diez días", "Entre diez y veinte días", "Entre diez y quince días", "Entre quince y veinte días"],
+      "correct": "c",
+      "explanation": "El artículo 82 concede un plazo no inferior a diez días ni superior a quince para alegar y presentar documentos."
+    },
+    {
+      "stem": "¿Cuál es el plazo mínimo del trámite de información pública?",
+      "options": ["Cinco días", "Diez días", "Quince días", "Veinte días"],
+      "correct": "d",
+      "explanation": "El artículo 83 exige que el plazo para formular alegaciones en información pública no sea inferior a veinte días."
+    },
+    {
+      "stem": "¿Cómo se computan los plazos señalados por días en el procedimiento administrativo?",
+      "options": ["Por días hábiles, excluyendo sábados, domingos y festivos", "Por días naturales, incluidos sábados y domingos", "Solo por días laborables del interesado", "Siempre por días naturales"],
+      "correct": "a",
+      "explanation": "El artículo 30.2 dispone que los plazos por días son hábiles y excluye del cómputo sábados, domingos y festivos."
+    },
+    {
+      "stem": "En un procedimiento sancionador iniciado de oficio, ¿qué efecto produce el vencimiento del plazo máximo sin resolución?",
+      "options": ["El silencio estimatorio", "La caducidad del procedimiento", "El silencio desestimatorio", "La nulidad de pleno derecho"],
+      "correct": "b",
+      "explanation": "El artículo 25.1.b establece que, cuando se ejercitan potestades sancionadoras o de gravamen, el vencimiento del plazo produce la caducidad del procedimiento y el archivo de las actuaciones."
+    }
+  ]
+}

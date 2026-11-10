@@ -9,8 +9,9 @@ cuenta ni token de proveedor. Este documento cubre esa vía y las cuentas que ha
 ## Demo estática ya publicada (no necesita cuenta)
 
 - URL: <https://erdeivih.github.io/opofuente-demo/>.
-- Qué enseña: temario 5/40, apuntes completos de I.1 y II.13, dos prácticas de 10 preguntas y ficha
-  de pregunta; progreso en `localStorage`.
+- Qué enseña: temario 5/40, **13 temas completos** con apartados, tablas, ejemplos y fuente, **13
+  prácticas de 10 preguntas** (130 en total) y ficha de pregunta; **27 temas en preparación**
+  marcados como tales. Progreso en `localStorage`.
 - Cómo se regenera y publica: [`DEMO-PAGES.md`](DEMO-PAGES.md).
 - No incluye Guardia Civil, corpus real ni material de academias.
 

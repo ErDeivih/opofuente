@@ -1,0 +1,105 @@
+{
+  "node_path": "I.10",
+  "title": "La contratación del sector público (Ley 9/2017)",
+  "source": {
+    "label": "Ley 9/2017, de 8 de noviembre, de Contratos del Sector Público, por la que se transponen al ordenamiento jurídico español las Directivas 2014/23/UE y 2014/24/UE",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2017-12902"
+  },
+  "sections": [
+    {
+      "heading": "Ámbito, principios y lógica de la LCSP",
+      "body": "La **Ley 9/2017, de 8 de noviembre, de Contratos del Sector Público (LCSP)** transpone las Directivas 2014/23/UE y 2014/24/UE y sustituye al texto refundido de 2011. Su ámbito subjetivo es amplio: comprende a las **administraciones públicas**, a los **poderes adjudicadores** y a otras entidades del sector público, con reglas distintas según el tipo de ente y de contrato.\n\nLa ley distingue los contratos **sujetos a regulación armonizada (SARA)**, que superan los umbrales comunitarios y se rigen por las directivas, del resto de contratos. Los umbrales SARA se actualizan periódicamente por reglamento comunitario y se publican en el Diario Oficial de la Unión Europea: conviene consultar la cifra vigente en cada convocatoria en lugar de memorizar una cantidad que cambia.\n\nLos principios rectores son el **libre acceso a la licitación**, la **igualdad de trato**, la **transparencia**, la **no discriminación**, la **publicidad**, la **estabilidad presupuestaria** y la **eficiencia en el uso de los fondos públicos**. La ley incorpora además la **contratación estratégica** (cláusulas sociales, ambientales y de innovación) y la obligación de velar por la integridad de los procedimientos y por la lucha contra el fraude y la corrupción."
+    },
+    {
+      "heading": "Clases de contrato",
+      "table": {
+        "columns": ["Contrato", "Objeto y rasgo esencial"],
+        "rows": [
+          ["Obras", "Ejecución de una obra, así como la redacción del proyecto y la dirección facultativa cuando se contraten conjuntamente; puede ser de primer establecimiento, reforma, restauración o demolición."],
+          ["Concesión de obras", "Ejecución de obras cuya contraprestación consiste en el derecho a explotar la obra, asumiendo el concesionario el riesgo operacional."],
+          ["Concesión de servicios", "Gestión de un servicio público con contraprestación en el derecho a explotar el servicio y riesgo operacional del concesionario."],
+          ["Suministro", "Adquisición, arrendamiento financiero o arrendamiento de bienes muebles, con o sin instalación."],
+          ["Servicios", "Prestaciones de hacer, incluidas las de mantenimiento, consultoría, informática o formación."]
+        ]
+      }
+    },
+    {
+      "heading": "Procedimientos de adjudicación y contratos menores",
+      "body": "La regla general es el **procedimiento abierto**, en el que cualquier empresario interesado puede presentar una oferta sin invitación previa. El **abierto simplificado** es una variante ágil para prestaciones sencillas y de importe moderado, con trámites abreviados y reglas de valoración simplificadas. El **restringido** selecciona previamente a los licitadores por su solvencia y solo ellos presentan oferta. El **negociado** se reserva a supuestos legalmente tasados (urgencia, exclusividad, fracaso de un procedimiento previo o prestaciones que requieren negociación) y el **diálogo competitivo** se emplea para proyectos complejos que necesitan soluciones del mercado.\n\nLos **contratos menores** (obras por valor estimado inferior a 15.000 euros; suministros y servicios inferiores a 40.000 euros) permiten la adjudicación directa. Exigen justificar la necesidad, el precio y la elección del adjudicatario, respetar las prohibiciones de contratar, cumplir la prohibición de **fraccionar** el contrato para eludir la licitación y atender las obligaciones de publicidad y de control del gasto que fija la ley. No son un cauce para cubrir necesidades permanentes ni para encadenar contratos sobre el mismo objeto.\n\n**Técnicas de racionalización.** La ley permite acudir a **acuerdos marco**, **sistemas dinámicos de adquisición** y **subastas electrónicas** para agilizar compras repetitivas, así como a la **contratación centralizada** mediante centrales de compras. Estas técnicas simplifican la tramitación, pero no relajan los principios de publicidad, concurrencia e igualdad: las condiciones se fijan de antemano y la adjudicación se documenta."
+    },
+    {
+      "heading": "Solvencia, pliegos y garantías",
+      "body": "**Capacidad y solvencia.** Solo pueden contratar las personas con plena capacidad de obrar que acrediten **solvencia económica y financiera** y **solvencia técnica o profesional** adecuadas al contrato. La solvencia económica se acredita con el volumen de negocio o ratios financieros; la técnica, con títulos, experiencia, medios personales y materiales. La **clasificación** se exige en determinados contratos de obras y servicios según su importe y puede sustituirse por la acreditación documental de la solvencia.\n\n**Pliegos.** El **pliego de cláusulas administrativas particulares (PCAP)** regula los derechos y obligaciones, los criterios de adjudicación y las condiciones del contrato; el **pliego de prescripciones técnicas (PPT)** define las características técnicas de la prestación. Los criterios de adjudicación deben ser objetivos, transparentes y estar vinculados al objeto del contrato, y la **mejor relación calidad-precio** puede valorarse con fórmulas o con criterios de juicio de valor.\n\n**Garantías.** La LCSP no exige la antigua garantía provisional. La **garantía definitiva** se fija con carácter general en el **5 % del precio de adjudicación** y responde de la correcta ejecución del contrato; el pliego puede prever garantías complementarias o retenciones en supuestos justificados."
+    },
+    {
+      "heading": "Mesa de contratación, publicidad y control",
+      "body": "**La mesa de contratación** es un órgano colegiado de asistencia al órgano de contratación: valora las ofertas (o las que dependen de juicio de valor, según el pliego) y propone la adjudicación. En las entidades locales está presidida por un miembro de la corporación o por un funcionario designado, y forman parte de ella el Letrado, el Interventor y un representante del servicio correspondiente; la secretaría la ejerce un funcionario de la corporación. Sus miembros deben ser imparciales y abstenerse cuando concurra causa legal.\n\n**Publicidad.** El **perfil del contratante** se aloja en la **Plataforma de Contratación del Sector Público**, donde se publican pliegos, anuncios y resultados. Los contratos SARA se anuncian además en el **Diario Oficial de la Unión Europea**; los demás se publican en el boletín oficial que corresponda. La ley impulsa la licitación electrónica y la formalización del contrato en documento administrativo.\n\n**Control.** Frente a los actos de preparación y adjudicación cabe el **recurso especial en materia de contratación** ante el Tribunal Administrativo Central de Recursos Contractuales o el órgano autonómico equivalente, con carácter potestativo y antes de la vía contencioso-administrativa; los umbrales de este recurso son distintos para obras y concesiones que para servicios y suministros. El control de la ejecución corresponde al responsable del contrato."
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento necesita contratar el mantenimiento anual de su aplicación de gestión empresarial: valor estimado de 30.000 euros, sin IVA, y prestación sencilla. El jefe de servicio propone contratar directamente a una empresa conocida y dividir el encargo en dos anualidades de 15.000 euros «para agilizar».\n\n**Resolución razonada.** (1) El contrato es de **servicios** (prestaciones de hacer) y su valor estimado, 30.000 euros, queda por debajo del umbral del contrato menor de servicios y suministros (40.000 euros): en principio puede adjudicarse como **contrato menor**. (2) Aun así, el contrato menor exige **informe de necesidad**, justificación del precio y de la elección del adjudicatario, respeto de las prohibiciones de contratar y publicidad en el perfil del contratante. (3) Dividir el encargo en dos contratos de 15.000 euros para evitar la licitación es **fraccionamiento prohibido**: responde a una necesidad única y permanente y elude el procedimiento. (4) Si el valor estimado superase el umbral, habría que tramitar un procedimiento de licitación, con pliegos y publicación de anuncio. (5) Si el mantenimiento se prolonga año tras año, el contrato menor no es el cauce adecuado: procede planificar un contrato plurianual con el procedimiento que corresponda."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué ley regula actualmente la contratación del sector público en España?",
+      "options": ["La Ley 30/2007, de Contratos del Sector Público", "La Ley 9/2017, de Contratos del Sector Público", "La Ley 39/2015, del Procedimiento Administrativo Común", "La Ley 7/1985, de Bases del Régimen Local"],
+      "correct": "b",
+      "explanation": "La Ley 9/2017, de 8 de noviembre, de Contratos del Sector Público, es la norma vigente y transpone las Directivas 2014/23/UE y 2014/24/UE."
+    },
+    {
+      "stem": "¿Cuál de las siguientes NO es una clase de contrato regulada por la LCSP?",
+      "options": ["Contrato de obras", "Contrato de suministro", "Concesión de servicios", "Contrato de gestión de servicios públicos"],
+      "correct": "d",
+      "explanation": "La LCSP clasifica los contratos en obras, concesión de obras, concesión de servicios, suministro y servicios; la gestión de servicios públicos fue una categoría del régimen anterior y hoy se reconduce a la concesión de servicios."
+    },
+    {
+      "stem": "En la concesión de obras, ¿qué rasgo define la contraprestación del concesionario?",
+      "options": ["Un precio cierto pagado por la Administración", "La entrega de bienes muebles", "El pago de tasas por el usuario en todo caso", "El derecho a explotar la obra asumiendo el riesgo operacional"],
+      "correct": "d",
+      "explanation": "El rasgo definitorio de la concesión es que el concesionario asume el riesgo operacional y se retribuye mediante la explotación de la obra."
+    },
+    {
+      "stem": "¿Cuál es el importe máximo de un contrato menor de servicios o de suministro?",
+      "options": ["15.000 euros", "30.000 euros", "40.000 euros", "100.000 euros"],
+      "correct": "c",
+      "explanation": "Los contratos menores de suministro y servicios requieren un valor estimado inferior a 40.000 euros; los de obras, inferior a 15.000 euros."
+    },
+    {
+      "stem": "¿Qué procedimiento permite que cualquier empresario interesado presente oferta sin invitación previa?",
+      "options": ["El restringido", "El negociado", "El diálogo competitivo", "El abierto"],
+      "correct": "d",
+      "explanation": "El procedimiento abierto es la regla general: cualquier interesado que acredite solvencia puede presentar oferta; el restringido exige invitación previa."
+    },
+    {
+      "stem": "¿Qué órgano valora las ofertas y propone la adjudicación en el procedimiento abierto?",
+      "options": ["La Intervención", "El Pleno", "La mesa de contratación", "El Consejo de Ministros"],
+      "correct": "c",
+      "explanation": "La mesa de contratación es el órgano colegiado de asistencia que valora las ofertas y propone la adjudicación al órgano de contratación."
+    },
+    {
+      "stem": "¿Qué documento establece las cláusulas administrativas y los criterios de adjudicación de un contrato?",
+      "options": ["El pliego de cláusulas administrativas particulares", "El pliego de prescripciones técnicas", "El informe de necesidad", "El anuncio de licitación"],
+      "correct": "a",
+      "explanation": "El PCAP regula los derechos y obligaciones, los criterios de adjudicación y las condiciones del contrato; el PPT define las características técnicas."
+    },
+    {
+      "stem": "La LCSP suprimió la garantía provisional y exige, con carácter general, una garantía definitiva de...",
+      "options": ["El 10 % del presupuesto base de licitación", "El 2 % del valor estimado", "El 5 % del precio de adjudicación", "No se exige garantía definitiva"],
+      "correct": "c",
+      "explanation": "La garantía definitiva se fija con carácter general en el 5 % del precio de adjudicación y responde de la correcta ejecución del contrato."
+    },
+    {
+      "stem": "¿Qué recurso específico cabe contra los actos de preparación y adjudicación de los contratos del sector público?",
+      "options": ["El recurso de alzada ante el alcalde", "El recurso de reposición en todo caso", "El recurso especial en materia de contratación", "No cabe ningún recurso"],
+      "correct": "c",
+      "explanation": "El recurso especial en materia de contratación se resuelve por el Tribunal Administrativo Central de Recursos Contractuales o el órgano autonómico equivalente."
+    },
+    {
+      "stem": "¿Qué dos tipos de solvencia debe acreditar el licitador?",
+      "options": ["Económica y financiera, y técnica o profesional", "Política y social", "Penal y fiscal", "Técnica y comercial"],
+      "correct": "a",
+      "explanation": "La LCSP exige acreditar solvencia económica y financiera y solvencia técnica o profesional, en los términos y con los medios que fija la ley."
+    }
+  ]
+}

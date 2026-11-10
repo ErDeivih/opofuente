@@ -1,0 +1,104 @@
+{
+  "node_path": "I.7",
+  "title": "El personal al servicio de las administraciones públicas (TREBEP)",
+  "source": {
+    "label": "Real Decreto Legislativo 5/2015, de 30 de octubre, por el que se aprueba el texto refundido de la Ley del Estatuto Básico del Empleado Público (TREBEP)",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11719"
+  },
+  "sections": [
+    {
+      "heading": "Marco normativo: del EBEP al TREBEP",
+      "body": "**El Estatuto Básico del Empleado Público (EBEP)** nació como Ley 7/2007, de 12 de abril, y hoy se aplica a través del texto refundido aprobado por el **Real Decreto Legislativo 5/2015, de 30 de octubre** (TREBEP). Es la norma básica del régimen estatutario de los empleados públicos de todas las administraciones: Administración General del Estado, comunidades autónomas y entidades locales.\n\nEl TREBEP no sustituye al resto de la normativa: fija un mínimo común y remite a las leyes de función pública de cada administración para desarrollarlo. Además, determinados colectivos (personal de las Cortes Generales y de los órganos constitucionales, Fuerzas Armadas, Fuerzas y Cuerpos de Seguridad, personal del Poder Judicial o personal sanitario estatutario) se rigen por su legislación específica, sin perjuicio de la referencia supletoria del Estatuto.\n\nDentro de su ámbito, el Estatuto ordena la relación de servicio de los funcionarios y, en lo que resulte aplicable, del **personal laboral**, que conserva su vínculo contractual y convencional. El **personal eventual** no es funcionario de carrera ni personal laboral: ocupa un puesto de confianza con nombramiento y cese libres."
+    },
+    {
+      "heading": "Clases de empleado público",
+      "table": {
+        "columns": ["Clase", "Vínculo", "Rasgos esenciales"],
+        "rows": [
+          ["Funcionario de carrera", "Relación estatutaria, nacida del nombramiento", "Ocupa una plaza con carácter permanente; ingresa por oposición o concurso-oposición; tiene carrera administrativa y régimen retributivo estatutario."],
+          ["Funcionario interino", "Nombramiento temporal", "Cubre plazas vacantes mientras se resuelve su cobertura, sustituye titulares, ejecuta programas temporales o atiende un exceso o acumulación de tareas; cesa cuando desaparece la causa."],
+          ["Personal laboral", "Contrato de trabajo: fijo, indefinido o temporal", "Se rige por la legislación laboral y el convenio colectivo, con el TREBEP como referencia en lo que proceda; ocupa puestos que no se reservan a funcionarios."],
+          ["Personal eventual", "Nombramiento no permanente", "Realiza únicamente funciones de confianza o asesoramiento especial, retribuidas con cargo a un crédito presupuestario; su cese es libre."]
+        ]
+      }
+    },
+    {
+      "heading": "El acceso al empleo público",
+      "body": "**Acceso al empleo público.** El acceso se rige por los principios de **igualdad, mérito, capacidad y publicidad** que establece el TREBEP: cualquier persona que reúna los requisitos puede concurrir en condiciones de igualdad y la Administración no puede reservar plazas a personas concretas ni utilizar la selección como instrumento de clientelismo.\n\nLa planificación se realiza mediante la **Oferta de Empleo Público (OEP)**, que concreta las plazas vacantes que se convocan en el ejercicio. Después, cada plaza se convoca mediante una convocatoria pública con sus **bases**, que vinculan a la Administración, a los órganos de selección y a los aspirantes. Las bases fijan los requisitos (nacionalidad, capacidad funcional, edad, titulación y, en su caso, habilitación), el sistema selectivo, las pruebas y el baremo.\n\nLos **sistemas selectivos** son la oposición (pruebas que acreditan conocimientos y capacidad), el concurso-oposición (pruebas más valoración de méritos) y, con carácter excepcional y legalmente tasado, el concurso. Los **órganos de selección** actúan de forma colegiada e imparcial; no pueden formar parte de ellos el personal de designación política, los funcionarios interinos ni el personal eventual, y sus miembros deben abstenerse cuando concurra causa legal. La publicidad de las pruebas, la transparencia de los resultados y la motivación de las puntuaciones son garantías esenciales del proceso."
+    },
+    {
+      "heading": "Carrera profesional, evaluación y retribuciones",
+      "body": "**Carrera profesional.** Es el conjunto ordenado de oportunidades de ascenso y expectativas de progreso profesional conforme a la cualificación, el mérito, la capacidad y el desempeño. Se distingue la **carrera horizontal** (progresión de grado o nivel sin cambiar de puesto, ligada a la trayectoria y a la evaluación) y la **carrera vertical** (ascenso a puestos de mayor responsabilidad, a través de la provisión de puestos, la **promoción interna** o, en su caso, la libre designación). La **evaluación del desempeño** debe ser objetiva, transparente y conocida de antemano, y sus resultados pueden condicionar la progresión.\n\n**Retribuciones.** Se dividen en **básicas** (sueldo asignado al grupo o subgrupo de clasificación, trienios y pagas extraordinarias) y **complementarias**: el **complemento de destino** retribuye el nivel del puesto; el **complemento específico** las condiciones particulares (dificultad técnica, dedicación, responsabilidad); la **productividad** retribuye el rendimiento y los resultados; las **gratificaciones e indemnizaciones** cubren, respectivamente, servicios extraordinarios y gastos ocasionados por el servicio. Las retribuciones deben respetar la legalidad, la igualdad y la transparencia; no pueden fijarse al margen de la ley ni de forma arbitraria.\n\n**Provisión de puestos y movilidad.** Los puestos de trabajo se proveen por **concurso** (valoración de méritos con convocatoria pública) o por **libre designación** (para puestos de especial responsabilidad, con motivación y cese discrecional). La **movilidad** entre administraciones se articula mediante procesos abiertos y convenios, y la comisión de servicios cubre necesidades temporales. Estas figuras no sustituyen al sistema de carrera: son mecanismos de asignación de puestos que deben respetar la igualdad, el mérito y la capacidad."
+    },
+    {
+      "heading": "Situaciones administrativas y régimen disciplinario",
+      "body": "**Situaciones administrativas.** El funcionario puede hallarse en distintas situaciones: **servicio activo** (presta servicios y mantiene todos sus derechos), **servicios especiales** (pasa a órganos constitucionales, a la Unión Europea, a organismos internacionales o a determinados cargos con reserva de plaza y cómputo del tiempo), **servicio en otras administraciones públicas** (movilidad), **excedencia** (voluntaria por interés particular, por cuidado de familiares o por razón de violencia de género) y **suspensión de funciones** (provisional durante un procedimiento o firme como sanción). Cada situación tiene efectos distintos sobre retribuciones, reserva del puesto y cómputo de la antigüedad.\n\n**Régimen disciplinario.** Las faltas se clasifican en leves, graves y muy graves y deben estar tipificadas. Las sanciones van desde el apercibimiento, el demérito o el traslado forzoso hasta la suspensión firme de funciones y la **separación del servicio**, que solo cabe por falta muy grave y conlleva la pérdida de la condición de funcionario de carrera; para el personal laboral la sanción equivalente es el despido. Rigen los principios de legalidad, tipicidad, proporcionalidad, culpabilidad y non bis in idem, y el **procedimiento disciplinario** exige instrucción de expediente, audiencia del interesado y resolución motivada. Las faltas y las sanciones prescriben conforme a su gravedad."
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento tiene vacante una plaza de técnico de informática ya incluida en la Oferta de Empleo Público, pero la convocatoria aún no se ha publicado. Mientras tanto, el servicio acumula tareas por la implantación de una nueva aplicación de gestión y el jefe de servicio propone contratar a un informático «hasta que se resuelva la oposición».\n\n**Resolución razonada.** (1) La plaza vacante cuya cobertura se tramita puede cubrirse con un **funcionario interino** nombrado al efecto, porque concurre una causa legal de interinidad; la interinidad no convierte al interino en titular de la plaza ni le da derecho a permanecer cuando la plaza se cubra. (2) Si lo que existe es un pico de trabajo temporal, la causa aplicable es el exceso o acumulación de tareas, con el límite temporal que fija la ley; la interinidad no puede convertirse en una forma encubierta de cubrir una necesidad estructural, y si la necesidad se vuelve permanente habrá que acudir a la oferta de empleo público y al procedimiento selectivo ordinario. (3) El nombramiento del interino no puede ser una designación arbitraria: debe respetar los principios de igualdad, mérito y capacidad y el procedimiento de selección que fije la convocatoria. (4) No cabe encadenar interinidades para atender una necesidad permanente, porque se desnaturaliza el sistema y se elude el proceso selectivo. (5) Si durante la interinidad se le asigna un complemento de productividad, deberá motivarse su necesidad y ajustarse a la regulación y a la negociación aplicables."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué norma aprueba el texto refundido de la Ley del Estatuto Básico del Empleado Público?",
+      "options": ["La Ley 7/2007, de 12 de abril", "El Real Decreto Legislativo 5/2015, de 30 de octubre", "La Ley 30/1984, de 2 de agosto", "La Ley 40/2015, de 1 de octubre"],
+      "correct": "b",
+      "explanation": "La Ley 7/2007 aprobó el EBEP; su texto refundido, hoy vigente, es el aprobado por el Real Decreto Legislativo 5/2015 (TREBEP)."
+    },
+    {
+      "stem": "¿Quién tiene la consideración de personal eventual?",
+      "options": ["Quien cubre una plaza vacante como funcionario hasta que se resuelva su cobertura", "Quien presta servicios con un contrato de trabajo indefinido", "Quien desempeña funciones de confianza o asesoramiento especial, con nombramiento y cese libres", "Quien realiza prácticas tras superar la oposición"],
+      "correct": "c",
+      "explanation": "El personal eventual ocupa puestos de confianza o asesoramiento especial, no permanentes, con nombramiento y cese libres y retribución con cargo a un crédito presupuestario."
+    },
+    {
+      "stem": "¿Cuál de las siguientes NO es una causa legal de nombramiento de funcionario interino?",
+      "options": ["La cobertura de plazas vacantes cuando no sea posible hacerlo con funcionarios de carrera", "La cobertura de un puesto de libre designación para funciones de confianza", "La sustitución transitoria de los titulares", "La ejecución de programas de carácter temporal"],
+      "correct": "b",
+      "explanation": "Las funciones de confianza o asesoramiento especial se cubren con personal eventual; las demás opciones son causas legales de interinidad."
+    },
+    {
+      "stem": "¿Qué sistema selectivo combina la superación de pruebas con la valoración de méritos?",
+      "options": ["La oposición", "El concurso", "El concurso-oposición", "La libre designación"],
+      "correct": "c",
+      "explanation": "El concurso-oposición valora a la vez pruebas de capacidad y méritos; la oposición es solo de pruebas, el concurso solo de méritos y la libre designación es un sistema de provisión, no de selección."
+    },
+    {
+      "stem": "¿Cuál de las siguientes es una retribución complementaria?",
+      "options": ["El sueldo del grupo de clasificación", "El complemento de destino", "Los trienios", "Las pagas extraordinarias"],
+      "correct": "b",
+      "explanation": "El sueldo, los trienios y las pagas extraordinarias son retribuciones básicas; el complemento de destino, el específico y la productividad son complementarias."
+    },
+    {
+      "stem": "Un funcionario de carrera es designado para prestar servicio en un organismo internacional. ¿En qué situación administrativa queda?",
+      "options": ["Servicio activo", "Excedencia voluntaria", "Suspensión de funciones", "Servicios especiales"],
+      "correct": "d",
+      "explanation": "La prestación de servicios en organismos internacionales, la Unión Europea u órganos constitucionales determina la situación de servicios especiales, con reserva de plaza y cómputo del tiempo."
+    },
+    {
+      "stem": "¿Cuál de las siguientes NO es causa de pérdida de la condición de funcionario de carrera?",
+      "options": ["La renuncia a la condición", "La jubilación", "El traslado a otro puesto de trabajo dentro de la misma Administración", "La sanción firme de separación del servicio"],
+      "correct": "c",
+      "explanation": "La renuncia, la jubilación, la pérdida de la nacionalidad, la separación del servicio y la pena de inhabilitación son causas de pérdida; el traslado es una forma de movilidad y no extingue la relación de servicio."
+    },
+    {
+      "stem": "¿Qué sanción solo puede imponerse por la comisión de una falta muy grave y supone la pérdida de la condición de funcionario?",
+      "options": ["La separación del servicio", "El apercibimiento", "El demérito", "La suspensión firme de funciones"],
+      "correct": "a",
+      "explanation": "La separación del servicio es la sanción más grave, reservada a las faltas muy graves, y conlleva la pérdida de la condición de funcionario de carrera."
+    },
+    {
+      "stem": "¿Qué ha de respetar necesariamente la selección del personal al servicio de la Administración?",
+      "options": ["Los principios de igualdad, mérito y capacidad", "El turno de antigüedad de los solicitantes", "La propuesta de los grupos políticos con representación", "El orden de presentación de las solicitudes"],
+      "correct": "a",
+      "explanation": "El acceso se somete a los principios de igualdad, mérito, capacidad y publicidad; no caben turnos de antigüedad ni propuestas políticas que sustituyan el mérito y la capacidad."
+    },
+    {
+      "stem": "El personal laboral de la Administración se rige, en lo que no regulan su contrato y convenio, por la legislación laboral y, con carácter supletorio, por...",
+      "options": ["La Ley 39/2015, del procedimiento administrativo común", "Las instrucciones del órgano de dirección", "La Ley 19/2013, de transparencia", "El TREBEP, en lo que resulte aplicable"],
+      "correct": "d",
+      "explanation": "El TREBEP se aplica al personal laboral en lo que proceda; su régimen principal es el contrato de trabajo y el convenio colectivo."
+    }
+  ]
+}

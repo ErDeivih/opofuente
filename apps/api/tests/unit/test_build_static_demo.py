@@ -1,4 +1,8 @@
-"""La demo estática de Pages: temario completo, dos prácticas y ningún perfil privado."""
+"""La demo estática de Pages: temario completo, temas con contenido real y estados honestos.
+
+Se construye el JSON de verdad y se comprueba lo que la demo promete: 40 temas, progreso por estado,
+cada tema completo con 3+ apartados, fuente y 10 preguntas, y ningún perfil privado.
+"""
 
 from __future__ import annotations
 
@@ -9,30 +13,51 @@ from opofuente.config import project_root
 from opofuente.tools.build_static_demo import build_static_demo
 
 
-def test_la_demo_estatica_lleva_temario_dos_practicas_y_solo_datos_publicos(
-    tmp_path: Path,
-) -> None:
+def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path) -> None:
     salida = tmp_path / "data.json"
     counts = build_static_demo(out=salida, root=project_root())
 
-    assert counts == {"blocks": 5, "topics": 40, "practices": 2, "questions": 20}
-    texto = salida.read_text(encoding="utf-8")
-    data = json.loads(texto)
-    assert data["curriculum"]["code"] == "informatica-c1"
-    assert len(data["curriculum"]["blocks"]) == 5
-    assert len(data["practices"]) == 2
+    assert counts["blocks"] == 5
+    assert counts["topics"] == 40
+    assert counts["complete"] >= 5, "la demo debe publicar varios temas redactados"
+    assert counts["withQuestions"] == counts["complete"], "hoy todo tema completo tiene su práctica"
+    assert counts["complete"] + counts["pending"] == counts["topics"]
+    assert counts["practices"] == counts["complete"], "cada tema completo tiene su práctica"
+    assert counts["pending"] >= 1, "debe quedar algún tema en preparación (es honesto)"
+    assert counts["questions"] == counts["complete"] * 10
 
-    practicas = {practica["tema_path"]: practica for practica in data["practices"]}
-    assert set(practicas) == {"I.1", "II.13"}
-    assert len(practicas["I.1"]["questions"]) == 10
-    assert len(practicas["II.13"]["questions"]) == 10
-    assert all(
-        len(pregunta["options"]) == 4
-        for practica in data["practices"]
-        for pregunta in practica["questions"]
-    )
+    data = json.loads(salida.read_text(encoding="utf-8"))
+    assert data["progress"] == {
+        "total": 40,
+        "complete": counts["complete"],
+        "withQuestions": counts["withQuestions"],
+        "pending": counts["pending"],
+        "questions": counts["questions"],
+    }
+
+    topics = {
+        topic["path"]: topic for block in data["curriculum"]["blocks"] for topic in block["topics"]
+    }
+    assert len(topics) == 40
+    assert any(topic["status"] == "pendiente" for topic in topics.values())
+
+    for path, contenido in data["topics"].items():
+        if contenido["status"] != "completo":
+            continue
+        assert topics[path]["status"] == "completo"
+        assert len(contenido["sections"]) >= 3
+        assert contenido["source"]["label"].strip() != ""
+        assert any("table" in section for section in contenido["sections"]), (
+            f"{path}: un tema completo debe incluir una tabla"
+        )
+        practica = next(item for item in data["practices"] if item["tema_path"] == path)
+        assert len(practica["questions"]) == 10
+        for pregunta in practica["questions"]:
+            assert len(pregunta["options"]) == 4
+            assert pregunta["correct"] in {"a", "b", "c", "d"}
+            assert pregunta["explanation"].strip() != ""
 
     # Sin material restringido: la demo se publica en un repositorio público.
-    assert "Guardia Civil" not in texto
-    assert "guardia civil" not in texto.lower()
-    assert "celador" not in texto.lower()
+    texto = salida.read_text(encoding="utf-8").lower()
+    assert "guardia civil" not in texto
+    assert "celador" not in texto

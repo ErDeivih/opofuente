@@ -1,10 +1,23 @@
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+
+/** Publica `data.json` junto al bundle para que se pueda inspeccionar y verificar desde fuera. */
+const emitDemoData: Plugin = {
+  name: 'opofuente-demo-data',
+  generateBundle() {
+    this.emitFile({
+      type: 'asset',
+      fileName: 'data.json',
+      source: readFileSync(path.join(here, 'demo', 'data.json'), 'utf8'),
+    });
+  },
+};
 
 /**
  * Build de la demo estática para GitHub Pages.
@@ -16,7 +29,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   root: path.join(here, 'demo'),
   base: './',
-  plugins: [react()],
+  plugins: [react(), emitDemoData],
   server: { fs: { allow: [here] } },
   build: {
     outDir: path.join(here, 'dist-demo'),

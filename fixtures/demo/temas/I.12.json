@@ -1,0 +1,105 @@
+{
+  "node_path": "I.12",
+  "title": "Transparencia y protección de datos en la Administración",
+  "source": {
+    "label": "Ley 19/2013, de 9 de diciembre, de transparencia, acceso a la información pública y buen gobierno; Reglamento (UE) 2016/679 (RGPD) y Ley Orgánica 3/2018, de 5 de diciembre (LOPDGDD)",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-12887"
+  },
+  "sections": [
+    {
+      "heading": "El doble marco: transparencia y protección de datos",
+      "body": "La **Ley 19/2013, de 9 de diciembre** tiene tres ejes: la **publicidad activa**, el **derecho de acceso a la información pública** y las obligaciones de **buen gobierno** de los altos cargos. Desde el 25 de mayo de 2018 se aplica además el **Reglamento (UE) 2016/679 (RGPD)** y, en España, la **Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD)**.\n\nNo son derechos contrapuestos: se **ponderan**. La transparencia no es un derecho absoluto —tiene límites y causas de inadmisión—, y la protección de datos no impide el acceso cuando existe una base jurídica y la ponderación favorece el interés público, especialmente si la información afecta a la organización o a la actividad pública del órgano. Cuando la información contiene datos personales se valora el daño a los derechos de sus titulares, se publica solo lo necesario y, si procede, se disocian los datos o se concede **acceso parcial**."
+    },
+    {
+      "heading": "La publicidad activa",
+      "body": "La publicidad activa es la obligación de publicar **de oficio**, de forma periódica y actualizada, la información cuyo conocimiento sea relevante para controlar la actuación pública. Se difunde en las sedes electrónicas y páginas web, en formatos comprensibles, accesibles y preferiblemente reutilizables: no se espera a que nadie la solicite.\n\nLos bloques principales son: la información **institucional, organizativa y de planificación** (funciones, normativa aplicable, organigrama actualizado con identificación de responsables, planes y evaluación de su cumplimiento); la **de relevancia jurídica** (anteproyectos, normas, procedimientos e instrucciones); la **económica, presupuestaria y estadística** (contratos, convenios, subvenciones, presupuestos, cuentas y retribuciones de altos cargos); y la información que sea objeto frecuente de solicitud de acceso.\n\nEstán obligadas todas las administraciones y entidades del sector público y, además, determinados sujetos privados: partidos políticos, organizaciones sindicales y empresariales y entidades privadas que reciban ayudas o subvenciones públicas superiores a **100.000 euros**, o cuando al menos el **40 %** de sus ingresos anuales tenga carácter de subvención con un mínimo de **5.000 euros**. La publicidad activa respeta los límites del derecho de acceso y, en particular, la protección de datos personales, con disociación cuando la información contenga datos especialmente protegidos."
+    },
+    {
+      "heading": "Plazos y órganos clave",
+      "table": {
+        "columns": ["Materia", "Plazo", "Órgano o referencia"],
+        "rows": [
+          ["Resolución de una solicitud de acceso a información pública", "1 mes desde la recepción, ampliable por otro mes si la complejidad lo justifica", "Órgano competente; el silencio es desestimatorio"],
+          ["Respuesta a los derechos del interesado en materia de protección de datos", "1 mes, ampliable dos meses más si el tratamiento es complejo", "Responsable del tratamiento"],
+          ["Notificación de una brecha de seguridad a la autoridad de control", "72 horas desde que el responsable tiene conocimiento", "Agencia Española de Protección de Datos (AEPD)"],
+          ["Reclamación frente a la denegación de acceso a información pública", "1 mes desde la notificación de la resolución", "Consejo de Transparencia y Buen Gobierno u órgano autonómico equivalente"],
+          ["Evaluación de impacto relativa a la protección de datos (EIPD)", "Antes de iniciar el tratamiento de alto riesgo", "Responsable, con asesoramiento del Delegado de Protección de Datos"]
+        ]
+      }
+    },
+    {
+      "heading": "El derecho de acceso a la información pública",
+      "body": "El derecho de acceso se reconoce a todas las personas, **sin necesidad de motivar la solicitud**, y recae sobre la información pública: los contenidos o documentos que obren en poder de la Administración y hayan sido elaborados o adquiridos en el ejercicio de sus funciones. La solicitud puede presentarse por cualquier medio, incluido el electrónico.\n\nLa ley regula causas de **inadmisión** (información en curso de elaboración, información de carácter auxiliar o de apoyo, solicitudes repetitivas o abusivas y peticiones que exijan una reelaboración), porque el derecho no obliga a crear información nueva. También establece **límites**: seguridad nacional, defensa, relaciones exteriores, seguridad pública, prevención e investigación de los delitos, intereses económicos y comerciales, secreto profesional, medio ambiente y protección de datos personales. Los límites se aplican con un **test de daño e interés público**, de forma motivada y proporcionada, y el acceso puede concederse parcialmente. El **art. 15** de la Ley 19/2013 regula específicamente el equilibrio con la protección de datos personales.\n\nLa resolución debe dictarse y notificarse en el plazo máximo de **un mes**, ampliable por otro mes cuando la complejidad lo justifique. Si no se resuelve en plazo, la solicitud se entiende **desestimada** por silencio. Frente a la denegación cabe una **reclamación potestativa ante el Consejo de Transparencia y Buen Gobierno** (o el órgano autonómico equivalente), sin perjuicio de la vía contencioso-administrativa."
+    },
+    {
+      "heading": "RGPD: principios, bases jurídicas, derechos y Delegado de Protección de Datos",
+      "body": "**Principios.** Todo tratamiento debe cumplir el art. 5 del RGPD: **licitud, lealtad y transparencia**; **limitación de la finalidad**; **minimización** (datos adecuados, pertinentes y limitados a lo necesario); **exactitud**; **limitación del plazo de conservación**; **integridad y confidencialidad**; y **responsabilidad proactiva**, que obliga al responsable a poder demostrar el cumplimiento.\n\n**Base jurídica.** Todo tratamiento necesita una base del art. 6: consentimiento, ejecución de un contrato, cumplimiento de una obligación legal, protección de intereses vitales, ejercicio de poderes públicos o interés legítimo. En la Administración la base habitual no es el consentimiento, sino el **cumplimiento de una obligación legal** o el **ejercicio de poderes públicos**. El consentimiento debe ser libre, informado, específico e inequívoco; para las categorías especiales de datos (salud, biometría, ideología, etc.) se exige consentimiento explícito o una base legal específica.\n\n**Derechos del interesado.** Acceso, rectificación, supresión, limitación del tratamiento, portabilidad, oposición y derecho a no ser objeto de decisiones individuales automatizadas. Su ejercicio es gratuito y debe responderse en el plazo de un mes, ampliable dos meses más si el tratamiento es complejo; los derechos pueden limitarse cuando una norma legal lo justifique, por ejemplo la conservación obligatoria de documentación administrativa.\n\n**Delegado de Protección de Datos (DPD).** Es obligatorio en las administraciones públicas. Debe tener conocimientos especializados, actúa con independencia, asesora y supervisa al responsable y a los encargados, coopera con la AEPD y es el punto de contacto para los interesados. **Seguridad.** El RGPD exige medidas técnicas y organizativas apropiadas (seudonimización, cifrado, confidencialidad, integridad, disponibilidad y resiliencia), registro de actividades de tratamiento, evaluaciones de impacto para tratamientos de alto riesgo y notificación de brechas a la AEPD en 72 horas, con comunicación a los afectados cuando el riesgo sea alto."
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un vecino solicita acceso al expediente de una inspección municipal sobre una obra colindante. El expediente contiene el informe de un técnico municipal y datos personales de un tercero (documento de identidad, domicilio y datos de salud de un trabajador). El concejal propone denegar todo el acceso «por protección de datos» y contestar verbalmente en el plazo de una semana.\n\n**Resolución razonada.** (1) No procede denegar de forma automática: se trata de información pública y la solicitud no necesita motivación. (2) Debe tramitarse y resolverse en el plazo máximo de **un mes**, ampliable por otro mes justificado; una respuesta verbal no sustituye la resolución notificada. (3) Se aplica el **test de daño e interés público**: la información sobre la actuación administrativa y la obra prevalece, pero los datos personales del tercero se valoran conforme al art. 15 de la Ley 19/2013 y al RGPD. (4) Procede el **acceso parcial**: se entrega el informe técnico y la parte de la actuación pública, con anonimización o disociación de los datos personales no relevantes; los datos de salud quedan fuera salvo consentimiento o base legal específica. (5) Si se deniega, la resolución debe motivarse citando el límite aplicado, y el interesado puede reclamar ante el Consejo de Transparencia y Buen Gobierno y, después, acudir a la jurisdicción contencioso-administrativa. (6) Las solicitudes de derechos del RGPD (acceso, rectificación o supresión) se tramitan por separado, con su plazo de un mes y respuesta del responsable."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué ley regula la publicidad activa y el derecho de acceso a la información pública?",
+      "options": ["La Ley 39/2015, del Procedimiento Administrativo Común", "La Ley 19/2013, de transparencia, acceso a la información pública y buen gobierno", "La Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales", "La Ley 9/2017, de Contratos del Sector Público"],
+      "correct": "b",
+      "explanation": "La Ley 19/2013 regula la publicidad activa, el derecho de acceso y las obligaciones de buen gobierno; la LOPDGDD y el RGPD regulan la protección de datos."
+    },
+    {
+      "stem": "¿Es necesario motivar la solicitud de acceso a la información pública?",
+      "options": ["Sí, siempre y por escrito", "Sí, salvo que la presente un periodista", "No, la solicitud no requiere motivación", "Solo cuando afecte a datos personales"],
+      "correct": "c",
+      "explanation": "El derecho de acceso se reconoce a todas las personas y puede ejercerse sin necesidad de motivar la solicitud ni de invocar un interés concreto."
+    },
+    {
+      "stem": "¿Cuál es el plazo máximo para resolver una solicitud de acceso a la información pública?",
+      "options": ["10 días hábiles", "1 mes desde la recepción, ampliable por otro mes si la complejidad lo justifica", "3 meses improrrogables", "6 meses"],
+      "correct": "b",
+      "explanation": "La ley fija un plazo de un mes, ampliable por otro mes cuando la complejidad o el volumen de la información lo justifiquen."
+    },
+    {
+      "stem": "Si la Administración no resuelve la solicitud de acceso en el plazo legal, ¿qué ocurre?",
+      "options": ["Se entiende desestimada por silencio", "Se entiende estimada por silencio", "Se prorroga automáticamente el plazo un mes más", "Debe resolver el Consejo de Ministros"],
+      "correct": "a",
+      "explanation": "En materia de acceso a la información pública el silencio tiene efecto desestimatorio: la falta de resolución se entiende como denegación."
+    },
+    {
+      "stem": "Cuando la información solicitada contiene datos personales de terceros, ¿qué regla se aplica?",
+      "options": ["Se deniega siempre el acceso", "Se concede siempre el acceso sin condiciones", "Se pondera el daño a los derechos de los titulares y puede concederse acceso parcial con disociación de datos", "Se exige el consentimiento de todos los empleados públicos citados"],
+      "correct": "c",
+      "explanation": "El art. 15 de la Ley 19/2013 y el RGPD exigen ponderar el interés público y el daño a los derechos de los titulares, permitiendo el acceso parcial y la anonimización de los datos no relevantes."
+    },
+    {
+      "stem": "¿Cuál de las siguientes es una obligación de publicidad activa?",
+      "options": ["Publicar el organigrama y las retribuciones de los altos cargos", "Publicar las conversaciones telefónicas de los concejales", "Publicar los datos de salud de los ciudadanos", "Publicar las contraseñas de los sistemas municipales"],
+      "correct": "a",
+      "explanation": "La publicidad activa comprende la información institucional y organizativa, la de relevancia jurídica y la económica, presupuestaria y estadística, incluidas las retribuciones de los altos cargos."
+    },
+    {
+      "stem": "¿Qué principio del RGPD exige que los datos sean adecuados, pertinentes y limitados a lo necesario?",
+      "options": ["Limitación de la finalidad", "Exactitud", "Responsabilidad proactiva", "Minimización de datos"],
+      "correct": "d",
+      "explanation": "La minimización de datos impide recoger más información de la necesaria para la finalidad del tratamiento."
+    },
+    {
+      "stem": "En la Administración, ¿cuál es la base jurídica habitual para tratar datos personales?",
+      "options": ["El consentimiento de los interesados en todo caso", "El interés legítimo del órgano administrativo", "El cumplimiento de una obligación legal o el ejercicio de poderes públicos", "La decisión discrecional del responsable"],
+      "correct": "c",
+      "explanation": "Las administraciones tratan datos principalmente porque una norma les obliga o porque ejercen potestades públicas; el consentimiento es una base más propia de relaciones privadas."
+    },
+    {
+      "stem": "¿Qué caracteriza al Delegado de Protección de Datos en las administraciones públicas?",
+      "options": ["Es un órgano judicial que resuelve reclamaciones", "Su designación es obligatoria y asesora y supervisa el cumplimiento en materia de protección de datos", "Es un cargo electivo de la corporación local", "Solo puede designarlo la Agencia Española de Protección de Datos"],
+      "correct": "b",
+      "explanation": "El DPD es obligatorio en las administraciones públicas, actúa con independencia, asesora al responsable, supervisa el cumplimiento y coopera con la autoridad de control."
+    },
+    {
+      "stem": "¿En qué plazo debe notificarse una brecha de seguridad a la autoridad de control?",
+      "options": ["24 horas", "1 mes", "72 horas desde que el responsable tiene conocimiento", "No es obligatorio notificarla"],
+      "correct": "c",
+      "explanation": "El RGPD impone notificar las brechas a la autoridad de control en 72 horas desde que el responsable tiene conocimiento, salvo que sea improbable que suponga un riesgo."
+    }
+  ]
+}

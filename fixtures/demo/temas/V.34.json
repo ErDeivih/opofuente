@@ -1,0 +1,208 @@
+{
+  "node_path": "V.34",
+  "title": "Seguridad de la información",
+  "source": {
+    "label": "ISO/IEC 27001:2022 — Seguridad de la información, ciberseguridad y protección de la privacidad. Sistemas de gestión de la seguridad de la información. Requisitos",
+    "url": "https://www.iso.org/standard/27001"
+  },
+  "sections": [
+    {
+      "heading": "Confidencialidad, integridad y disponibilidad",
+      "body": "La seguridad de la información protege la información frente a accesos, usos, divulgaciones, alteraciones o destrucciones no autorizadas. Su objetivo clásico se resume en tres propiedades, conocidas como **triada CIA** por sus siglas en inglés:\n\n- **Confidencialidad**: solo acceden a la información las personas y sistemas autorizados.\n- **Integridad**: la información es exacta, completa y no se ha modificado sin control.\n- **Disponibilidad**: la información y los servicios están accesibles cuando se necesitan.\n\nA ellas se añaden habitualmente otras propiedades: **autenticidad** (el origen es quien dice ser), **trazabilidad** (poder reconstruir quién hizo qué y cuándo) y **no repudio** (no poder negar una acción acreditada). Cada activo tiene una valoración distinta en cada dimensión: la disponibilidad es crítica en un sistema de urgencias, la confidencialidad lo es en un historial clínico y la integridad en un registro contable.\n\nLa seguridad se organiza en capas (**defensa en profundidad**): controles físicos (acceso al centro de datos, redundancia eléctrica), lógicos (autenticación, cortafuegos, cifrado, copias de seguridad) y organizativos (políticas, roles, formación, gestión de proveedores). Ninguna capa basta por sí sola: un cortafuegos perfecto no sirve de mucho si la copia de seguridad está en el mismo armario que el servidor.\n\nConviene distinguir **seguridad de la información** de **protección de datos personales**: la primera protege todo tipo de información; la segunda es el régimen jurídico que limita cómo se tratan los datos de personas físicas. Se solapan, pero no son lo mismo."
+    },
+    {
+      "heading": "Amenaza, vulnerabilidad y riesgo",
+      "body": "Una **amenaza** es una circunstancia o agente con potencial de causar daño (un ataque de ransomware, un incendio, un error humano, un corte de suministro). Una **vulnerabilidad** es una debilidad que la amenaza puede aprovechar (un servidor sin actualizar, una contraseña compartida, una sala sin control de acceso). El **riesgo** combina ambas con el valor del activo y el daño que produciría: en términos simples, **riesgo = probabilidad × impacto**.\n\nLa gestión de riesgos es un ciclo: identificar activos y riesgos, analizarlos, evaluarlos frente a los criterios de aceptación y tratarlos. Las opciones de tratamiento son:\n\n- **Mitigar o reducir** el riesgo con salvaguardas (copias, segmentación, autenticación multifactor).\n- **Evitar** la actividad que lo genera.\n- **Transferir** el riesgo (seguro, externalización con garantías contractuales).\n- **Aceptar** el riesgo residual, de forma consciente y documentada.\n\nEl **riesgo residual** es el que queda después de aplicar las salvaguardas: nunca es cero. La **apetencia de riesgo** es la cantidad de riesgo que la dirección está dispuesta a asumir. La evaluación debe repetirse porque los activos, las amenazas y las salvaguardas cambian.\n\nLa norma **ISO/IEC 27005** ofrece orientaciones para la gestión del riesgo de seguridad de la información y encaja con los requisitos de ISO/IEC 27001 y con metodologías nacionales como MAGERIT."
+    },
+    {
+      "heading": "ISO/IEC 27001 y el sistema de gestión (SGSI)",
+      "body": "**ISO/IEC 27001** especifica los requisitos de un **sistema de gestión de la seguridad de la información (SGSI)**: un marco de gobierno, procesos y controles para proteger la información de forma sistemática y demostrable. Es certificable por organismos acreditados y es la referencia más extendida en el mundo.\n\nLa norma sigue la estructura común de las normas de sistemas de gestión: contexto de la organización, liderazgo, planificación, apoyo, operación, evaluación del desempeño y mejora. Los requisitos clave son:\n\n- Definir el **alcance** del SGSI y el contexto (procesos, ubicaciones, servicios).\n- Aprobar una **política de seguridad** y asignar responsabilidades.\n- Realizar una **evaluación de riesgos** y un **plan de tratamiento**.\n- Elaborar la **declaración de aplicabilidad** (SoA), que justifica qué controles se aplican y cuáles no.\n- Medir, auditar internamente y revisar por la dirección.\n- Mejorar de forma continua.\n\nEl **Anexo A** contiene el catálogo de controles de referencia, agrupados en cuatro temas: **organizativos**, **de personas**, **físicos** y **tecnológicos**. La norma no exige aplicar todos los controles de forma mecánica: exige justificar la selección según los riesgos. Los controles se detallan en **ISO/IEC 27002**, que es una guía de buenas prácticas y no un documento certificable.\n\nEl ciclo es de mejora continua: planificar (política y riesgos), hacer (controles y operación), verificar (métricas y auditoría) y actuar (correcciones y mejoras). Un SGSI no es una carpeta de documentos: es un sistema que se revisa y se demuestra con evidencias."
+    },
+    {
+      "heading": "MAGERIT: análisis y gestión de riesgos",
+      "body": "**MAGERIT** es la metodología de análisis y gestión de riesgos de los sistemas de información promovida por el **CCN-CERT** y alineada con el Esquema Nacional de Seguridad. Propone un proceso ordenado y repetible, con un enfoque cuantitativo y cualitativo a la vez, y se apoya en catálogos de elementos para que dos equipos distintos lleguen a resultados comparables.\n\nEl proceso parte del **inventario de activos**: información, servicios, aplicaciones, equipos, comunicaciones, instalaciones y personas. Cada activo se **valora** en cinco dimensiones: **disponibilidad**, **integridad**, **confidencialidad**, **autenticidad** y **trazabilidad**. Después se identifican las **amenazas** que pueden afectarlo y su probabilidad, se estima el **impacto** (valor del activo multiplicado por la degradación que causaría) y se calcula el riesgo. Sobre ese mapa se seleccionan **salvaguardas**, se estima el riesgo residual y se decide el tratamiento.\n\nEl resultado se concreta en documentos: inventario y valoración de activos, análisis de riesgos, plan de tratamiento y declaración de aplicabilidad cuando se trabaja con ISO/IEC 27001 o con el ENS. MAGERIT se estructura en varios libros —método, catálogo de elementos y guía de técnicas— para que el método y los catálogos puedan actualizarse por separado.\n\nLa metodología no decide por la organización: ordena la información para que la dirección pueda priorizar con criterio y justificar sus decisiones ante una auditoría."
+    },
+    {
+      "heading": "Ejemplo resuelto: riesgo en el portal municipal",
+      "body": "Un ayuntamiento quiere evaluar el riesgo de su **portal de transparencia**, publicado en Internet y usado también por los empleados para subir documentación.\n\n**Activos.** El servidor web, la base de datos de documentos, los ficheros publicados y la reputación del ayuntamiento. La información es pública en su mayor parte, pero el panel de administración maneja credenciales y borradores.\n\n**Amenazas.** Ataque de denegación de servicio, robo de credenciales de administración, fallo del disco del servidor y error humano al publicar un documento.\n\n**Probabilidad e impacto.** El fallo de disco es probable a lo largo de la vida útil del servidor y su impacto sería alto (portal caído). El robo de credenciales es menos probable, pero el impacto sería alto por la posibilidad de publicar contenido falso. El error humano es frecuente y de impacto medio. El ataque de denegación de servicio se considera de probabilidad media.\n\n**Riesgo.** Con la matriz de la tabla, el fallo de disco, el robo de credenciales y el error humano quedan en riesgo alto o muy alto, y el ataque de denegación de servicio en medio.\n\n**Salvaguardas.** Copias de seguridad diarias verificadas y fuera del servidor, autenticación multifactor para el panel de administración, doble revisión antes de publicar, cortafuegos de aplicación, monitorización de disponibilidad y un plan de comunicación para caídas. También se contrata un servicio anti-DDoS (transferencia parcial del riesgo).\n\n**Resultado.** El riesgo residual del fallo de disco y del robo de credenciales baja a medio; el del error humano, a bajo. La dirección acepta el riesgo residual y fija una revisión anual y otra tras cualquier incidente.",
+      "table": {
+        "columns": [
+          "Probabilidad / impacto",
+          "Impacto bajo",
+          "Impacto medio",
+          "Impacto alto"
+        ],
+        "rows": [
+          [
+            "Probabilidad alta",
+            "Riesgo medio",
+            "Riesgo alto",
+            "Riesgo muy alto"
+          ],
+          [
+            "Probabilidad media",
+            "Riesgo bajo",
+            "Riesgo medio",
+            "Riesgo alto"
+          ],
+          [
+            "Probabilidad baja",
+            "Riesgo bajo",
+            "Riesgo bajo",
+            "Riesgo medio"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "Controles técnicos y organizativos",
+      "body": "Los controles se clasifican según su función: **preventivos** (evitan el incidente), **detectivos** (lo descubren cuanto antes) y **correctivos** (lo contienen y lo reparan). También se distingue entre **técnicos**, que actúan sobre sistemas, y **organizativos**, que actúan sobre personas y procesos. Una organización madura combina todos.\n\nLos controles técnicos habituales son: gestión de identidades y accesos con **MFA** y mínimo privilegio, **hardening** y gestión de actualizaciones, segmentación de red y cortafuegos, **cifrado** en tránsito y en reposo, copias de seguridad con la regla 3-2-1 (tres copias, dos medios, una fuera), registro centralizado y **SIEM**, detección de intrusos, protección del puesto de trabajo (**EDR**), gestión de secretos y privilegios (**PAM**).\n\nLos organizativos incluyen la política de seguridad aprobada por la dirección, la asignación de roles y responsabilidades, la formación y concienciación, la gestión de proveedores, el control de acceso lógico y físico, los procedimientos de respuesta a incidentes, los planes de continuidad y recuperación (**BCP/DRP**) y las auditorías. La seguridad empieza por una decisión de la dirección: sin política y sin recursos, los controles técnicos se degradan.\n\nEn el sector público español, el **Esquema Nacional de Seguridad (ENS)**, aprobado por el Real Decreto 311/2022, fija los principios y las medidas exigibles según la categoría del sistema (básica, media o alta) y las dimensiones de seguridad (disponibilidad, autenticidad, integridad, confidencialidad y trazabilidad). Es coherente con ISO/IEC 27001 y con MAGERIT, y su cumplimiento se declara y se audita.",
+      "table": {
+        "columns": [
+          "Tipo de control",
+          "Ejemplo",
+          "Para qué sirve"
+        ],
+        "rows": [
+          [
+            "Preventivo técnico",
+            "Autenticación multifactor",
+            "Impide el acceso con una contraseña robada"
+          ],
+          [
+            "Preventivo organizativo",
+            "Política de seguridad y formación",
+            "Fija reglas y reduce el error humano"
+          ],
+          [
+            "Detectivo técnico",
+            "SIEM y alertas de intrusión",
+            "Descubre actividad anómala a tiempo"
+          ],
+          [
+            "Correctivo técnico",
+            "Copias de seguridad y restauración",
+            "Recupera el servicio tras un fallo"
+          ],
+          [
+            "Correctivo organizativo",
+            "Plan de respuesta a incidentes",
+            "Ordena la reacción y la comunicación"
+          ]
+        ]
+      }
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué propiedad de la seguridad garantiza que solo las personas autorizadas accedan a la información?",
+      "options": [
+        "Integridad",
+        "Confidencialidad",
+        "Disponibilidad",
+        "Trazabilidad"
+      ],
+      "correct": "b",
+      "explanation": "La confidencialidad limita el acceso a las personas y sistemas autorizados. La integridad protege la exactitud y la disponibilidad garantiza el acceso cuando se necesita."
+    },
+    {
+      "stem": "En el análisis de riesgos, el nivel de riesgo se obtiene normalmente:",
+      "options": [
+        "Sumando amenaza y vulnerabilidad",
+        "Dividiendo el impacto entre las salvaguardas",
+        "Multiplicando probabilidad por impacto",
+        "Restando el riesgo residual al riesgo inicial"
+      ],
+      "correct": "c",
+      "explanation": "El riesgo se estima combinando la probabilidad de que la amenaza aproveche una vulnerabilidad con el impacto o daño que causaría."
+    },
+    {
+      "stem": "¿Qué es el riesgo residual?",
+      "options": [
+        "El riesgo antes de aplicar salvaguardas",
+        "El riesgo que asume el proveedor externo",
+        "La suma de todas las amenazas identificadas",
+        "El riesgo que queda después de aplicar las salvaguardas"
+      ],
+      "correct": "d",
+      "explanation": "Tras aplicar las salvaguardas queda un riesgo residual, que la dirección debe aceptar de forma consciente y documentada."
+    },
+    {
+      "stem": "¿Qué norma especifica los requisitos de un sistema de gestión de la seguridad de la información?",
+      "options": [
+        "ISO/IEC 27001",
+        "ISO/IEC 27002",
+        "MAGERIT",
+        "ISO/IEC 20000-1"
+      ],
+      "correct": "a",
+      "explanation": "ISO/IEC 27001 contiene los requisitos del SGSI y es certificable. ISO/IEC 27002 es una guía de controles, MAGERIT una metodología de riesgos y 20000-1 se refiere a gestión de servicios."
+    },
+    {
+      "stem": "¿Qué contiene el Anexo A de ISO/IEC 27001?",
+      "options": [
+        "La plantilla de la declaración de aplicabilidad",
+        "El catálogo de controles de referencia agrupados por temas",
+        "El procedimiento de auditoría interna",
+        "El catálogo de activos de la organización"
+      ],
+      "correct": "b",
+      "explanation": "El Anexo A recoge los controles de referencia agrupados en cuatro temas: organizativos, de personas, físicos y tecnológicos."
+    },
+    {
+      "stem": "En MAGERIT, ¿cómo se denomina una causa potencial de daño sobre un activo?",
+      "options": [
+        "Amenaza",
+        "Salvaguarda",
+        "Activo",
+        "Vulnerabilidad"
+      ],
+      "correct": "a",
+      "explanation": "La amenaza es la causa potencial de daño; la vulnerabilidad es la debilidad que puede ser aprovechada y la salvaguarda la medida que reduce el riesgo."
+    },
+    {
+      "stem": "¿Qué opción de tratamiento del riesgo consiste en contratar un ciberseguro?",
+      "options": [
+        "Mitigar",
+        "Evitar",
+        "Aceptar",
+        "Transferir"
+      ],
+      "correct": "d",
+      "explanation": "Transferir el riesgo consiste en trasladar total o parcialmente las consecuencias a un tercero, por ejemplo mediante un seguro o un contrato con garantías."
+    },
+    {
+      "stem": "Si un atacante modifica una factura sin ser detectado, ¿qué propiedad de la seguridad se ha vulnerado?",
+      "options": [
+        "Disponibilidad",
+        "Integridad",
+        "Confidencialidad",
+        "Autenticidad del usuario"
+      ],
+      "correct": "b",
+      "explanation": "La integridad garantiza que la información es exacta y no se modifica sin control; una alteración no detectada es un fallo de integridad."
+    },
+    {
+      "stem": "¿Cuál de estas medidas es un control organizativo?",
+      "options": [
+        "El cortafuegos perimetral",
+        "El antivirus del puesto de trabajo",
+        "La política de seguridad aprobada por la dirección",
+        "El cifrado del disco duro"
+      ],
+      "correct": "c",
+      "explanation": "La política de seguridad es un control organizativo; el cortafuegos, el antivirus y el cifrado son controles técnicos."
+    },
+    {
+      "stem": "¿Qué es ISO/IEC 27002?",
+      "options": [
+        "La norma certificable de requisitos del SGSI",
+        "La metodología española de análisis de riesgos",
+        "El reglamento europeo de protección de datos",
+        "Una guía de buenas prácticas que detalla los controles"
+      ],
+      "correct": "d",
+      "explanation": "ISO/IEC 27002 es una guía de buenas prácticas que desarrolla y explica los controles; la norma certificable de requisitos es ISO/IEC 27001."
+    }
+  ]
+}

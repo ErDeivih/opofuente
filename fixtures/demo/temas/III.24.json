@@ -1,0 +1,232 @@
+{
+  "node_path": "III.24",
+  "title": "Monitorización y gestión de incidencias",
+  "source": {
+    "label": "ISO/IEC 20000-1:2018 — Tecnología de la información. Gestión del servicio. Parte 1: Requisitos del sistema de gestión del servicio",
+    "url": "https://www.iso.org/standard/70636.html"
+  },
+  "sections": [
+    {
+      "heading": "Gestión de servicios de TI",
+      "body": "Un **servicio de TI** es una capacidad que se entrega al usuario sin que este tenga que gestionar la tecnología que hay detrás: el correo corporativo, la sede electrónica, la red del edificio o la aplicación de nóminas. La **gestión de servicios** (ITSM) organiza personas, procesos y herramientas para que esos servicios se diseñen, se presten y se mejoren con un nivel de calidad acordado.\n\nLa norma **ISO/IEC 20000-1** especifica los requisitos de un **sistema de gestión del servicio** (SMS): planificación, diseño, transición, entrega y mejora de los servicios. Es una norma certificable y sirve de referencia contractual. **ITIL** es un marco de buenas prácticas, no una norma: describe prácticas y no se audita la conformidad de la organización contra él como se hace con ISO/IEC 20000-1. Ambos enfoques conviven: ITIL orienta el «cómo» y la norma fija el «qué» exigible.\n\nEn la operación diaria conviven varios elementos:\n\n- El **catálogo de servicios**, que describe qué se ofrece, a quién y con qué condiciones.\n- La **CMDB** o base de datos de configuración, con los **elementos de configuración** (servidores, aplicaciones, enlaces) y sus dependencias; sin ella es difícil saber qué se rompe cuando algo falla.\n- El **service desk** o punto único de contacto, que registra las peticiones, informa al usuario y coordina la resolución.\n- Los **roles**: gestor de incidentes, gestor de problemas, gestor de cambios y responsables de servicio.\n\nLa clave es que todo quede registrado: un servicio sin catálogo ni registro de incidencias no se puede medir, y lo que no se mide difícilmente se puede mejorar."
+    },
+    {
+      "heading": "Incidente, problema, cambio y petición de servicio",
+      "body": "Estos cuatro conceptos se confunden con facilidad y conviene separarlos porque tienen procesos, plazos y responsables distintos.\n\nUn **incidente** es una interrupción no planificada del servicio o una reducción de su calidad. Su objetivo es **restaurar** el servicio cuanto antes, aunque sea con una solución temporal (**workaround**). Un **problema** es la causa, real o potencial, de uno o varios incidentes; su objetivo es eliminarla para que no vuelva a ocurrir. Cuando la causa está documentada y existe una solución temporal probada, el problema se convierte en **error conocido**: el service desk puede aplicar esa solución sin investigar de nuevo.\n\nUn **cambio** es cualquier adición, modificación o retirada que pueda afectar a los servicios. Se pide mediante una **RFC** (petición de cambio), se evalúan su riesgo y su impacto y se autoriza en el **CAB** (comité de cambios). Hay tres tipos: **estándar** (preaprobado y repetitivo, con procedimiento conocido), **normal** (requiere evaluación y aprobación) y **emergente** (para resolver un incidente grave, con aprobación mínima y revisión posterior).\n\nUna **petición de servicio** no es un fallo: es una solicitud habitual del usuario (alta de acceso, instalación de una aplicación, información) que se atiende por un cauce predefinido. Una **incidencia mayor** es la que afecta a un servicio crítico o a muchos usuarios y activa un protocolo especial de comunicación y coordinación.",
+      "table": {
+        "columns": [
+          "Concepto",
+          "Definición",
+          "Objetivo"
+        ],
+        "rows": [
+          [
+            "Incidente",
+            "Interrupción no planificada o reducción de la calidad del servicio",
+            "Restaurar el servicio lo antes posible"
+          ],
+          [
+            "Problema",
+            "Causa real o potencial de uno o varios incidentes",
+            "Eliminar la causa y evitar que se repita"
+          ],
+          [
+            "Cambio",
+            "Adición, modificación o retirada que puede afectar a los servicios",
+            "Implantarlo con el riesgo controlado"
+          ],
+          [
+            "Petición de servicio",
+            "Solicitud habitual del usuario (acceso, información, cambio estándar)",
+            "Atenderla por un cauce predefinido"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "SLA, OLA y contratos con proveedores",
+      "body": "El **SLA** (acuerdo de nivel de servicio) es el acuerdo entre el proveedor del servicio y el cliente. Fija la descripción del servicio, el horario de cobertura, los tiempos de respuesta y de resolución, la disponibilidad comprometida, la forma de medirla, los informes, las penalizaciones o créditos y las exclusiones. Un SLA sin métricas verificables es una declaración de intenciones.\n\nLa **OLA** (acuerdo de nivel operativo) es un acuerdo **interno** entre equipos de la propia organización (por ejemplo, entre el service desk y el equipo de sistemas) que ayuda a cumplir el SLA con el cliente. El **UC** (contrato de respaldo) es el contrato con un proveedor externo y también debe alinearse con el SLA: si el proveedor de comunicaciones no garantiza lo mismo que prometemos al usuario, el SLA no se sostiene.\n\nLa cadena es **UC → OLA → SLA**. Los niveles de soporte suelen organizarse en **primer nivel** (contacto, registro y resolución de casos conocidos), **segundo nivel** (técnicos especialistas) y **tercer nivel** (fabricantes, desarrollo o proveedores). En la práctica moderna se añade la distinción entre **SLI** (lo que se mide), **SLO** (el objetivo interno) y **SLA** (el compromiso contractual y sus consecuencias).\n\nLos acuerdos deben revisarse periódicamente: los servicios cambian y los objetivos firmados hace tres años pueden ser irreales o demasiado laxos."
+    },
+    {
+      "heading": "Ciclo de vida del ticket y prioridad",
+      "body": "Un **ticket** recorre un ciclo con estados controlados: **nuevo** (registrado), **asignado**, **en curso**, **pendiente del usuario o de un proveedor** (el reloj del SLA puede detenerse si el contrato lo prevé), **resuelto** y **cerrado** (tras la confirmación y, si procede, la encuesta de satisfacción). Cada transición debe quedar registrada con fecha, responsable y motivo.\n\nLa **prioridad** no la fija el usuario ni la antigüedad del ticket: se calcula con dos dimensiones. El **impacto** mide a cuántos usuarios y servicios afecta y su criticidad; la **urgencia** mide cuánto empeora la situación si se espera. La combinación se suele representar en una matriz de impacto × urgencia, como la de la tabla.\n\nEl **escalado** puede ser **funcional** (se pasa el caso a un especialista) o **jerárquico** (se avisa a un responsable porque se está incumpliendo el plazo o el impacto es alto). En una incidencia mayor se nombra un coordinador, se abre un canal de comunicación y se informa a los usuarios cada cierto tiempo, aunque no haya novedades: el silencio también es un fallo de servicio.",
+      "table": {
+        "columns": [
+          "Impacto / urgencia",
+          "Urgencia alta",
+          "Urgencia media",
+          "Urgencia baja"
+        ],
+        "rows": [
+          [
+            "Impacto alto",
+            "P1: crítica",
+            "P2: alta",
+            "P3: media"
+          ],
+          [
+            "Impacto medio",
+            "P2: alta",
+            "P3: media",
+            "P4: baja"
+          ],
+          [
+            "Impacto bajo",
+            "P3: media",
+            "P4: baja",
+            "P4: baja"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto: caída del ERP municipal",
+      "body": "Un lunes a las **08:05**, el sistema de nóminas y contabilidad de un ayuntamiento deja de responder. El service desk recibe llamadas de varios departamentos y la herramienta de monitorización confirma que el servicio web no contesta. Es día de cierre de nóminas.\n\n**Clasificación.** El servicio es crítico, afecta a unos 120 usuarios y bloquea una tarea con plazo legal: impacto alto y urgencia alta. Se registra como **P1** (incidencia mayor), asociado al servicio y al elemento de configuración.\n\n**Coordinación.** Se nombra un gestor de incidentes, se abre una sala de seguimiento y se avisa por correo y por la intranet cada 30 minutos. El primer nivel comprueba que la red y el acceso remoto funcionan y descarta un fallo general de comunicaciones; el problema está en el servidor de aplicaciones, así que el caso se escala al **segundo nivel**.\n\n**Diagnóstico y restauración.** El equipo de sistemas ve que el disco de la base de datos está lleno. Se libera espacio y se reinicia el servicio con una copia de seguridad verificada. El servicio vuelve a estar disponible a las **10:20**: 2 h 15 min de indisponibilidad, dentro del objetivo de resolución de 4 horas fijado en el SLA para los P1. Se comunica el restablecimiento y se confirma con los usuarios antes de cerrar.\n\n**Problema y cambio.** Se abre un **problema**: la tarea de copia de seguridad no purgaba los registros antiguos. Se documenta como **error conocido** con la solución temporal, se presenta una **RFC** para automatizar la rotación de registros y se añade una alerta de monitorización al 80 % de ocupación. El cambio es estándar y se aplica en la ventana del fin de semana. En la revisión posterior se confirma que no ha vuelto a ocurrir y se actualiza la documentación.\n\n**Qué enseña el caso.** Separar incidente (restaurar), problema (causa) y cambio (evitar que vuelva) evita que el mismo fallo se repita cada mes; y la comunicación periódica sostiene la confianza aunque el servicio aún no esté restaurado."
+    },
+    {
+      "heading": "Métricas y monitorización",
+      "body": "Un servicio se gestiona con datos. Las métricas más habituales son:\n\n- **MTTR**: tiempo medio de reparación o restauración; se calcula dividiendo el total de tiempo de indisponibilidad entre el número de incidentes.\n- **MTBF**: tiempo medio entre fallos; mide la fiabilidad de un componente.\n- **MTTA**: tiempo medio hasta el acuse o la primera acción.\n- **Disponibilidad**: porcentaje del tiempo comprometido en que el servicio está operativo; equivale a MTBF / (MTBF + MTTR) expresado en porcentaje.\n- **Cumplimiento de SLA**: porcentaje de tickets resueltos dentro del plazo.\n- **FCR** (resolución en el primer contacto): porcentaje de casos resueltos en el primer contacto.\n- **Reapertura y backlog**: tickets que se reabren y tickets pendientes por antigüedad; un backlog que envejece es una señal de alarma.\n\nLa **monitorización** aporta la materia prima: agentes y SNMP para servidores y red, syslog para eventos, sondas sintéticas que prueban el servicio como lo haría un usuario, APM para el rendimiento de aplicaciones y paneles que muestran tendencias. Las alertas deben tener umbrales justificados y un responsable; demasiadas alertas producen **fatiga** y se ignoran las importantes. No se monitoriza solo la infraestructura: también la experiencia del usuario y el cumplimiento de los compromisos.\n\nLos informes de servicio se revisan con el cliente en reuniones periódicas. Ahí se detectan tendencias, se ajustan prioridades y se decide qué mejorar; sin esa revisión, las métricas se convierten en un adorno del panel.",
+      "table": {
+        "columns": [
+          "Métrica",
+          "Cómo se calcula",
+          "Qué mide"
+        ],
+        "rows": [
+          [
+            "MTTR",
+            "Tiempo total de indisponibilidad / número de incidentes",
+            "Rapidez media de restauración"
+          ],
+          [
+            "MTBF",
+            "Tiempo en servicio / número de fallos",
+            "Fiabilidad entre fallos"
+          ],
+          [
+            "Disponibilidad",
+            "MTBF / (MTBF + MTTR) × 100",
+            "Tiempo operativo frente al comprometido"
+          ],
+          [
+            "Cumplimiento de SLA",
+            "Incidentes resueltos en plazo / total × 100",
+            "Calidad contractual del servicio"
+          ]
+        ]
+      }
+    }
+  ],
+  "questions": [
+    {
+      "stem": "En la gestión de servicios, ¿qué es un incidente?",
+      "options": [
+        "Una solicitud habitual del usuario",
+        "Una interrupción no planificada o una reducción de la calidad del servicio",
+        "La causa raíz de varios fallos",
+        "Una modificación planificada de la infraestructura"
+      ],
+      "correct": "b",
+      "explanation": "El incidente es la interrupción no planificada o la degradación del servicio; su objetivo es restaurar el servicio, no investigar la causa raíz."
+    },
+    {
+      "stem": "¿Qué persigue la gestión de problemas?",
+      "options": [
+        "Restaurar el servicio lo antes posible",
+        "Documentar las peticiones de los usuarios",
+        "Eliminar la causa raíz de los incidentes",
+        "Aprobar los cambios de infraestructura"
+      ],
+      "correct": "c",
+      "explanation": "La gestión de problemas busca la causa raíz y su eliminación para evitar que los incidentes se repitan; restaurar el servicio es la gestión de incidentes."
+    },
+    {
+      "stem": "¿Cuál es la diferencia esencial entre un SLA y una OLA?",
+      "options": [
+        "El SLA se firma con el cliente y la OLA es un acuerdo interno entre equipos",
+        "El SLA es interno y la OLA es con el cliente",
+        "La OLA es un contrato con un proveedor externo",
+        "El SLA solo mide la disponibilidad y la OLA los tiempos"
+      ],
+      "correct": "a",
+      "explanation": "El SLA es el acuerdo con el cliente; la OLA es un acuerdo operativo interno entre equipos de la organización que ayuda a cumplirlo. El contrato con un proveedor externo es el UC."
+    },
+    {
+      "stem": "¿Cómo se determina la prioridad de un ticket?",
+      "options": [
+        "Por la antigüedad del ticket",
+        "Por el orden de llegada",
+        "Por el impacto y la urgencia",
+        "Por el nivel del técnico asignado"
+      ],
+      "correct": "c",
+      "explanation": "La prioridad se calcula combinando el impacto (a cuántos y con qué criticidad afecta) y la urgencia (cuánto empeora si se espera). La antigüedad no la define."
+    },
+    {
+      "stem": "¿Qué documento formaliza una petición de cambio?",
+      "options": [
+        "Una RFC",
+        "Una OLA",
+        "Un SLA",
+        "Un error conocido"
+      ],
+      "correct": "a",
+      "explanation": "La petición de cambio (RFC) describe el cambio, su justificación, su evaluación de riesgo y su plan; la autoriza el comité de cambios (CAB)."
+    },
+    {
+      "stem": "¿Qué es un error conocido?",
+      "options": [
+        "Un incidente que todavía no se ha diagnosticado",
+        "Un cambio de emergencia ya aplicado",
+        "Una petición de servicio rechazada",
+        "Un problema con causa raíz documentada y una solución temporal probada"
+      ],
+      "correct": "d",
+      "explanation": "Cuando un problema tiene la causa documentada y existe una solución temporal probada, se convierte en error conocido y el service desk puede aplicarla sin reiniciar la investigación."
+    },
+    {
+      "stem": "¿Qué mide el MTTR?",
+      "options": [
+        "El tiempo medio entre fallos",
+        "El tiempo medio de reparación o restauración",
+        "El porcentaje de casos resueltos al primer contacto",
+        "El número de tickets abiertos"
+      ],
+      "correct": "b",
+      "explanation": "El MTTR (mean time to repair/restore) mide el tiempo medio que se tarda en restaurar el servicio tras un incidente."
+    },
+    {
+      "stem": "¿Cómo se calcula la disponibilidad a partir del MTBF y el MTTR?",
+      "options": [
+        "MTBF / (MTBF + MTTR) × 100",
+        "MTTR / (MTBF + MTTR) × 100",
+        "(MTBF + MTTR) / MTBF × 100",
+        "MTBF × MTTR / 100"
+      ],
+      "correct": "a",
+      "explanation": "La disponibilidad es el tiempo en servicio (MTBF) dividido entre el tiempo total (MTBF + MTTR), expresado en porcentaje."
+    },
+    {
+      "stem": "¿Qué tipo de cambio se usa para resolver un incidente grave con la mínima aprobación previa?",
+      "options": [
+        "Cambio estándar",
+        "Cambio normal",
+        "Cambio de alcance",
+        "Cambio de emergencia"
+      ],
+      "correct": "d",
+      "explanation": "El cambio de emergencia se aplica para resolver un incidente grave con aprobación mínima; después se documenta y se revisa."
+    },
+    {
+      "stem": "¿Qué debe hacer el primer nivel de soporte antes de escalar un caso?",
+      "options": [
+        "Cerrar el ticket sin más",
+        "Comprobar los casos conocidos y descartar causas básicas",
+        "Aplicar un cambio de emergencia",
+        "Modificar el SLA del cliente"
+      ],
+      "correct": "b",
+      "explanation": "El primer nivel registra el caso, comprueba las soluciones conocidas y descarta causas básicas antes de escalar al segundo nivel."
+    }
+  ]
+}

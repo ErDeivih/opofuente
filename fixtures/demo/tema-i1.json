@@ -1,67 +1,169 @@
 {
   "node_path": "I.1",
   "title": "La Constitución Española de 1978",
-  "apuntes": "**La Constitución Española de 1978**\n\nLa Constitución fue aprobada por las Cortes Generales el 31 de octubre de 1978, ratificada en referéndum el 6 de diciembre, sancionada por el Rey el 27 de diciembre y publicada en el BOE el 29 de diciembre de 1978. Entró en vigor ese mismo día, 29 de diciembre, y con ella quedaron derogadas las Leyes Fundamentales del franquismo y la Ley para la Reforma Política (disposición derogatoria).\n\n**Estructura.** Consta de un preámbulo, 169 artículos distribuidos en un título preliminar y diez títulos, cuatro disposiciones adicionales, nueve transitorias, una derogatoria y una final. Los títulos son: preliminar (artículos 1-9); I, derechos y deberes fundamentales (10-55); II, la Corona (56-65); III, las Cortes Generales (66-96); IV, el Gobierno y la Administración (97-107); V, relaciones entre el Gobierno y las Cortes (108-116); VI, el Poder Judicial (117-127); VII, economía y hacienda (128-136); VIII, organización territorial del Estado (137-158); IX, el Tribunal Constitucional (159-165); y X, la reforma constitucional (166-169).\n\n**Principios y valores.** El artículo 1 define España como un Estado social y democrático de Derecho que propugna como valores superiores de su ordenamiento la libertad, la justicia, la igualdad y el pluralismo político. La soberanía nacional reside en el pueblo español, del que emanan los poderes del Estado, y la forma política es la monarquía parlamentaria. El artículo 2 proclama la indisoluble unidad de la Nación española y el derecho a la autonomía de las nacionalidades y regiones. El castellano es la lengua oficial del Estado (artículo 3), la capital es Madrid (artículo 5) y los partidos políticos, los sindicatos y las asociaciones empresariales son cauces de participación (artículos 6 y 7).\n\n**Derechos y garantías.** El Título I abre con la dignidad de la persona y los derechos inviolables (artículo 10). El capítulo II regula los derechos y libertades (artículos 14-38), entre ellos la igualdad ante la ley, la vida, la libertad ideológica y religiosa, la libertad de expresión, la tutela judicial efectiva, la educación y la libertad de empresa. El artículo 53 establece las garantías: reserva de ley, tutela judicial y recurso de amparo ante el Tribunal Constitucional. El Defensor del Pueblo (artículo 54) supervisa la Administración. Los derechos pueden suspenderse en los estados de excepción y de sitio en los términos del artículo 55.\n\n**La reforma.** El artículo 167 regula el procedimiento ordinario: aprobación por tres quintos de cada Cámara y, si no hay acuerdo, comisión paritaria y mayoría de dos tercios del Congreso; el referéndum es preceptivo si lo solicita una décima parte de los miembros de cualquiera de las Cámaras. El artículo 168 reserva el procedimiento agravado a la revisión total o a la que afecte al título preliminar, al Título I, al Título II o al Título IX: exige mayoría de dos tercios de cada Cámara, disolución de las Cortes, ratificación por las nuevas Cámaras por dos tercios y referéndum obligatorio.\n\n**Fuente.** Constitución Española, BOE núm. 311, de 29 de diciembre de 1978 (texto consolidado del BOE).",
   "questions": [
     {
       "stem": "¿Cuándo entró en vigor la Constitución Española de 1978?",
-      "options": ["El 6 de diciembre de 1978", "El 29 de diciembre de 1978", "El 27 de diciembre de 1978", "El 31 de octubre de 1978"],
+      "options": [
+        "El 6 de diciembre de 1978",
+        "El 29 de diciembre de 1978",
+        "El 27 de diciembre de 1978",
+        "El 31 de octubre de 1978"
+      ],
       "correct": "b",
       "explanation": "Se publicó en el BOE el 29 de diciembre de 1978 y entró en vigor ese mismo día (disposición final)."
     },
     {
       "stem": "¿Cuántos artículos tiene la Constitución Española de 1978?",
-      "options": ["167", "168", "169", "170"],
+      "options": [
+        "167",
+        "168",
+        "169",
+        "170"
+      ],
       "correct": "c",
       "explanation": "Tiene 169 artículos, además de preámbulo y disposiciones adicionales, transitorias, derogatoria y final."
     },
     {
       "stem": "¿Qué materia regula el Título I de la Constitución?",
-      "options": ["La Corona", "Las Cortes Generales", "Los derechos y deberes fundamentales", "La organización territorial del Estado"],
+      "options": [
+        "La Corona",
+        "Las Cortes Generales",
+        "Los derechos y deberes fundamentales",
+        "La organización territorial del Estado"
+      ],
       "correct": "c",
       "explanation": "El Título I (artículos 10-55) regula los derechos y deberes fundamentales."
     },
     {
       "stem": "Según el artículo 1.1, ¿cuáles son los valores superiores del ordenamiento jurídico?",
-      "options": ["La libertad, la justicia, la igualdad y el pluralismo político", "La unidad, la autonomía y la solidaridad", "La dignidad, la seguridad y la legalidad", "La democracia, la monarquía y la participación"],
+      "options": [
+        "La libertad, la justicia, la igualdad y el pluralismo político",
+        "La unidad, la autonomía y la solidaridad",
+        "La dignidad, la seguridad y la legalidad",
+        "La democracia, la monarquía y la participación"
+      ],
       "correct": "a",
       "explanation": "El artículo 1.1 propugna como valores superiores la libertad, la justicia, la igualdad y el pluralismo político."
     },
     {
       "stem": "¿En quién reside la soberanía nacional?",
-      "options": ["En las Cortes Generales", "En el pueblo español", "En el Rey", "En el Gobierno"],
+      "options": [
+        "En las Cortes Generales",
+        "En el pueblo español",
+        "En el Rey",
+        "En el Gobierno"
+      ],
       "correct": "b",
       "explanation": "El artículo 1.2 establece que la soberanía nacional reside en el pueblo español, del que emanan los poderes del Estado."
     },
     {
       "stem": "¿Cuál es la forma política del Estado según el artículo 1.3?",
-      "options": ["La República parlamentaria", "La monarquía parlamentaria", "La monarquía absoluta", "El Estado federal"],
+      "options": [
+        "La República parlamentaria",
+        "La monarquía parlamentaria",
+        "La monarquía absoluta",
+        "El Estado federal"
+      ],
       "correct": "b",
       "explanation": "El artículo 1.3 define la forma política del Estado español como monarquía parlamentaria."
     },
     {
       "stem": "¿Qué reformas exigen el procedimiento agravado del artículo 168?",
-      "options": ["Cualquier reforma constitucional", "La revisión total o la que afecte al título preliminar, al Título I, al Título II o al Título IX", "Solo las que afecten al Título I", "Solo las que afecten a los artículos 1 a 9"],
+      "options": [
+        "Cualquier reforma constitucional",
+        "La revisión total o la que afecte al título preliminar, al Título I, al Título II o al Título IX",
+        "Solo las que afecten al Título I",
+        "Solo las que afecten a los artículos 1 a 9"
+      ],
       "correct": "b",
       "explanation": "El artículo 168 se aplica a la revisión total y a la que afecte al título preliminar, al Título I, al Título II o al Título IX."
     },
     {
       "stem": "¿Cuál es la lengua oficial del Estado?",
-      "options": ["El castellano", "El catalán", "El inglés", "Ninguna lengua tiene carácter oficial"],
+      "options": [
+        "El castellano",
+        "El catalán",
+        "El inglés",
+        "Ninguna lengua tiene carácter oficial"
+      ],
       "correct": "a",
       "explanation": "El artículo 3.1 establece que el castellano es la lengua española oficial del Estado."
     },
     {
       "stem": "¿En qué Título se regula el Tribunal Constitucional?",
-      "options": ["Título VIII", "Título IX", "Título X", "Título II"],
+      "options": [
+        "Título VIII",
+        "Título IX",
+        "Título X",
+        "Título II"
+      ],
       "correct": "b",
       "explanation": "El Título IX (artículos 159-165) regula el Tribunal Constitucional."
     },
     {
       "stem": "¿Cuál es la capital del Estado según el artículo 5?",
-      "options": ["Madrid", "Toledo", "Barcelona", "Sevilla"],
+      "options": [
+        "Madrid",
+        "Toledo",
+        "Barcelona",
+        "Sevilla"
+      ],
       "correct": "a",
       "explanation": "El artículo 5 declara que la capital del Estado es la villa de Madrid."
+    }
+  ],
+  "source": {
+    "label": "Constitución Española, BOE-A-1978-31229 (texto consolidado)",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1978-31229"
+  },
+  "sections": [
+    {
+      "heading": "La Constitución Española de 1978",
+      "body": "La Constitución fue aprobada por las Cortes Generales el 31 de octubre de 1978, ratificada en referéndum el 6 de diciembre, sancionada por el Rey el 27 de diciembre y publicada en el BOE el 29 de diciembre de 1978. Entró en vigor ese mismo día, 29 de diciembre, y con ella quedaron derogadas las Leyes Fundamentales del franquismo y la Ley para la Reforma Política (disposición derogatoria)."
+    },
+    {
+      "heading": "Estructura",
+      "body": "Consta de un preámbulo, 169 artículos distribuidos en un título preliminar y diez títulos, cuatro disposiciones adicionales, nueve transitorias, una derogatoria y una final. Los títulos son: preliminar (artículos 1-9); I, derechos y deberes fundamentales (10-55); II, la Corona (56-65); III, las Cortes Generales (66-96); IV, el Gobierno y la Administración (97-107); V, relaciones entre el Gobierno y las Cortes (108-116); VI, el Poder Judicial (117-127); VII, economía y hacienda (128-136); VIII, organización territorial del Estado (137-158); IX, el Tribunal Constitucional (159-165); y X, la reforma constitucional (166-169)."
+    },
+    {
+      "heading": "Estructura de la Constitución",
+      "table": {
+        "columns": [
+          "Parte",
+          "Contenido"
+        ],
+        "rows": [
+          [
+            "Preámbulo y título preliminar",
+            "Artículos 1-9: principios, lengua, capital, partidos y sindicatos"
+          ],
+          [
+            "Título I",
+            "Artículos 10-55: derechos y deberes fundamentales y sus garantías"
+          ],
+          [
+            "Títulos II-VII",
+            "Corona, Cortes, Gobierno, relaciones Gobierno-Cortes, Poder Judicial y economía"
+          ],
+          [
+            "Títulos VIII-X",
+            "Organización territorial, Tribunal Constitucional y reforma"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "Principios y valores",
+      "body": "El artículo 1 define España como un Estado social y democrático de Derecho que propugna como valores superiores de su ordenamiento la libertad, la justicia, la igualdad y el pluralismo político. La soberanía nacional reside en el pueblo español, del que emanan los poderes del Estado, y la forma política es la monarquía parlamentaria. El artículo 2 proclama la indisoluble unidad de la Nación española y el derecho a la autonomía de las nacionalidades y regiones. El castellano es la lengua oficial del Estado (artículo 3), la capital es Madrid (artículo 5) y los partidos políticos, los sindicatos y las asociaciones empresariales son cauces de participación (artículos 6 y 7)."
+    },
+    {
+      "heading": "Derechos y garantías",
+      "body": "El Título I abre con la dignidad de la persona y los derechos inviolables (artículo 10). El capítulo II regula los derechos y libertades (artículos 14-38), entre ellos la igualdad ante la ley, la vida, la libertad ideológica y religiosa, la libertad de expresión, la tutela judicial efectiva, la educación y la libertad de empresa. El artículo 53 establece las garantías: reserva de ley, tutela judicial y recurso de amparo ante el Tribunal Constitucional. El Defensor del Pueblo (artículo 54) supervisa la Administración. Los derechos pueden suspenderse en los estados de excepción y de sitio en los términos del artículo 55."
+    },
+    {
+      "heading": "La reforma",
+      "body": "El artículo 167 regula el procedimiento ordinario: aprobación por tres quintos de cada Cámara y, si no hay acuerdo, comisión paritaria y mayoría de dos tercios del Congreso; el referéndum es preceptivo si lo solicita una décima parte de los miembros de cualquiera de las Cámaras. El artículo 168 reserva el procedimiento agravado a la revisión total o a la que afecte al título preliminar, al Título I, al Título II o al Título IX: exige mayoría de dos tercios de cada Cámara, disolución de las Cortes, ratificación por las nuevas Cámaras por dos tercios y referéndum obligatorio."
     }
   ]
 }

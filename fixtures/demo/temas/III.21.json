@@ -1,0 +1,287 @@
+{
+  "node_path": "III.21",
+  "title": "Redes",
+  "source": {
+    "label": "IETF — RFC 791, Internet Protocol (IPv4); RFC 8200, Internet Protocol, Version 6 (IPv6)",
+    "url": "https://datatracker.ietf.org/doc/html/rfc791"
+  },
+  "sections": [
+    {
+      "heading": "Capas OSI y modelo TCP/IP",
+      "body": "El modelo **OSI** de ISO organiza la comunicación en siete capas, cada una con una responsabilidad definida y una unidad de datos propia. De abajo arriba:\n\n- **Física**: transmite bits por el medio (cobre, fibra, radio); define voltajes, conectores y codificación.\n- **Enlace de datos**: agrupa los bits en tramas, usa direcciones MAC y detecta errores de transmisión.\n- **Red**: direcciona lógicamente y encamina paquetes entre redes distintas.\n- **Transporte**: entrega extremo a extremo, con control de flujo y de errores; aquí están TCP y UDP.\n- **Sesión**: abre, mantiene y cierra diálogos entre aplicaciones.\n- **Presentación**: da formato a los datos, los codifica, comprime o cifra.\n- **Aplicación**: ofrece servicios de red al usuario (web, correo, transferencia de ficheros).\n\nEl modelo **TCP/IP**, que es el que se implementa realmente en Internet, reduce la pila a cuatro capas: **acceso a la red** (física y enlace), **internet** (IP e ICMP), **transporte** (TCP y UDP) y **aplicación** (HTTP, DNS, SMTP, SSH...). Algunos manuales separan el acceso a la red en física y enlace y hablan de cinco capas; es una diferencia de nomenclatura, no de funcionamiento.\n\nLa clave del diseño es la **encapsulación**: los datos de la aplicación se meten en un segmento TCP o en un datagrama UDP, este en un paquete IP, el paquete en una trama de enlace y la trama en bits. En recepción se recorre el camino inverso (**desencapsulación**) y cada capa lee solo su propia cabecera. Gracias a esa separación se puede cambiar la tecnología de una capa sin rehacer las demás: sustituir Ethernet por Wi-Fi no obliga a tocar TCP ni la aplicación."
+    },
+    {
+      "heading": "Direccionamiento IPv4 e IPv6",
+      "body": "Una dirección **IPv4** es un número de **32 bits** que se escribe en decimal con puntos: cuatro octetos entre 0 y 255 (por ejemplo, 192.168.10.25). Dentro de la dirección, la **máscara de subred** o el prefijo separan la parte de red de la parte de host. Las antiguas clases A, B y C se sustituyeron por el direccionamiento sin clases (**CIDR**), que admite prefijos de cualquier longitud.\n\nEl prefijo indica cuántos bits son de red. En cada subred hay dos direcciones que no se asignan a un host: la **dirección de red** (todos los bits de host a 0) y la **dirección de broadcast** (todos a 1), que sirve para enviar a todos los equipos de la subred. Por eso una subred con h bits de host admite 2^h − 2 hosts utilizables; las excepciones son los enlaces punto a punto /31 (RFC 3021) y las rutas a un solo host /32.\n\n**IPv6** usa **128 bits** y se escribe como ocho grupos de cuatro dígitos hexadecimales separados por dos puntos. Se pueden omitir los ceros a la izquierda de cada grupo y sustituir una única secuencia de grupos nulos por «::» (solo una vez por dirección). No existe broadcast: los envíos a varios equipos usan **multicast**. Las direcciones **link-local** (fe80::/10) sirven para hablar con los vecinos del mismo enlace, las **ULA** (fc00::/7) son el equivalente privado y las **globales** (2000::/3) se enrutan en Internet. Un prefijo /64 es el habitual para una LAN y permite la autoconfiguración **SLAAC**. IPv6 sustituye ARP por **NDP** sobre ICMPv6 y no necesita NAT para funcionar, aunque conviene filtrarlo con cortafuegos; la convivencia con IPv4 se resuelve con **dual stack**.\n\nLa tabla recoge las direcciones IPv4 reservadas que más se preguntan. El resto de direcciones IPv4 se consideran públicas. **NAT** permite que muchos equipos privados compartan una dirección pública a la salida a Internet: ahorra direcciones y reduce la exposición directa, pero no sustituye a un cortafuegos.",
+      "table": {
+        "columns": [
+          "Rango",
+          "Prefijo",
+          "Uso"
+        ],
+        "rows": [
+          [
+            "10.0.0.0",
+            "/8",
+            "Red privada (RFC 1918), la de mayor tamaño"
+          ],
+          [
+            "172.16.0.0",
+            "/12",
+            "Red privada (RFC 1918): de 172.16.0.0 a 172.31.255.255"
+          ],
+          [
+            "192.168.0.0",
+            "/16",
+            "Red privada (RFC 1918), habitual en hogares y pymes"
+          ],
+          [
+            "169.254.0.0",
+            "/16",
+            "Dirección link-local (APIPA) cuando no hay DHCP"
+          ],
+          [
+            "127.0.0.0",
+            "/8",
+            "Loopback: el propio equipo"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto: subredes con /26",
+      "body": "Un ayuntamiento dispone del bloque **192.168.10.0/24** y quiere cuatro subredes iguales para Administración, Contabilidad, Biblioteca y la red de invitados.\n\n**Paso 1.** El prefijo de partida es /24, así que quedan 8 bits de host. Como 2^2 = 4, se toman **2 bits** para subred y el nuevo prefijo es **/26**, con 6 bits de host.\n\n**Paso 2.** La máscara de /26 tiene 26 bits a 1: **255.255.255.192**.\n\n**Paso 3.** El **tamaño de bloque** es 256 − 192 = **64 direcciones** por subred. Las subredes empiezan en 0, 64, 128 y 192.\n\n**Paso 4.** Cada subred tiene 2^6 − 2 = **62 hosts utilizables**, porque se descuentan la dirección de red y la de broadcast. La primera subred útil va de 192.168.10.1 a 192.168.10.62 y su broadcast es 192.168.10.63.\n\nSi alguna unidad necesitara más de 62 puestos habría que repartir de forma desigual (**VLSM**): con un /25 se obtienen 126 hosts y el /26 sobrante se reserva para las redes pequeñas. Los invitados no deberían compartir subred con los equipos municipales: conviene separarlos con VLAN o con reglas de cortafuegos.",
+      "table": {
+        "columns": [
+          "Subred",
+          "Dirección de red",
+          "Primer host",
+          "Último host",
+          "Broadcast"
+        ],
+        "rows": [
+          [
+            "192.168.10.0/26",
+            "192.168.10.0",
+            "192.168.10.1",
+            "192.168.10.62",
+            "192.168.10.63"
+          ],
+          [
+            "192.168.10.64/26",
+            "192.168.10.64",
+            "192.168.10.65",
+            "192.168.10.126",
+            "192.168.10.127"
+          ],
+          [
+            "192.168.10.128/26",
+            "192.168.10.128",
+            "192.168.10.129",
+            "192.168.10.190",
+            "192.168.10.191"
+          ],
+          [
+            "192.168.10.192/26",
+            "192.168.10.192",
+            "192.168.10.193",
+            "192.168.10.254",
+            "192.168.10.255"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "VLAN y trunking",
+      "body": "Una **VLAN** (red de área local virtual) divide un conmutador físico en varias redes lógicas independientes. Cada VLAN es un **dominio de broadcast** propio: los equipos de VLAN distintas no se ven por trama aunque estén en el mismo switch. Así se reduce el tráfico de broadcast, se separan departamentos o invitados y se aplican políticas por segmento sin comprar un switch por cada red.\n\nEl enlace entre el switch y un equipo final suele ser de **acceso** (access): pertenece a una sola VLAN y las tramas viajan sin etiquetar. El enlace entre switches o entre switch y router suele ser **troncal** (trunk): transporta varias VLAN a la vez y distingue cada trama con una etiqueta **802.1Q** de 4 bytes que incluye el identificador de VLAN (12 bits, valores utilizables de 1 a 4094) y la prioridad o clase de servicio. La VLAN nativa circula sin etiquetar por el trunk; por eso conviene no usar como nativa una VLAN de usuarios.\n\nPara que dos VLAN se comuniquen hace falta **encaminamiento**: subinterfaces en un router («router on a stick»), una interfaz virtual (**SVI**) en un switch de nivel 3 o un cortafuegos que haga de puerta. En muchos entornos el acceso a la VLAN de invitados se limita a Internet con reglas de filtrado.\n\nLa configuración de VLAN debe documentarse y controlarse: un puerto mal asignado puede unir dos redes que debían estar separadas, y un trunk mal protegido permite saltar de una VLAN a otra."
+    },
+    {
+      "heading": "Encaminamiento estático y dinámico",
+      "body": "El **router** decide por dónde enviar cada paquete consultando su tabla de rutas. La regla principal es la **coincidencia de prefijo más larga**: si varias rutas encajan, gana la más específica. Si no encaja ninguna, se usa la ruta por defecto (0.0.0.0/0 en IPv4 y ::/0 en IPv6).\n\nUna **ruta estática** se configura a mano. Es sencilla, no consume CPU ni ancho de banda y resulta adecuada para topologías pequeñas o para rutas de salida; su problema es que no se adapta sola a una caída y hay que mantenerla.\n\nEl **encaminamiento dinámico** intercambia información entre routers y recalcula caminos cuando cambia la red. Los protocolos de **vector de distancia** (RIP) anuncian redes y saltos a sus vecinos; los de **estado de enlace** (OSPF, IS-IS) construyen un mapa común de la topología y calculan el camino más corto. BGP es un protocolo de **vector de camino** que se usa entre sistemas autónomos, es decir, en el encaminamiento exterior de Internet.\n\nDentro de una organización se usan protocolos **interiores** (IGP). OSPF es el más habitual en redes medianas y grandes por su convergencia y su soporte de áreas; RIP solo tiene sentido en redes muy pequeñas porque limita a 15 saltos. La **convergencia** es el tiempo que tarda la red en estabilizarse tras un cambio: cuanto menor, mejor. La **sumarización** de rutas reduce el tamaño de las tablas y el número de anuncios.",
+      "table": {
+        "columns": [
+          "Protocolo",
+          "Tipo",
+          "Métrica principal",
+          "Ámbito"
+        ],
+        "rows": [
+          [
+            "RIP",
+            "Vector de distancia",
+            "Saltos (máximo 15)",
+            "IGP, redes pequeñas"
+          ],
+          [
+            "OSPF",
+            "Estado de enlace",
+            "Coste (basado en el ancho de banda)",
+            "IGP, redes medianas y grandes"
+          ],
+          [
+            "IS-IS",
+            "Estado de enlace",
+            "Coste",
+            "IGP, grandes redes y proveedores"
+          ],
+          [
+            "BGP",
+            "Vector de camino",
+            "Atributos de ruta (AS_PATH y otros)",
+            "EGP, entre sistemas autónomos"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "DNS, DHCP y puertos habituales",
+      "body": "**DNS** traduce nombres a direcciones. La consulta empieza en el **resolutor** del equipo, que pregunta a un servidor recursivo; este recorre la jerarquía (raíz, dominio de primer nivel, dominio autoritativo) y guarda la respuesta en caché durante el **TTL** indicado. Los registros principales son **A** (IPv4), **AAAA** (IPv6), **CNAME** (alias), **MX** (correo), **NS** (servidores de nombres), **PTR** (resolución inversa), **TXT** (texto, muy usado en verificación de dominio y correo) y **SOA** (datos de la zona). DNS usa el puerto 53, normalmente UDP para las consultas y TCP para respuestas grandes o transferencias de zona; DNSSEC añade firmas para verificar la autenticidad de las respuestas.\n\n**DHCP** asigna la configuración IP de forma automática: dirección, máscara, puerta de enlace, servidores DNS y otros parámetros. El intercambio clásico se resume en **DORA**: «Discover» (el cliente busca), «Offer» (el servidor ofrece), «Request» (el cliente pide la oferta) y «Acknowledge» (el servidor confirma). La concesión tiene un plazo (**lease**) que se renueva antes de caducar; el servidor escucha en el puerto 67 y el cliente en el 68. Como los mensajes iniciales son de broadcast, en redes separadas por routers hace falta un **relay** DHCP.\n\nLos puertos se agrupan en **bien conocidos** (0-1023), **registrados** (1024-49151) y **dinámicos o efímeros** (49152-65535). La tabla recoge los más preguntados; el registro oficial lo mantiene IANA.",
+      "table": {
+        "columns": [
+          "Puerto",
+          "Transporte",
+          "Servicio"
+        ],
+        "rows": [
+          [
+            "22",
+            "TCP",
+            "SSH (administración remota segura)"
+          ],
+          [
+            "53",
+            "UDP y TCP",
+            "DNS"
+          ],
+          [
+            "67 y 68",
+            "UDP",
+            "DHCP (servidor y cliente)"
+          ],
+          [
+            "80 y 443",
+            "TCP",
+            "HTTP y HTTPS"
+          ],
+          [
+            "25 y 587",
+            "TCP",
+            "SMTP (envío de correo y sumisión)"
+          ]
+        ]
+      }
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Cuántas capas tiene el modelo OSI?",
+      "options": [
+        "Cuatro",
+        "Cinco",
+        "Siete",
+        "Ocho"
+      ],
+      "correct": "c",
+      "explanation": "El modelo OSI de ISO define siete capas, de la física a la aplicación. El modelo TCP/IP es el que se simplifica en cuatro o cinco capas según el manual."
+    },
+    {
+      "stem": "¿En qué capa del modelo OSI se decide el encaminamiento de paquetes entre redes distintas?",
+      "options": [
+        "Enlace de datos",
+        "Red",
+        "Transporte",
+        "Sesión"
+      ],
+      "correct": "b",
+      "explanation": "La capa de red (nivel 3) direcciona lógicamente y encamina paquetes; IP es su protocolo característico."
+    },
+    {
+      "stem": "¿Cuál de estas direcciones IPv4 es privada según el RFC 1918?",
+      "options": [
+        "172.32.0.1",
+        "11.0.0.1",
+        "10.20.30.40",
+        "192.169.1.1"
+      ],
+      "correct": "c",
+      "explanation": "El RFC 1918 reserva 10.0.0.0/8, 172.16.0.0/12 y 192.168.0.0/16. La dirección 172.32.0.1 queda fuera del rango privado 172.16.0.0-172.31.255.255, y 192.169.1.1 no está en 192.168.0.0/16."
+    },
+    {
+      "stem": "¿Qué máscara corresponde a un prefijo /26?",
+      "options": [
+        "255.255.255.192",
+        "255.255.255.128",
+        "255.255.255.224",
+        "255.255.255.0"
+      ],
+      "correct": "a",
+      "explanation": "Un /26 tiene 26 bits a 1: los tres primeros octetos completos y los dos primeros bits del cuarto, es decir, 255.255.255.192."
+    },
+    {
+      "stem": "En una subred /26, ¿cuántos hosts utilizables hay?",
+      "options": [
+        "30",
+        "62",
+        "64",
+        "126"
+      ],
+      "correct": "b",
+      "explanation": "Quedan 6 bits de host: 2^6 = 64 direcciones, menos la dirección de red y la de broadcast, dan 62 hosts utilizables."
+    },
+    {
+      "stem": "¿Cuántos bits tiene una dirección IPv6?",
+      "options": [
+        "32",
+        "64",
+        "96",
+        "128"
+      ],
+      "correct": "d",
+      "explanation": "IPv6 usa 128 bits, escritos como ocho grupos de cuatro dígitos hexadecimales. IPv4 usa 32 bits."
+    },
+    {
+      "stem": "¿Qué añade una etiqueta 802.1Q a una trama Ethernet?",
+      "options": [
+        "La dirección MAC de destino",
+        "El puerto TCP de origen",
+        "El identificador de VLAN y la prioridad",
+        "La dirección IP del siguiente salto"
+      ],
+      "correct": "c",
+      "explanation": "802.1Q inserta 4 bytes con el identificador de VLAN (12 bits) y la prioridad de clase de servicio; es la base del trunking entre switches."
+    },
+    {
+      "stem": "¿Qué protocolo de encaminamiento dinámico es de estado de enlace y se usa habitualmente como IGP?",
+      "options": [
+        "OSPF",
+        "RIP",
+        "BGP",
+        "ARP"
+      ],
+      "correct": "a",
+      "explanation": "OSPF construye una base de datos de la topología y calcula las rutas con el algoritmo de Dijkstra. RIP es vector de distancia, BGP es un protocolo exterior y ARP no es un protocolo de encaminamiento."
+    },
+    {
+      "stem": "¿Qué puerto usa normalmente DNS?",
+      "options": [
+        "22",
+        "25",
+        "443",
+        "53"
+      ],
+      "correct": "d",
+      "explanation": "DNS usa el puerto 53, sobre UDP para las consultas y sobre TCP cuando la respuesta es grande o se transfiere una zona."
+    },
+    {
+      "stem": "¿Cuál es el orden del intercambio DHCP clásico?",
+      "options": [
+        "Discover, Offer, Request, Acknowledge",
+        "Offer, Discover, Acknowledge, Request",
+        "Discover, Request, Offer, Acknowledge",
+        "Request, Offer, Discover, Acknowledge"
+      ],
+      "correct": "a",
+      "explanation": "DORA: el cliente descubre (Discover), el servidor ofrece (Offer), el cliente solicita (Request) y el servidor confirma la concesión (Acknowledge)."
+    }
+  ]
+}

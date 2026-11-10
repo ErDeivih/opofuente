@@ -1,0 +1,105 @@
+{
+  "node_path": "I.6",
+  "title": "El régimen jurídico del sector público (Ley 40/2015)",
+  "source": {
+    "label": "Ley 40/2015, de 1 de octubre, de Régimen Jurídico del Sector Público (texto consolidado)",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-10566"
+  },
+  "sections": [
+    {
+      "heading": "Objeto, ámbito y principios",
+      "body": "La **Ley 40/2015, de 1 de octubre, de Régimen Jurídico del Sector Público**, regula la organización y el funcionamiento de las Administraciones Públicas y las relaciones entre ellas: la Administración General del Estado, las de las comunidades autónomas, las entidades locales y su **sector público institucional**. Es la ley «ad intra», complementaria de la Ley 39/2015, que regula las relaciones con la ciudadanía.\n\nEl **artículo 2** define el ámbito subjetivo: el sector público comprende la Administración General del Estado, las Administraciones autonómicas, las entidades locales y el sector público institucional. Este último integra los organismos públicos y entidades de derecho público vinculados o dependientes, las entidades de derecho privado vinculadas o dependientes (que se sujetan a las normas que específicamente las mencionan y, en todo caso, cuando ejerzan potestades administrativas) y las universidades públicas.\n\nLos **principios** de actuación (artículo 3) son, entre otros, el servicio efectivo a la ciudadanía, la simplicidad, claridad y proximidad, la participación, la objetividad, la transparencia, la eficacia, la eficiencia, la responsabilidad y la cooperación y coordinación entre Administraciones. La ley regula también las relaciones interadministrativas (cooperación, colaboración y asistencia) y los órganos de cooperación.\n\nLa organización administrativa se basa en **órganos** y **unidades administrativas**: el órgano es la unidad a la que se atribuye una competencia, y la unidad administrativa es el conjunto de medios personales y materiales al servicio del órgano. Los órganos pueden ser unipersonales o colegiados, y los colegiados tienen sus propias reglas de convocatoria, quórum y adopción de acuerdos."
+    },
+    {
+      "heading": "Órganos, competencias y técnicas de ejercicio",
+      "body": "La **competencia** es la aptitud de un órgano para resolver sobre una materia. Es **irrenunciable** y se ejerce por el órgano que la tiene atribuida como propia, salvo los casos de delegación o avocación previstos en la ley (artículo 8). La competencia se determina por la materia, el territorio y el tiempo, y su ejercicio puede modularse con las técnicas que siguen.\n\nLa **delegación de competencias** (artículo 9) supone que un órgano delega el ejercicio de una competencia propia en otro órgano de la misma Administración, aunque no sea jerárquicamente dependiente, o en un organismo público vinculado o dependiente. Debe publicarse en el boletín oficial correspondiente y es revocable en cualquier momento. No cabe delegar las competencias sobre relaciones con la Jefatura del Estado, la Presidencia del Gobierno, las Cortes Generales, las presidencias de los consejos de Gobierno y asambleas autonómicas; tampoco la adopción de disposiciones de carácter general, la resolución de recursos que haya dictado el propio órgano ni las materias con reserva de ley.\n\nLa **avocación** (artículo 10) es la operación inversa: un órgano superior atrae para sí el conocimiento de uno o varios asuntos que corresponden ordinariamente o por delegación a sus órganos dependientes, mediante **acuerdo motivado** notificado a los interesados. Contra el acuerdo de avocación no cabe recurso, aunque puede impugnarse en el recurso que se interponga contra la resolución final.\n\nLa **suplencia** (artículo 13) cubre temporalmente al titular de un órgano en casos de vacante, ausencia, enfermedad, abstención o recusación; **no altera la competencia** y no requiere publicación. En los actos dictados por suplencia debe hacerse constar esa circunstancia.\n\nLa **encomienda de gestión** (artículo 11) permite encargar a otro órgano o entidad de derecho público de la misma o de distinta Administración la realización de actividades **materiales o técnicas** de su competencia, cuando entre las competencias del encomendado estén esas actividades y por razones de eficacia o falta de medios técnicos idóneos. La encomienda **no cede la titularidad de la competencia** ni los elementos sustantivos de su ejercicio: el órgano encomendante dicta los actos jurídicos. Además, la encomienda no puede tener por objeto prestaciones propias de los contratos públicos.\n\nJunto a estas figuras, la **abstención** y la **recusación** (artículos 23 y 24) garantizan la imparcialidad de las autoridades y del personal: quien tenga interés personal, parentesco, amistad íntima o enemistad manifiesta con los interesados debe abstenerse, y el interesado puede recusarle por escrito.",
+      "table": {
+        "columns": ["Figura", "Qué implica", "Requisito o efecto"],
+        "rows": [
+          ["Delegación", "El órgano delegante transfiere el ejercicio de una competencia a otro órgano", "Debe publicarse en el boletín oficial; no cabe para disposiciones generales ni para resolver recursos propios"],
+          ["Avocación", "El órgano superior atrae para sí un asunto del inferior", "Acuerdo motivado y notificado; no cabe recurso autónomo contra el acuerdo"],
+          ["Suplencia", "Sustitución temporal del titular de un órgano", "No altera la competencia ni exige publicación"],
+          ["Encomienda de gestión", "Encargo de actividades materiales o técnicas a otro órgano o entidad de derecho público", "No cede la titularidad de la competencia; no puede cubrir prestaciones contractuales"]
+        ]
+      }
+    },
+    {
+      "heading": "Los convenios de colaboración",
+      "body": "Los **convenios** son acuerdos entre Administraciones, organismos o entidades de derecho público, y también con sujetos de derecho privado, para colaborar en un objetivo común. Se regulan en los artículos 47 a 53 de la Ley 40/2015 y no pueden suponer **cesión de la titularidad de la competencia**.\n\nDeben justificar la competencia, el objeto y las actuaciones, las obligaciones de cada parte, los compromisos económicos, el régimen de modificación, los mecanismos de seguimiento y el plazo de vigencia. Ese plazo **no puede superar cuatro años**, salvo que una norma prevea otro mayor, y puede prorrogarse por acuerdo unánime de las partes por un periodo de hasta **cuatro años adicionales**.\n\nLa suscripción debe mejorar la eficiencia de la gestión pública, facilitar el uso conjunto de medios y cumplir la legislación de estabilidad presupuestaria. En el ámbito de la Administración General del Estado, los convenios se perfeccionan por el consentimiento y **surten efectos una vez inscritos en el Registro Electrónico estatal de Órganos e Instrumentos de Cooperación** (en el plazo de cinco días hábiles) y publicados en el BOE (en el plazo de diez días hábiles).\n\nLos convenios se extinguen por el cumplimiento de su objeto o por incurrir en causa de resolución: transcurso del plazo, acuerdo unánime de las partes, incumplimiento, denuncia, decisión judicial o cualquier otra que se haya previsto."
+    },
+    {
+      "heading": "La responsabilidad patrimonial",
+      "body": "Los particulares tienen derecho a ser indemnizados por las lesiones que sufran en sus bienes y derechos como consecuencia del **funcionamiento normal o anormal de los servicios públicos**, salvo en los casos de fuerza mayor o de daños que tengan el deber jurídico de soportar (artículo 32 de la Ley 40/2015). El daño debe ser **efectivo, evaluable económicamente e individualizado** con relación a una persona o grupo de personas, y debe existir **nexo causal** entre el funcionamiento del servicio y la lesión.\n\nNo hay responsabilidad por el mero hecho de que se anule un acto administrativo: la anulación no presupone por sí misma derecho a indemnización. La ley regula también la **responsabilidad del Estado legislador** por leyes declaradas inconstitucionales o contrarias al Derecho de la Unión, con los requisitos que establece.\n\nEl procedimiento se tramita conforme a la Ley 39/2015. El derecho a reclamar **prescribe al año** de producido el hecho o el acto, o de manifestarse el efecto lesivo; en los daños físicos o psíquicos, el plazo empieza desde la curación o la determinación del alcance de las secuelas. La Administración debe resolver en el plazo de **seis meses**; si no lo hace, la resolución se entiende **contraria a la indemnización** (silencio desestimatorio). La cuantía se calcula con referencia al día en que se produjo la lesión, se actualiza a la fecha de fin del procedimiento conforme al Índice de Garantía de la Competitividad y devenga los intereses de demora que procedan.\n\nLa responsabilidad es **directa** de la Administración: el particular reclama a la Administración, que después exige de oficio a sus autoridades y personal la responsabilidad en que hayan incurrido por dolo o culpa grave, previo el correspondiente procedimiento (artículo 36)."
+    },
+    {
+      "heading": "El sector público institucional",
+      "body": "El **sector público institucional** agrupa las entidades instrumentales creadas por las Administraciones para cumplir sus fines. La Ley 40/2015 ordena los tipos:\n\n- **Organismos públicos**: comprenden los **organismos autónomos** y las **entidades públicas empresariales**. Los organismos autónomos son entidades de derecho público con personalidad jurídica, tesorería y patrimonio propios y autonomía de gestión, que desarrollan actividades de fomento, prestacionales, de gestión de servicios o de producción de bienes de interés público (artículo 98). Las entidades públicas empresariales son también entidades de derecho público, pero se financian mayoritariamente con ingresos de mercado y combinan el ejercicio de potestades administrativas con actividades prestacionales (artículo 103).\n- **Autoridades administrativas independientes**, con funciones de regulación o supervisión.\n- **Sociedades mercantiles estatales**, con forma de sociedad y capital mayoritariamente público.\n- **Consorcios**, entidades de derecho público con personalidad jurídica propia creadas por varias Administraciones para fines de interés común.\n- **Fundaciones del sector público** y **fondos sin personalidad jurídica**.\n\nLa creación de los organismos públicos estatales se hace **por ley** (artículo 91), que fija el tipo, los fines generales, el departamento de dependencia y las peculiaridades de su régimen de personal, contratación y patrimonio. La ley somete a estas entidades a un régimen de control de eficacia, evaluación de resultados y tutela por la Administración de la que dependen."
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Una consejería quiere que una sociedad mercantil pública gestione un servicio, un ministerio quiere delegar en una subdirección la resolución de un procedimiento de subvenciones y un vecino sufre daños por el mal funcionamiento de una depuradora municipal.\n\n**Resolución.**\n\n- La **sociedad mercantil pública** no puede recibir una encomienda de gestión para prestaciones propias de un contrato público: la encomienda solo procede a órganos o entidades de derecho público y para actividades materiales o técnicas. Si se trata de un encargo a un medio propio, se aplica la legislación de contratos del sector público.\n- La **delegación** de la resolución de subvenciones en una subdirección es posible si se publica en el boletín oficial y no afecta a disposiciones generales ni a la resolución de recursos; los actos dictados por delegación se consideran dictados por el órgano delegante y deben indicar la delegación.\n- El daño causado por la depuradora municipal genera **responsabilidad patrimonial** si es efectivo, evaluable económicamente e individualizado y existe nexo causal con el servicio; la fuerza mayor excluye la responsabilidad. El vecino reclama a la Administración en el plazo de **un año**; esta resuelve en **seis meses** y, si no lo hace, el silencio es desestimatorio. Después, la Administración puede repetir contra el personal que actuó con dolo o culpa grave.\n\n**Conclusión.** Hay que distinguir la encomienda (actividad material, entre entes públicos) del contrato; la delegación de la avocación; y la responsabilidad de la Administración, que es directa, de la responsabilidad interna de sus empleados."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué ley regula el régimen jurídico del sector público?",
+      "options": ["La Ley 40/2015, de 1 de octubre", "La Ley 39/2015, de 1 de octubre", "La Ley 7/1985, de 2 de abril", "La Ley 9/2017, de 8 de noviembre"],
+      "correct": "a",
+      "explanation": "La Ley 40/2015 regula el régimen jurídico del sector público; la Ley 39/2015 regula el procedimiento administrativo común y la Ley 9/2017 los contratos del sector público."
+    },
+    {
+      "stem": "¿Cómo es la competencia de los órganos administrativos?",
+      "options": ["Renunciable si lo acuerda el titular", "Irrenunciable, aunque su ejercicio puede delegarse o avocarse", "Libremente transferible a cualquier particular", "Discrecional y no reglada"],
+      "correct": "b",
+      "explanation": "El artículo 8 declara la competencia irrenunciable y la ejerce el órgano que la tiene atribuida, salvo los casos de delegación o avocación previstos en la ley."
+    },
+    {
+      "stem": "¿Qué requisito es imprescindible para que una delegación de competencias sea válida?",
+      "options": ["Que la autorice el Consejo de Ministros", "Que la acepte el órgano delegado", "Que se publique en el boletín oficial correspondiente", "Que la apruebe el Pleno de la corporación"],
+      "correct": "c",
+      "explanation": "El artículo 9 exige que las delegaciones de competencias y su revocación se publiquen en el BOE, en el boletín de la comunidad autónoma o en el de la provincia, según la Administración."
+    },
+    {
+      "stem": "¿Qué es la avocación?",
+      "options": ["Delegar la firma en un subordinado", "Sustituir temporalmente al titular de un órgano", "Encargar una actividad material a otro órgano", "Atraer un órgano superior el conocimiento de un asunto"],
+      "correct": "d",
+      "explanation": "La avocación permite al órgano superior atraer para sí un asunto que corresponde ordinariamente o por delegación a sus órganos dependientes, mediante acuerdo motivado."
+    },
+    {
+      "stem": "¿Qué permite la encomienda de gestión?",
+      "options": ["Encargar actividades materiales o técnicas a otro órgano o entidad de derecho público", "Transferir la titularidad de la competencia", "Aprobar disposiciones generales", "Resolver un recurso de alzada"],
+      "correct": "a",
+      "explanation": "La encomienda de gestión solo cubre actividades materiales o técnicas y no supone cesión de la titularidad de la competencia ni de los elementos sustantivos de su ejercicio."
+    },
+    {
+      "stem": "¿Qué efecto tiene la suplencia en la competencia del órgano?",
+      "options": ["Altera la titularidad de la competencia", "No altera la competencia y no requiere publicación", "Exige publicación en el BOE", "Requiere acuerdo del Consejo de Ministros"],
+      "correct": "b",
+      "explanation": "El artículo 13 dispone que la suplencia no implica alteración de la competencia y que para su validez no es necesaria su publicación."
+    },
+    {
+      "stem": "¿Cuál es la duración máxima inicial de un convenio de colaboración?",
+      "options": ["Un año", "Dos años", "Cuatro años", "Seis años"],
+      "correct": "c",
+      "explanation": "El artículo 49 exige una duración determinada no superior a cuatro años, prorrogable por acuerdo unánime de las partes por hasta cuatro años adicionales."
+    },
+    {
+      "stem": "¿Cuál es el plazo para reclamar la responsabilidad patrimonial de una Administración?",
+      "options": ["Seis meses", "Dos años", "Cinco años", "Un año"],
+      "correct": "d",
+      "explanation": "El derecho a reclamar prescribe al año de producido el hecho o el acto que motive la indemnización o de manifestarse su efecto lesivo."
+    },
+    {
+      "stem": "¿Qué requisitos debe reunir el daño indemnizable por responsabilidad patrimonial?",
+      "options": ["Ser efectivo, evaluable económicamente e individualizado", "Ser solo moral o hipotético", "Ser siempre superior a 1.000 euros", "Basta con que se anule el acto administrativo"],
+      "correct": "a",
+      "explanation": "El artículo 32 exige que el daño sea efectivo, evaluable económicamente e individualizado con relación a una persona o grupo de personas."
+    },
+    {
+      "stem": "¿Qué rasgo diferencia a las entidades públicas empresariales de los organismos autónomos?",
+      "options": ["Se financian íntegramente con impuestos", "Se financian mayoritariamente con ingresos de mercado", "Carecen de personalidad jurídica propia", "No pueden ejercer potestades administrativas"],
+      "correct": "b",
+      "explanation": "El artículo 103 define las entidades públicas empresariales como entidades de derecho público que se financian mayoritariamente con ingresos de mercado, a diferencia de los organismos autónomos."
+    }
+  ]
+}

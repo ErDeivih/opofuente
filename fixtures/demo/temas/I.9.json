@@ -1,0 +1,105 @@
+{
+  "node_path": "I.9",
+  "title": "Las haciendas locales y el presupuesto",
+  "source": {
+    "label": "Real Decreto Legislativo 2/2004, de 5 de marzo, por el que se aprueba el texto refundido de la Ley Reguladora de las Haciendas Locales (texto vigente de la Ley 39/1988)",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2004-4214"
+  },
+  "sections": [
+    {
+      "heading": "Autonomía y suficiencia financiera en la hacienda local",
+      "body": "La Constitución reconoce la autonomía de los municipios y provincias (art. 137) y exige que las haciendas locales dispongan de **medios suficientes** para el desempeño de sus funciones (art. 142); además, reconoce a las entidades locales autonomía para establecer y exigir tributos conforme a la ley (art. 133.2). La **Ley 39/1988, de 28 de diciembre, reguladora de las Haciendas Locales** desarrolló ese modelo y su texto vigente es el **texto refundido aprobado por el Real Decreto Legislativo 2/2004, de 5 de marzo (TRLRHL)**.\n\nEl sistema de recursos combina **tributos propios** (impuestos, tasas y contribuciones especiales) con la **participación en los tributos del Estado**, las subvenciones, los ingresos patrimoniales y el recurso al crédito. La autonomía no es ilimitada: los tributos locales se crean por ley y se regulan mediante **ordenanzas fiscales**, no pueden recaer sobre materias ya gravadas por el Estado y su gestión se somete a la Ley General Tributaria. Los regímenes forales del País Vasco y Navarra, el régimen económico-fiscal de Canarias y las singularidades de Ceuta y Melilla se mantienen al margen del régimen común.\n\nLa **suficiencia financiera** se persigue por dos vías complementarias: los tributos propios y la participación en tributos del Estado. La ley no garantiza un nivel de gasto, sino un sistema de recursos que, bien gestionado y con una carga tributaria razonable, permita prestar los servicios de competencia local."
+    },
+    {
+      "heading": "Los impuestos municipales",
+      "table": {
+        "columns": ["Impuesto", "Hecho imponible", "Exigencia"],
+        "rows": [
+          ["Impuesto sobre Bienes Inmuebles (IBI)", "Titularidad de bienes inmuebles rústicos y urbanos y de derechos reales sobre ellos", "Obligatorio"],
+          ["Impuesto sobre Actividades Económicas (IAE)", "Ejercicio de actividades económicas en el término municipal", "Obligatorio, con exenciones legales (entre ellas, las personas físicas)"],
+          ["Impuesto sobre Vehículos de Tracción Mecánica (IVTM)", "Titularidad de vehículos de tracción mecánica aptos para circular", "Obligatorio"],
+          ["Impuesto sobre el Incremento de Valor de los Terrenos de Naturaleza Urbana (IIVTNU)", "Incremento de valor de los terrenos urbanos puesto de manifiesto en la transmisión o en la constitución de derechos reales", "Obligatorio, con la regulación municipal que exige la ley"],
+          ["Impuesto sobre Construcciones, Instalaciones y Obras (ICIO)", "Realización de construcciones, instalaciones u obras que requieran licencia urbanística", "Potestativo: el ayuntamiento decide si lo exige"]
+        ]
+      }
+    },
+    {
+      "heading": "Tasas, contribuciones especiales y precios públicos",
+      "body": "**Las tasas** son tributos que se exigen por la utilización privativa o el aprovechamiento especial del dominio público, así como por la prestación de servicios o la realización de actividades administrativas de solicitud o recepción obligatoria cuando no sean prestables por la iniciativa privada. Su importe no puede superar el **coste real o previsible** del servicio o actividad, y su regulación corresponde a la ley y a la ordenanza fiscal.\n\n**Las contribuciones especiales** se exigen cuando una obra pública o el establecimiento o ampliación de un servicio local produce un beneficio especial o un aumento de valor de los bienes de los sujetos pasivos. La base imponible tiene como límite máximo el **90 % del coste soportado** por la entidad, una vez descontadas las subvenciones; se reparte entre los beneficiarios con módulos como los metros lineales de fachada, la superficie, el volumen edificable o el valor catastral. El devengo se produce cuando las obras se ejecutan o el servicio empieza a prestarse, aunque la entidad puede exigir anticipos conforme a la ley.\n\n**Los precios públicos** son contraprestaciones pecuniarias por servicios o prestaciones que no constituyen tributo: se fijan con referencia al coste del servicio y admiten excepciones por razones sociales o de interés público. Confundir tasa y precio público es un error clásico: la tasa es un tributo y su régimen está en la ley y en la ordenanza fiscal; el precio público es un ingreso de derecho público no tributario."
+    },
+    {
+      "heading": "La participación en los tributos del Estado",
+      "body": "**La participación en los tributos del Estado (PIE)** canaliza la suficiencia financiera de municipios y provincias: es el derecho a percibir una parte de la recaudación estatal, con criterios de distribución y mecanismos de actualización fijados por la ley. No se negocia cada año: el sistema genera **entregas a cuenta** durante el ejercicio y una **liquidación definitiva** posterior.\n\nLa distribución atiende a variables como la población, el esfuerzo fiscal y la capacidad tributaria, e incorpora fondos de cooperación para los municipios con menor capacidad económica o con dificultades singulares. Canarias, el País Vasco y Navarra cuentan con regímenes financieros singulares, y Ceuta y Melilla tienen particularidades propias.\n\nPara las entidades locales la PIE es un **recurso ordinario** y no una subvención discrecional, aunque su importe efectivo depende del presupuesto del Estado y de la evolución de la recaudación. Por eso la hacienda local no debe planificar sus gastos estructurales contando solo con esta fuente: la autonomía financiera exige también aprovechar los tributos propios."
+    },
+    {
+      "heading": "El presupuesto local: contenido, aprobación, modificaciones y estabilidad",
+      "body": "**Contenido y principios.** El presupuesto general de una entidad local es la expresión cifrada y equilibrada de sus ingresos y gastos para un ejercicio, que coincide con el año natural. Comprende el estado de ingresos, el estado de gastos, las bases de ejecución y los anexos de los organismos autónomos y sociedades mercantiles locales. Se rige por los principios de unidad, universalidad, anualidad, especialidad, equilibrio, publicidad y transparencia.\n\n**Elaboración y aprobación.** El proyecto lo prepara la Intervención y lo presenta el presidente de la corporación; el Pleno lo aprueba inicialmente, se abre un periodo de información pública y, resueltas las alegaciones, se aprueba definitivamente y se publica en el boletín oficial de la provincia. Si el presupuesto no está aprobado antes del 1 de enero, se considera **prorrogado automáticamente** el del ejercicio anterior hasta la aprobación del nuevo.\n\n**Modificaciones y liquidación.** Durante el ejercicio pueden aprobarse **créditos extraordinarios y suplementos de crédito** (para gastos no previstos o insuficientes), transferencias de crédito, generación de créditos e incorporación de remanentes, cada una con su órgano competente y sus límites legales. La liquidación se cierra con la **cuenta general**, que forma la Intervención, aprueba el Pleno y se remite al Tribunal de Cuentas o a la cámara de cuentas autonómica.\n\n**Estabilidad presupuestaria y control.** La Ley Orgánica 2/2012, de 27 de abril, de Estabilidad Presupuestaria y Sostenibilidad Financiera, somete también a las entidades locales a los principios de **estabilidad** (equilibrio o superávit en términos de contabilidad nacional), **sostenibilidad financiera**, **regla de gasto** y transparencia. Los incumplimientos activan planes económico-financieros y medidas de corrección. El control interno corresponde a la Intervención (función interventora y control financiero), sin perjuicio del control externo del Tribunal de Cuentas y de las cámaras de cuentas autonómicas.\n\n**Liquidación y remanentes.** El presupuesto debe aprobarse y ejecutarse en equilibrio entre ingresos y gastos. El **remanente de tesorería** (recursos líquidos menos las obligaciones pendientes de pago a 31 de diciembre) mide la capacidad de financiación de la entidad y su evolución se analiza al liquidar el presupuesto; los **remanentes de crédito** solo pueden incorporarse al ejercicio siguiente cuando la ley y las bases de ejecución lo autorizan. La liquidación se somete al Pleno y alimenta la información económica que la entidad debe publicar."
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un municipio de 4.000 habitantes decide renovar el acerado y la iluminación de una calle. El coste previsto de la obra es de 100.000 euros y la diputación provincial concede una subvención de 10.000 euros. La obra beneficia a 10 viviendas. El ayuntamiento pregunta si puede repartir todo el coste entre las viviendas mediante contribuciones especiales.\n\n**Resolución razonada.** (1) El coste soportado por la entidad es **90.000 euros** (100.000 menos la subvención de 10.000), porque las subvenciones minoran la base. (2) El límite máximo de la base imponible es el **90 %** del coste soportado: 90 % de 90.000 = **81.000 euros**. (3) Los 9.000 euros restantes no pueden cubrirse con contribuciones especiales y deben financiarse con recursos ordinarios u otras subvenciones. (4) Si el reparto se hace por vivienda, la cuota máxima sería 81.000 / 10 = **8.100 euros** por vivienda, sin perjuicio de que el acuerdo concreto utilice los módulos de reparto que la ley permite. (5) El acuerdo concreto de imposición y ordenación debe aprobarse y someterse a información pública; el devengo se produce cuando las obras se ejecutan, aunque quepa exigir anticipos conforme a la ley."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Cuál es el texto vigente que regula las haciendas locales en el régimen común?",
+      "options": ["La Ley 39/1988, de 28 de diciembre, en su redacción original", "El texto refundido aprobado por el Real Decreto Legislativo 2/2004, de 5 de marzo", "La Ley 7/1985, de 2 de abril, reguladora de las Bases del Régimen Local", "La Ley Orgánica 2/2012, de 27 de abril"],
+      "correct": "b",
+      "explanation": "La Ley 39/1988 fue refundida: su texto vigente es el aprobado por el Real Decreto Legislativo 2/2004 (TRLRHL), que es la norma que se maneja hoy."
+    },
+    {
+      "stem": "¿Qué recurso se exige por la utilización privativa o el aprovechamiento especial del dominio público local?",
+      "options": ["El precio público", "La tasa", "La contribución especial", "El impuesto"],
+      "correct": "b",
+      "explanation": "La tasa grava la utilización privativa o el aprovechamiento especial del dominio público y la prestación de servicios o actividades de solicitud o recepción obligatoria."
+    },
+    {
+      "stem": "¿Cuál es el límite máximo de la base imponible de las contribuciones especiales?",
+      "options": ["El 50 % del coste soportado por la entidad", "El 75 % del coste soportado por la entidad", "El 90 % del coste soportado por la entidad", "El 100 % del coste de la obra"],
+      "correct": "c",
+      "explanation": "La base imponible de las contribuciones especiales no puede superar el 90 % del coste que soporta la entidad, descontadas las subvenciones."
+    },
+    {
+      "stem": "¿Cuándo se devengan las contribuciones especiales?",
+      "options": ["Cuando se aprueba la ordenanza fiscal", "Cuando se ejecutan las obras o comienza a prestarse el servicio", "Cuando el beneficiario presenta la solicitud de licencia", "El 1 de enero de cada ejercicio"],
+      "correct": "b",
+      "explanation": "El devengo se produce al ejecutarse las obras o al iniciarse el servicio, sin perjuicio de que la entidad pueda exigir anticipos conforme a la ley."
+    },
+    {
+      "stem": "¿Cuál de los siguientes impuestos municipales tiene carácter potestativo?",
+      "options": ["El Impuesto sobre Bienes Inmuebles", "El Impuesto sobre Actividades Económicas", "El Impuesto sobre Vehículos de Tracción Mecánica", "El Impuesto sobre Construcciones, Instalaciones y Obras"],
+      "correct": "d",
+      "explanation": "El ICIO es potestativo: el ayuntamiento decide si lo exige. El IBI, el IAE y el IVTM son impuestos obligatorios del régimen común."
+    },
+    {
+      "stem": "¿Qué órgano aprueba el presupuesto general de una entidad local?",
+      "options": ["La Intervención", "El presidente de la corporación", "El Pleno de la corporación", "La diputación provincial"],
+      "correct": "c",
+      "explanation": "El Pleno aprueba el presupuesto; la Intervención lo prepara y el presidente lo presenta, pero la competencia para aprobarlo corresponde al Pleno."
+    },
+    {
+      "stem": "Si el presupuesto de la entidad local no está aprobado antes del 1 de enero, ¿qué ocurre?",
+      "options": ["Se prorroga automáticamente el presupuesto del ejercicio anterior", "Se aplica directamente el presupuesto del Estado", "La entidad queda disuelta hasta aprobar el nuevo", "Se aprueba por el Pleno sin información pública"],
+      "correct": "a",
+      "explanation": "La prórroga automática del presupuesto anterior garantiza que la entidad pueda seguir funcionando hasta que se apruebe el nuevo."
+    },
+    {
+      "stem": "¿Qué norma orgánica somete a las entidades locales a la estabilidad presupuestaria y la sostenibilidad financiera?",
+      "options": ["La Ley Orgánica 2/2012, de 27 de abril", "La Ley 39/1988, de 28 de diciembre", "La Ley 7/1985, de 2 de abril", "La Ley 19/2013, de 9 de diciembre"],
+      "correct": "a",
+      "explanation": "La Ley Orgánica 2/2012, de Estabilidad Presupuestaria y Sostenibilidad Financiera, extiende sus principios a todas las administraciones, incluidas las entidades locales."
+    },
+    {
+      "stem": "Cuando surge un gasto necesario no previsto y no existe crédito suficiente, ¿qué modificación presupuestaria procede?",
+      "options": ["Una transferencia de crédito", "Un suplemento de crédito o un crédito extraordinario", "Una incorporación de remanentes", "Una baja por anulación"],
+      "correct": "b",
+      "explanation": "Los créditos extraordinarios y los suplementos de crédito cubren gastos no previstos o insuficientemente dotados; la transferencia solo mueve crédito entre partidas y la incorporación de remanentes se refiere a créditos del ejercicio anterior."
+    },
+    {
+      "stem": "¿A quién corresponde el control externo de las cuentas de las entidades locales?",
+      "options": ["A la Intervención municipal", "Al Pleno de la corporación", "Al Tribunal de Cuentas, sin perjuicio de las cámaras de cuentas autonómicas", "Al Consejo de Ministros"],
+      "correct": "c",
+      "explanation": "La Intervención ejerce el control interno; el control externo corresponde al Tribunal de Cuentas, sin perjuicio de las competencias de las cámaras de cuentas de las comunidades autónomas."
+    }
+  ]
+}
