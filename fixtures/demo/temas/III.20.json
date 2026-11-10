@@ -13,13 +13,43 @@
     {
       "heading": "Niveles de RAID habituales",
       "table": {
-        "columns": ["Nivel", "Mínimo de discos", "Qué aporta", "Tolera fallos"],
+        "columns": [
+          "Nivel",
+          "Mínimo de discos",
+          "Qué aporta",
+          "Tolera fallos"
+        ],
         "rows": [
-          ["RAID 0", "2", "Rayado: rendimiento y capacidad, sin redundancia", "0 discos"],
-          ["RAID 1", "2", "Espejo: cada disco tiene una copia", "1 disco"],
-          ["RAID 5", "3", "Rayado con paridad distribuida", "1 disco"],
-          ["RAID 6", "4", "Doble paridad distribuida", "2 discos"],
-          ["RAID 10", "4", "Espejo y rayado combinados", "1 por espejo"]
+          [
+            "RAID 0",
+            "2",
+            "Rayado: rendimiento y capacidad, sin redundancia",
+            "0 discos"
+          ],
+          [
+            "RAID 1",
+            "2",
+            "Espejo: cada disco tiene una copia",
+            "1 disco"
+          ],
+          [
+            "RAID 5",
+            "3",
+            "Rayado con paridad distribuida",
+            "1 disco"
+          ],
+          [
+            "RAID 6",
+            "4",
+            "Doble paridad distribuida",
+            "2 discos"
+          ],
+          [
+            "RAID 10",
+            "4",
+            "Espejo y rayado combinados",
+            "1 por espejo"
+          ]
         ]
       }
     },
@@ -43,7 +73,12 @@
   "questions": [
     {
       "stem": "¿Cuántos discos como mínimo necesita RAID 5?",
-      "options": ["2", "3", "4", "5"],
+      "options": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
       "correct": "b",
       "explanation": "RAID 5 necesita al menos tres discos: datos y paridad distribuida; tolera el fallo de un disco."
     },
@@ -51,62 +86,77 @@
       "stem": "¿Qué caracteriza a RAID 1?",
       "options": [
         "Rayado sin redundancia",
-        "Espejo: cada disco contiene una copia de los datos",
         "Doble paridad",
+        "Espejo: cada disco contiene una copia de los datos",
         "Combinación de espejo y rayado"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "RAID 1 replica los datos en dos o más discos; tolera el fallo de un disco por espejo."
     },
     {
       "stem": "¿Qué nivel de RAID no aporta redundancia?",
-      "options": ["RAID 0", "RAID 1", "RAID 5", "RAID 6"],
-      "correct": "a",
+      "options": [
+        "RAID 6",
+        "RAID 1",
+        "RAID 5",
+        "RAID 0"
+      ],
+      "correct": "d",
       "explanation": "RAID 0 solo reparte los datos (striping): si falla un disco se pierde el volumen."
     },
     {
       "stem": "¿Qué copia guarda todos los datos seleccionados?",
-      "options": ["Incremental", "Diferencial", "Completa", "Snapshot"],
-      "correct": "c",
+      "options": [
+        "Completa",
+        "Diferencial",
+        "Incremental",
+        "Snapshot"
+      ],
+      "correct": "a",
       "explanation": "La copia completa guarda todo; es la base para restaurar las incrementales o diferenciales."
     },
     {
       "stem": "¿Qué copia guarda los cambios desde la última copia completa?",
-      "options": ["Incremental", "Diferencial", "Completa", "Espejo"],
+      "options": [
+        "Incremental",
+        "Diferencial",
+        "Completa",
+        "Espejo"
+      ],
       "correct": "b",
       "explanation": "La diferencial acumula los cambios desde la última completa; la incremental parte de la última copia de cualquier tipo."
     },
     {
       "stem": "¿Qué significa la regla 3-2-1?",
       "options": [
-        "3 copias, 2 soportes distintos y 1 fuera del sitio",
-        "3 servidores, 2 redes y 1 cortafuegos",
         "3 copias, 2 contraseñas y 1 administrador",
+        "3 servidores, 2 redes y 1 cortafuegos",
+        "3 copias, 2 soportes distintos y 1 fuera del sitio",
         "3 días, 2 semanas y 1 mes de retención"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La regla 3-2-1 pide tres copias, en dos tipos de soporte y al menos una fuera de la ubicación principal."
     },
     {
       "stem": "¿Qué mide el RTO?",
       "options": [
         "La cantidad de datos que se puede perder",
-        "El tiempo máximo aceptable para recuperar el servicio",
+        "El número de cintas necesarias",
         "El tamaño de la copia",
-        "El número de cintas necesarias"
+        "El tiempo máximo aceptable para recuperar el servicio"
       ],
-      "correct": "b",
+      "correct": "d",
       "explanation": "RTO es el tiempo objetivo de recuperación; RPO es la pérdida máxima de datos aceptable."
     },
     {
       "stem": "¿Por qué un snapshot no sustituye una copia de seguridad?",
       "options": [
-        "Porque ocupa demasiado",
         "Porque suele estar en el mismo almacenamiento y se pierde con él",
+        "Porque ocupa demasiado",
         "Porque no se puede programar",
         "Porque solo funciona en Windows"
       ],
-      "correct": "b",
+      "correct": "a",
       "explanation": "Un snapshot es una imagen puntual en el mismo sistema; si se pierde el almacenamiento, se pierden datos y snapshot."
     },
     {
@@ -124,12 +174,25 @@
       "stem": "¿Qué relación hay entre RAID y copias de seguridad?",
       "options": [
         "El RAID sustituye a las copias",
-        "El RAID da disponibilidad, pero no protege de borrados, cifrado o desastres",
         "Las copias solo son necesarias si no hay RAID",
+        "El RAID da disponibilidad, pero no protege de borrados, cifrado o desastres",
         "El RAID y las copias son lo mismo"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "RAID tolera fallos de disco, pero replica borrados y cifrado; la copia externa es la que permite recuperar."
     }
+  ],
+  "memorizar": [
+    "RAID 0: mínimo 2 discos y ninguna tolerancia; RAID 1: espejo y tolera 1 fallo; RAID 5: mínimo 3 discos y 1 fallo; RAID 6: mínimo 4 discos y 2 fallos; RAID 10: mínimo 4 discos.",
+    "DAS: discos conectados directamente al servidor; NAS: almacenamiento en red con sistema de ficheros (SMB/NFS); SAN: red dedicada de bloques.",
+    "Copia completa: todo; incremental: cambios desde la última copia de cualquier tipo; diferencial: cambios desde la última completa.",
+    "Regla 3-2-1: 3 copias, en 2 soportes distintos y 1 fuera del sitio; se refuerza con copia inmutable y pruebas de restauración.",
+    "RTO: tiempo máximo aceptable para recuperar el servicio; RPO: cantidad máxima de datos que se puede perder, medida en tiempo."
+  ],
+  "errores": [
+    "Confundir copia incremental (desde la última copia de cualquier tipo) con diferencial (desde la última completa).",
+    "Confundir RTO (tiempo de recuperación) con RPO (pérdida de datos admisible).",
+    "Creer que RAID sustituye a la copia de seguridad: replica también borrados y cifrado.",
+    "Pensar que un snapshot es una copia externa: comparte el almacenamiento y se pierde con él."
   ]
 }

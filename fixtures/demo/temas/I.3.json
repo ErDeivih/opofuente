@@ -22,12 +22,27 @@
       "heading": "Competencias y servicios obligatorios",
       "body": "El municipio tiene **competencias propias** que le atribuyen las leyes estatales y autonómicas, y puede prestar los servicios que contribuyan a satisfacer las necesidades de la comunidad vecinal. Como garantía mínima, el artículo 26 LRBRL impone la prestación de determinados **servicios obligatorios** en función de la población; la tabla los resume.\n\nAdemás, en los municipios de menos de 20.000 habitantes la **diputación provincial** (o entidad equivalente) coordina la prestación de los servicios de recogida y tratamiento de residuos, abastecimiento de agua potable y evacuación y tratamiento de aguas residuales, limpieza viaria, acceso a los núcleos de población, pavimentación de vías urbanas y alumbrado público. Con la conformidad de los municipios afectados, se propone la forma de prestación: directamente por la diputación o mediante fórmulas de gestión compartida como consorcios, mancomunidades u otras.\n\nLas competencias municipales se ejercen en régimen de autonomía, pero dentro del marco de la ley y de la coordinación que esta permite. El municipio puede asumir competencias **delegadas** de otras Administraciones y prestar servicios por medio de organismos, sociedades o mancomunidades.",
       "table": {
-        "columns": ["Población", "Servicios obligatorios"],
+        "columns": [
+          "Población",
+          "Servicios obligatorios"
+        ],
         "rows": [
-          ["Todos los municipios", "Alumbrado público, cementerio, recogida de residuos, limpieza viaria, abastecimiento domiciliario de agua potable, alcantarillado, acceso a los núcleos de población y pavimentación de las vías públicas"],
-          ["Más de 5.000 habitantes", "Además: parque público, biblioteca pública y tratamiento de residuos"],
-          ["Más de 20.000 habitantes", "Además: protección civil, evaluación e información de situaciones de necesidad social, atención inmediata a personas en situación o riesgo de exclusión social, prevención y extinción de incendios e instalaciones deportivas de uso público"],
-          ["Más de 50.000 habitantes", "Además: transporte colectivo urbano de viajeros y medio ambiente urbano"]
+          [
+            "Todos los municipios",
+            "Alumbrado público, cementerio, recogida de residuos, limpieza viaria, abastecimiento domiciliario de agua potable, alcantarillado, acceso a los núcleos de población y pavimentación de las vías públicas"
+          ],
+          [
+            "Más de 5.000 habitantes",
+            "Además: parque público, biblioteca pública y tratamiento de residuos"
+          ],
+          [
+            "Más de 20.000 habitantes",
+            "Además: protección civil, evaluación e información de situaciones de necesidad social, atención inmediata a personas en situación o riesgo de exclusión social, prevención y extinción de incendios e instalaciones deportivas de uso público"
+          ],
+          [
+            "Más de 50.000 habitantes",
+            "Además: transporte colectivo urbano de viajeros y medio ambiente urbano"
+          ]
         ]
       }
     },
@@ -43,63 +58,126 @@
   "questions": [
     {
       "stem": "¿Qué ley estatal regula las bases del régimen local?",
-      "options": ["La Ley 7/1985, de 2 de abril", "La Ley 39/2015, de 1 de octubre", "La Ley 40/2015, de 1 de octubre", "El Real Decreto Legislativo 2/2004, de 5 de marzo"],
+      "options": [
+        "La Ley 7/1985, de 2 de abril",
+        "La Ley 39/2015, de 1 de octubre",
+        "La Ley 40/2015, de 1 de octubre",
+        "El Real Decreto Legislativo 2/2004, de 5 de marzo"
+      ],
       "correct": "a",
       "explanation": "La Ley 7/1985, reguladora de las bases del régimen local, es la norma básica estatal; el Real Decreto Legislativo 2/2004 aprueba el texto refundido de las haciendas locales."
     },
     {
       "stem": "¿Qué entidades son entidades locales territoriales según la Ley 7/1985?",
-      "options": ["El municipio, la provincia y la comarca", "El municipio, la provincia y la isla", "El municipio y la mancomunidad", "La provincia y el área metropolitana"],
+      "options": [
+        "El municipio, la provincia y la comarca",
+        "El municipio, la provincia y la isla",
+        "El municipio y la mancomunidad",
+        "La provincia y el área metropolitana"
+      ],
       "correct": "b",
       "explanation": "El artículo 3 de la Ley 7/1985 declara entidades locales territoriales el municipio, la provincia y la isla en los archipiélagos balear y canario."
     },
     {
       "stem": "¿Cuáles son los elementos del municipio?",
-      "options": ["El territorio, la población y el presupuesto", "La población, el ayuntamiento y el término municipal", "El territorio, la población y la organización", "El territorio, el alcalde y el pleno"],
+      "options": [
+        "El territorio, la población y el presupuesto",
+        "La población, el ayuntamiento y el término municipal",
+        "El territorio, la población y la organización",
+        "El territorio, el alcalde y el pleno"
+      ],
       "correct": "c",
       "explanation": "El artículo 11 de la Ley 7/1985 establece que son elementos del municipio el territorio, la población y la organización."
     },
     {
       "stem": "¿Cuál de estos servicios es obligatorio en todos los municipios, con independencia de su población?",
-      "options": ["La biblioteca pública y el parque público", "La protección civil y la prevención de incendios", "El transporte colectivo urbano de viajeros", "El alumbrado público y el cementerio"],
+      "options": [
+        "La biblioteca pública y el parque público",
+        "La protección civil y la prevención de incendios",
+        "El transporte colectivo urbano de viajeros",
+        "El alumbrado público y el cementerio"
+      ],
       "correct": "d",
       "explanation": "El alumbrado público y el cementerio figuran entre los servicios obligatorios de todos los municipios del artículo 26; los demás corresponden a tramos de población superiores."
     },
     {
       "stem": "¿En qué municipios existe obligatoriamente la Junta de Gobierno Local?",
-      "options": ["En todos los municipios", "En los de más de 5.000 habitantes y, en los de menos, si lo prevé su reglamento orgánico o lo acuerda el Pleno", "Solo en los de más de 20.000 habitantes", "Solo en los de más de 50.000 habitantes"],
-      "correct": "b",
+      "options": [
+        "En los de más de 5.000 habitantes y, en los de menos, si lo prevé su reglamento orgánico o lo acuerda el Pleno",
+        "En todos los municipios",
+        "Solo en los de más de 20.000 habitantes",
+        "Solo en los de más de 50.000 habitantes"
+      ],
+      "correct": "a",
       "explanation": "El artículo 20 de la Ley 7/1985 la exige en los municipios con población superior a 5.000 habitantes y permite su existencia en los demás por decisión organizativa propia."
     },
     {
       "stem": "¿A qué órgano municipal corresponde aprobar las ordenanzas?",
-      "options": ["Al Pleno", "Al Alcalde", "A la Junta de Gobierno Local", "Al secretario municipal"],
-      "correct": "a",
+      "options": [
+        "Al Alcalde",
+        "Al Pleno",
+        "A la Junta de Gobierno Local",
+        "Al secretario municipal"
+      ],
+      "correct": "b",
       "explanation": "El artículo 22 de la Ley 7/1985 atribuye expresamente al Pleno la aprobación del reglamento orgánico y de las ordenanzas."
     },
     {
       "stem": "¿Quién es el presidente de la corporación municipal y su máximo representante?",
-      "options": ["El secretario municipal", "El teniente de alcalde", "El presidente de la diputación", "El alcalde"],
-      "correct": "d",
+      "options": [
+        "El secretario municipal",
+        "El teniente de alcalde",
+        "El alcalde",
+        "El presidente de la diputación"
+      ],
+      "correct": "c",
       "explanation": "El artículo 21 de la Ley 7/1985 declara al alcalde presidente de la corporación, con la dirección del gobierno y la administración municipal y la representación del ayuntamiento."
     },
     {
       "stem": "¿Cuáles son órganos que existen en todas las diputaciones provinciales?",
-      "options": ["Solo el Pleno y el Presidente", "El Pleno, el Presidente y los consejeros insulares", "El Presidente, los Vicepresidentes, la Junta de Gobierno y el Pleno", "El Alcalde, el Pleno y la Junta de Gobierno"],
-      "correct": "c",
+      "options": [
+        "Solo el Pleno y el Presidente",
+        "El Pleno, el Presidente y los consejeros insulares",
+        "El Alcalde, el Pleno y la Junta de Gobierno",
+        "El Presidente, los Vicepresidentes, la Junta de Gobierno y el Pleno"
+      ],
+      "correct": "d",
       "explanation": "El artículo 32 de la Ley 7/1985 dispone que el Presidente, los Vicepresidentes, la Junta de Gobierno y el Pleno existen en todas las diputaciones."
     },
     {
       "stem": "En Canarias, ¿qué entidad asume las competencias propias de la provincia?",
-      "options": ["La diputación provincial", "El cabildo insular", "El consejo comarcal", "La mancomunidad de municipios"],
-      "correct": "b",
+      "options": [
+        "El cabildo insular",
+        "La diputación provincial",
+        "El consejo comarcal",
+        "La mancomunidad de municipios"
+      ],
+      "correct": "a",
       "explanation": "En Canarias no existen diputaciones provinciales: la organización provincial se articula a través de los cabildos insulares, y en Baleares a través de los consejos insulares."
     },
     {
       "stem": "¿Cuál de estas potestades NO corresponde a los municipios?",
-      "options": ["La potestad reglamentaria", "La potestad expropiatoria", "La potestad legislativa", "La potestad sancionadora"],
-      "correct": "c",
+      "options": [
+        "La potestad reglamentaria",
+        "La potestad legislativa",
+        "La potestad expropiatoria",
+        "La potestad sancionadora"
+      ],
+      "correct": "b",
       "explanation": "Los municipios aprueban ordenanzas (potestad reglamentaria), pero no tienen potestad legislativa; la potestad legislativa corresponde a las Cortes Generales y a las asambleas autonómicas."
     }
+  ],
+  "memorizar": [
+    "Artículo 3 LRBRL: son entidades locales territoriales el municipio, la provincia y la isla (en Baleares y Canarias); las comarcas, áreas metropolitanas y mancomunidades son otras entidades locales.",
+    "Elementos del municipio (artículo 11 LRBRL): territorio, población y organización.",
+    "Junta de Gobierno Local: obligatoria en municipios de más de 5.000 habitantes y, en los de menos, si lo prevé el reglamento orgánico o lo acuerda el Pleno; la Comisión Especial de Cuentas existe en todos.",
+    "Servicios obligatorios del artículo 26 por tramos: en todos (alumbrado, cementerio, residuos, limpieza viaria, agua, alcantarillado, acceso y pavimentación); más de 5.000 (parque, biblioteca, tratamiento de residuos); más de 20.000 (protección civil, servicios sociales, incendios, instalaciones deportivas); más de 50.000 (transporte colectivo urbano y medio ambiente urbano).",
+    "Artículo 32 LRBRL: el Presidente, los Vicepresidentes, la Junta de Gobierno y el Pleno existen en todas las diputaciones; en Canarias la provincia se articula por cabildos insulares y en Baleares por consejos insulares, y en las comunidades uniprovinciales no hay diputación."
+  ],
+  "errores": [
+    "Confundir la Ley 7/1985 (bases del régimen local) con el Real Decreto Legislativo 2/2004 (texto refundido de las haciendas locales).",
+    "Confundir los tramos de población del artículo 26: el parque público y la biblioteca son de más de 5.000 habitantes y el transporte colectivo urbano, de más de 50.000.",
+    "Confundir la diputación con una institución presente en todo el territorio: en las comunidades uniprovinciales no hay diputación y en Canarias y Baleares la provincia se articula por cabildos y consejos insulares.",
+    "Confundir las entidades locales territoriales (municipio, provincia e isla) con las demás entidades locales (comarcas, áreas metropolitanas y mancomunidades)."
   ]
 }

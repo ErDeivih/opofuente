@@ -29,13 +29,37 @@
     {
       "heading": "Tabla de conceptos",
       "table": {
-        "columns": ["Concepto", "Qué aporta", "Clave"],
+        "columns": [
+          "Concepto",
+          "Qué aporta",
+          "Clave"
+        ],
         "rows": [
-          ["Simétrico", "Confidencialidad rápida", "Misma clave"],
-          ["Asimétrico", "Intercambio y autenticación", "Pública/privada"],
-          ["Hash", "Integridad", "Huella fija"],
-          ["Firma", "Autenticidad e integridad", "Privada del firmante"],
-          ["Certificado", "Vincula identidad y clave", "Emitido por una CA"]
+          [
+            "Simétrico",
+            "Confidencialidad rápida",
+            "Misma clave"
+          ],
+          [
+            "Asimétrico",
+            "Intercambio y autenticación",
+            "Pública/privada"
+          ],
+          [
+            "Hash",
+            "Integridad",
+            "Huella fija"
+          ],
+          [
+            "Firma",
+            "Autenticidad e integridad",
+            "Privada del firmante"
+          ],
+          [
+            "Certificado",
+            "Vincula identidad y clave",
+            "Emitido por una CA"
+          ]
         ]
       }
     },
@@ -48,73 +72,78 @@
     {
       "stem": "¿Qué usa la criptografía simétrica?",
       "options": [
-        "La misma clave para cifrar y descifrar",
         "Una clave pública y otra privada",
+        "La misma clave para cifrar y descifrar",
         "Solo funciones hash",
         "Un certificado digital"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "La criptografía simétrica comparte una única clave; es rápida y se usa para cifrar volúmenes y sesiones."
     },
     {
       "stem": "¿Qué clave se usa para firmar electrónicamente?",
       "options": [
-        "La clave privada del firmante",
-        "La clave pública del firmante",
         "La clave pública del receptor",
+        "La clave pública del firmante",
+        "La clave privada del firmante",
         "Una clave simétrica compartida"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "El firmante firma con su clave privada; el receptor verifica con la clave pública del certificado."
     },
     {
       "stem": "¿Qué aporta una función hash?",
       "options": [
-        "Una huella que permite detectar cambios en el contenido",
+        "Un certificado de identidad",
         "Confidencialidad del documento",
         "Una copia de seguridad",
-        "Un certificado de identidad"
+        "Una huella que permite detectar cambios en el contenido"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El hash detecta alteraciones; no cifra ni sustituye la firma."
     },
     {
       "stem": "¿Qué algoritmo hash está obsoleto para seguridad?",
-      "options": ["MD5", "SHA-256", "SHA-3", "Argon2"],
+      "options": [
+        "MD5",
+        "SHA-256",
+        "SHA-3",
+        "Argon2"
+      ],
       "correct": "a",
       "explanation": "MD5 y SHA-1 tienen colisiones conocidas y no deben usarse para seguridad; SHA-256/SHA-3 son actuales."
     },
     {
       "stem": "¿Qué es un certificado digital?",
       "options": [
-        "Un documento que vincula una clave pública con una identidad y lo emite una CA",
         "Una contraseña cifrada",
+        "Un documento que vincula una clave pública con una identidad y lo emite una CA",
         "Un algoritmo de compresión",
         "Una copia de la clave privada"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El certificado lo emite una autoridad de certificación y permite verificar la identidad asociada a la clave pública."
     },
     {
       "stem": "¿Qué garantiza TLS?",
       "options": [
-        "Confidencialidad e integridad de la conexión y autenticación del servidor",
-        "Que el sitio sea legalmente fiable",
         "Que no haya malware en el servidor",
+        "Que el sitio sea legalmente fiable",
+        "Confidencialidad e integridad de la conexión y autenticación del servidor",
         "Que el usuario esté autenticado siempre"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "TLS cifra e integra la comunicación y autentica el servidor con su certificado; no garantiza la honestidad del sitio."
     },
     {
       "stem": "¿Qué tipo de firma tiene el equivalente legal de la firma manuscrita en los términos de la ley?",
       "options": [
-        "La firma electrónica cualificada",
+        "Cualquier firma escaneada",
         "La firma simple",
         "La firma avanzada",
-        "Cualquier firma escaneada"
+        "La firma electrónica cualificada"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La Ley 6/2020 distingue simple, avanzada y cualificada; la cualificada tiene el equivalente legal de la manuscrita en los términos previstos."
     },
     {
@@ -131,24 +160,37 @@
     {
       "stem": "¿Qué diferencia hay entre cifrar y firmar?",
       "options": [
-        "Cifrar oculta el contenido; firmar autentica e integra",
         "Son lo mismo",
+        "Cifrar oculta el contenido; firmar autentica e integra",
         "Firmar oculta el contenido",
         "Cifrar autentica al firmante"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El cifrado protege la confidencialidad; la firma acredita autoría e integridad. Son objetivos distintos."
     },
     {
       "stem": "¿Qué debe hacerse con la clave privada?",
       "options": [
-        "Protegerla y no compartirla ni incluirla en el código",
-        "Publicarla para que todos la usen",
         "Guardarla en el repositorio",
+        "Publicarla para que todos la usen",
+        "Protegerla y no compartirla ni incluirla en el código",
         "Enviarla por correo sin cifrar"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La clave privada es el secreto del firmante; su filtración rompe la autenticidad y la confianza."
     }
+  ],
+  "memorizar": [
+    "Simétrica: una misma clave para cifrar y descifrar (AES); asimétrica: par de claves, la pública se comparte y la privada se protege.",
+    "La función hash aporta integridad (huella de longitud fija); MD5 y SHA-1 están obsoletos para seguridad y SHA-256 es un estándar actual.",
+    "Se firma la huella con la clave privada del firmante y se verifica con su clave pública; el sellado de tiempo fija el momento de la firma.",
+    "Ley 6/2020: firma simple, avanzada y cualificada; solo la cualificada tiene el equivalente legal de la firma manuscrita en los términos previstos.",
+    "El certificado lo emite una autoridad de certificación (CA) y vincula una clave pública con una identidad; TLS autentica al servidor, no garantiza que el sitio sea honesto."
+  ],
+  "errores": [
+    "Confundir cifrar con firmar: cifrar oculta el contenido; firmar autentica e integra, pero no oculta.",
+    "Creer que se firma con la clave pública: se firma con la privada del firmante y se verifica con la pública.",
+    "Pensar que el hash cifra el documento o permite recuperar el original.",
+    "Atribuir el equivalente legal de la firma manuscrita a la firma simple o a la avanzada en lugar de a la cualificada."
   ]
 }

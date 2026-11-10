@@ -25,15 +25,75 @@
     {
       "heading": "Tabla de roles equivalentes",
       "table": {
-        "columns": ["Servicio", "Windows Server", "Linux"],
+        "columns": [
+          "Servicio",
+          "Windows Server",
+          "Linux"
+        ],
         "rows": [
-          ["Directorio", "AD DS", "OpenLDAP / Samba AD"],
-          ["DNS", "Rol DNS", "BIND / Unbound"],
-          ["DHCP", "Rol DHCP", "ISC DHCP / Kea"],
-          ["Ficheros", "Servidor de archivos", "Samba / NFS"],
-          ["Web", "IIS", "Apache / Nginx"],
-          ["Virtualización", "Hyper-V", "KVM / Proxmox"],
-          ["Acceso remoto", "RDP / WinRM", "SSH"]
+          [
+            "Directorio",
+            "AD DS",
+            "OpenLDAP / Samba AD"
+          ],
+          [
+            "DNS",
+            "Rol DNS",
+            "BIND / Unbound"
+          ],
+          [
+            "DHCP",
+            "Rol DHCP",
+            "ISC DHCP / Kea"
+          ],
+          [
+            "Ficheros",
+            "Servidor de archivos",
+            "Samba / NFS"
+          ],
+          [
+            "Web",
+            "IIS",
+            "Apache / Nginx"
+          ],
+          [
+            "Virtualización",
+            "Hyper-V",
+            "KVM / Proxmox"
+          ],
+          [
+            "Acceso remoto",
+            "RDP / WinRM",
+            "SSH"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "Monitorización, copias y continuidad del servidor",
+      "body": "Un servidor en producción necesita **observabilidad**: saber si está disponible, cómo responde y qué errores genera. Se monitorizan CPU, memoria, disco, red, servicios, certificados y registros; las alertas deben ser accionables.\n\nLas **copias** deben ser externas, cifradas y probadas. Para un servicio crítico se define **RTO** (tiempo máximo de recuperación) y **RPO** (pérdida máxima de datos). La alta disponibilidad evita caídas, pero no sustituye la copia: un borrado o un ransomware se replica.\n\nLas actualizaciones se prueban en un entorno de preproducción y se aplican con ventana y reversión previstas.",
+      "table": {
+        "columns": [
+          "Necesidad",
+          "Práctica"
+        ],
+        "rows": [
+          [
+            "Disponibilidad",
+            "Monitorización y alertas"
+          ],
+          [
+            "Recuperación",
+            "Copias externas y restauración probada"
+          ],
+          [
+            "Continuidad",
+            "RTO/RPO documentados"
+          ],
+          [
+            "Actualizaciones",
+            "Preproducción y ventana de cambio"
+          ]
         ]
       }
     },
@@ -45,81 +105,101 @@
   "questions": [
     {
       "stem": "¿Qué servicio de Windows Server proporciona un directorio centralizado de usuarios y equipos?",
-      "options": ["Active Directory Domain Services", "IIS", "Hyper-V", "DHCP"],
-      "correct": "a",
+      "options": [
+        "DHCP",
+        "IIS",
+        "Hyper-V",
+        "Active Directory Domain Services"
+      ],
+      "correct": "d",
       "explanation": "AD DS es el servicio de directorio que almacena usuarios, equipos y grupos y sirve de base a la autenticación del dominio."
     },
     {
       "stem": "¿Qué protocolo usa AD para autenticar en el dominio?",
-      "options": ["Kerberos", "SMTP", "SNMP", "FTP"],
+      "options": [
+        "Kerberos",
+        "SMTP",
+        "SNMP",
+        "FTP"
+      ],
       "correct": "a",
       "explanation": "Kerberos es el protocolo de autenticación usado por Active Directory."
     },
     {
       "stem": "¿Para qué sirve DHCP en un servidor?",
       "options": [
-        "Asignar direcciones IP y parámetros de red automáticamente",
         "Resolver nombres de dominio",
+        "Asignar direcciones IP y parámetros de red automáticamente",
         "Cifrar discos",
         "Servir páginas web"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "DHCP entrega configuración de red (IP, máscara, puerta de enlace, DNS) a los clientes."
     },
     {
       "stem": "¿Qué permite una directiva de grupo (GPO)?",
       "options": [
-        "Aplicar configuración de forma centralizada a equipos y usuarios",
-        "Cambiar la contraseña de root",
         "Crear copias de seguridad",
+        "Cambiar la contraseña de root",
+        "Aplicar configuración de forma centralizada a equipos y usuarios",
         "Comprimir la base de datos"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "Las GPO permiten configurar de forma centralizada el entorno de equipos y usuarios del dominio."
     },
     {
       "stem": "¿Qué servicio se usa en Linux para gestionar servicios y unidades?",
-      "options": ["systemd", "IIS", "AD DS", "PowerShell"],
-      "correct": "a",
+      "options": [
+        "PowerShell",
+        "IIS",
+        "AD DS",
+        "systemd"
+      ],
+      "correct": "d",
       "explanation": "systemd gestiona servicios, unidades y el arranque; se administra con systemctl."
     },
     {
       "stem": "¿Qué protocolo se usa habitualmente para administrar un servidor Linux de forma remota?",
-      "options": ["SSH", "RDP", "SMTP", "SNMP"],
+      "options": [
+        "SSH",
+        "RDP",
+        "SMTP",
+        "SNMP"
+      ],
       "correct": "a",
       "explanation": "SSH permite acceder a la shell remota de forma cifrada y autenticada."
     },
     {
       "stem": "¿Qué permite Samba en Linux?",
       "options": [
-        "Compartir ficheros e imprimir con clientes Windows",
         "Compilar el kernel",
+        "Compartir ficheros e imprimir con clientes Windows",
         "Gestionar contenedores",
         "Servir correo"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Samba implementa SMB/CIFS y permite compartir recursos con redes Windows, además de poder actuar como controlador de dominio."
     },
     {
       "stem": "¿Qué es Hyper-V?",
       "options": [
-        "Un hipervisor de Microsoft para virtualización",
-        "Un servidor web",
         "Un protocolo de correo",
+        "Un servidor web",
+        "Un hipervisor de Microsoft para virtualización",
         "Un sistema de ficheros"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "Hyper-V es el hipervisor de Microsoft; permite crear y gestionar máquinas virtuales."
     },
     {
       "stem": "¿Qué principio de seguridad debe aplicarse a las cuentas de administrador?",
       "options": [
-        "Mínimo privilegio y uso separado de la cuenta diaria",
+        "Desactivar la auditoría",
         "Compartir una única cuenta para todo el equipo",
         "Usar la misma contraseña siempre",
-        "Desactivar la auditoría"
+        "Mínimo privilegio y uso separado de la cuenta diaria"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El mínimo privilegio reduce el impacto de un error o robo de credenciales; las cuentas de administrador no deben usarse para tareas diarias."
     },
     {
@@ -133,5 +213,16 @@
       "correct": "a",
       "explanation": "La operación incluye copias, monitorización, actualizaciones y revisión de logs; sin ello la disponibilidad no está garantizada."
     }
+  ],
+  "memorizar": [
+    "AD DS centraliza usuarios y equipos; Kerberos autentica en el dominio.",
+    "DNS y DHCP son servicios básicos; sin ellos la red deja de funcionar.",
+    "GPO aplica configuración centralizada a equipos y usuarios.",
+    "En Linux, systemd gestiona servicios y SSH el acceso remoto."
+  ],
+  "errores": [
+    "Instalar todos los roles en un único servidor sin separar funciones.",
+    "Confundir alta disponibilidad con copia de seguridad.",
+    "Usar cuentas de administrador para tareas diarias."
   ]
 }

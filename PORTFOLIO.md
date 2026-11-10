@@ -36,6 +36,9 @@ servidor.
 - **40 prácticas de 10 preguntas** (400 preguntas) con respuesta razonada y enlace al texto oficial
   cuando se cita un artículo.
 - **Temario completo**: 0 pendientes y 0 solo resumen; los 40 temas están publicados.
+- **Calidad revisada**: 40/40 fichas con «Lo que hay que memorizar» y «Errores típicos»; 5 temas
+  reforzados (II.15, II.16, II.17, III.18, III.22) y letra correcta equilibrada (100 a/b/c/d).
+  Detalle en [CALIDAD-TEMARIO.md](docs/CALIDAD-TEMARIO.md).
 - Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14,
   II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26,
   IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, IV.33, V.34, V.35, V.36, V.37, V.38, V.39 y V.40.
@@ -98,7 +101,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **52/52** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **53/53** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -131,6 +134,8 @@ servidor.
   explícita (D-034).
 - **Comunicación:** demo navegable, capturas a dos anchos y documentación de límites sin prometer de
   más.
+- **Calidad de contenido:** auditoría de los 40 temas, refuerzo de los 5 más delgados y equilibrio de
+  la letra correcta; evidencias en `CALIDAD-TEMARIO.md`.
 
 ## 7. Límites dichos
 
@@ -151,7 +156,7 @@ servidor.
 
 ## 9. Revisión final y qué queda
 
-- **52/52** comprobaciones, también a **390 px**; capturas nuevas en
+- **53/53** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
 - **40/40** temas completos: I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7.
@@ -159,4 +164,4 @@ servidor.
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 52/52 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 53/53 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

@@ -85,6 +85,8 @@ interface TopicContent {
   readonly practicaStatus: PracticaStatus;
   readonly source: DemoSource;
   readonly sections: readonly DemoSection[];
+  readonly memorizar: readonly string[];
+  readonly errores: readonly string[];
   readonly practiceSlug?: string;
 }
 
@@ -1130,6 +1132,8 @@ function Tema({ path }: { path: string }) {
     practicaStatus: 'pendiente',
     source: { label: '', url: '' },
     sections: [],
+    memorizar: [],
+    errores: [],
   };
   if (topic.apuntesStatus === 'pendiente') {
     return <PendingTopic topic={topic} summary={summary} />;
@@ -1191,6 +1195,22 @@ function Tema({ path }: { path: string }) {
         <p className="hint">
           Contenido propio de la demo a partir de la fuente citada; no reproduce texto de academias.
         </p>
+      </section>
+      <section className="card">
+        <h2>Lo que hay que memorizar</h2>
+        <ul className="demo-memorizar">
+          {topic.memorizar.map((punto) => (
+            <li key={punto}>{punto}</li>
+          ))}
+        </ul>
+      </section>
+      <section className="card">
+        <h2>Errores típicos</h2>
+        <ul className="demo-memorizar">
+          {topic.errores.map((error) => (
+            <li key={error}>{error}</li>
+          ))}
+        </ul>
       </section>
       {practice !== undefined ? (
         <section className="card">

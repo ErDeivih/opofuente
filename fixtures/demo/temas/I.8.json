@@ -25,12 +25,32 @@
     {
       "heading": "Tabla de clases de personal",
       "table": {
-        "columns": ["Clase", "Vínculo", "Característica"],
+        "columns": [
+          "Clase",
+          "Vínculo",
+          "Característica"
+        ],
         "rows": [
-          ["Funcionario de carrera", "Estatutario, permanente", "Ocupa plaza de plantilla; derecho administrativo"],
-          ["Funcionario interino", "Estatutario, temporal", "Cubre plaza vacante o sustituye; no consolida la plaza"],
-          ["Personal laboral", "Contrato de trabajo", "Rige el derecho laboral y el convenio"],
-          ["Personal eventual", "Nombramiento libre", "Confianza o asesoramiento; cese libre"]
+          [
+            "Funcionario de carrera",
+            "Estatutario, permanente",
+            "Ocupa plaza de plantilla; derecho administrativo"
+          ],
+          [
+            "Funcionario interino",
+            "Estatutario, temporal",
+            "Cubre plaza vacante o sustituye; no consolida la plaza"
+          ],
+          [
+            "Personal laboral",
+            "Contrato de trabajo",
+            "Rige el derecho laboral y el convenio"
+          ],
+          [
+            "Personal eventual",
+            "Nombramiento libre",
+            "Confianza o asesoramiento; cese libre"
+          ]
         ]
       }
     },
@@ -43,45 +63,45 @@
     {
       "stem": "¿Cuáles son las clases de empleados públicos del TREBEP?",
       "options": [
-        "Funcionarios de carrera, interinos, personal laboral y personal eventual",
         "Funcionarios, autónomos, becarios y voluntarios",
+        "Funcionarios de carrera, interinos, personal laboral y personal eventual",
         "Solo funcionarios de carrera y personal laboral fijo",
         "Funcionarios, militares y personal estatutario"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El TREBEP distingue funcionarios de carrera, funcionarios interinos, personal laboral y personal eventual."
     },
     {
       "stem": "¿Qué caracteriza al personal eventual?",
       "options": [
         "Ocupa una plaza de plantilla con carácter permanente",
-        "Realiza funciones de confianza o asesoramiento especial y su cese es libre",
         "Accede por oposición y tiene carrera administrativa",
+        "Realiza funciones de confianza o asesoramiento especial y su cese es libre",
         "Solo puede ser personal laboral indefinido"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "El personal eventual desempeña funciones de confianza o asesoramiento y es nombrado y cesado libremente; no es una vía de acceso a la función pública de carrera."
     },
     {
       "stem": "¿Cuándo puede nombrarse un funcionario interino?",
       "options": [
-        "Para cubrir una plaza vacante cuando no sea posible hacerlo con un funcionario de carrera o para sustituir a un titular",
+        "Para sustituir al alcalde en sus funciones políticas",
         "Para crear una plaza nueva sin pasar por el Pleno",
         "Para ascender directamente a un funcionario de carrera",
-        "Para sustituir al alcalde en sus funciones políticas"
+        "Para cubrir una plaza vacante cuando no sea posible hacerlo con un funcionario de carrera o para sustituir a un titular"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La interinidad cubre necesidades urgentes y temporales, como plazas vacantes o sustituciones, sin consolidar la plaza."
     },
     {
       "stem": "¿Quién aprueba la plantilla y la relación de puestos de trabajo de un ayuntamiento?",
       "options": [
-        "El Alcalde",
         "El Pleno",
+        "El Alcalde",
         "La Junta de Gobierno Local",
         "El interventor"
       ],
-      "correct": "b",
+      "correct": "a",
       "explanation": "La plantilla y la RPT son competencia del Pleno, dentro de sus atribuciones de organización."
     },
     {
@@ -99,33 +119,33 @@
       "stem": "¿Qué es la relación de puestos de trabajo?",
       "options": [
         "El listado de los empleados que trabajan cada día",
-        "La descripción de cada puesto: denominación, grupo, retribuciones y requisitos",
         "El contrato del personal laboral",
+        "La descripción de cada puesto: denominación, grupo, retribuciones y requisitos",
         "El calendario de vacaciones"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "La RPT describe los puestos y sus condiciones; la plantilla es el conjunto de plazas dotadas."
     },
     {
       "stem": "¿Cuáles son retribuciones básicas?",
       "options": [
         "El complemento de productividad y las gratificaciones",
-        "El sueldo, los trienios y las pagas extraordinarias",
+        "Las dietas por desplazamiento",
         "El complemento específico y el de puesto",
-        "Las dietas por desplazamiento"
+        "El sueldo, los trienios y las pagas extraordinarias"
       ],
-      "correct": "b",
+      "correct": "d",
       "explanation": "Las retribuciones básicas son sueldo, trienios y pagas extraordinarias; el complemento de puesto, el específico y la productividad son complementarias."
     },
     {
       "stem": "¿Qué implica la excedencia voluntaria?",
       "options": [
-        "Mantener el servicio activo sin trabajar",
         "No prestar servicio activo, con los derechos que la ley reconoce según el tipo de excedencia",
+        "Mantener el servicio activo sin trabajar",
         "Perder definitivamente la condición de funcionario",
         "Ser sancionado por falta grave"
       ],
-      "correct": "b",
+      "correct": "a",
       "explanation": "La excedencia supone no prestar servicio activo; sus efectos y derechos dependen del tipo de excedencia."
     },
     {
@@ -143,12 +163,25 @@
       "stem": "¿Quiénes son funcionarios con habilitación de carácter nacional en un ayuntamiento?",
       "options": [
         "El alcalde y los concejales",
-        "El secretario, el interventor y el tesorero",
         "Los técnicos de informática",
+        "El secretario, el interventor y el tesorero",
         "Los agentes de la policía local"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "Secretario, interventor y tesorero son funcionarios con habilitación nacional que ejercen fe pública y control interno."
     }
+  ],
+  "memorizar": [
+    "Cuatro clases de empleados públicos del TREBEP: funcionarios de carrera, funcionarios interinos, personal laboral y personal eventual.",
+    "Funcionarios con habilitación de carácter nacional en el ámbito local: secretario, interventor y tesorero, con funciones de fe pública y control interno.",
+    "La plantilla y la relación de puestos de trabajo (RPT) las aprueba el Pleno; la RPT describe denominación, grupo, retribuciones complementarias, requisitos y forma de provisión.",
+    "Retribuciones básicas: sueldo, trienios y pagas extraordinarias; complementarias: complemento de puesto, complemento específico, productividad y gratificaciones por servicios extraordinarios.",
+    "La selección se rige por igualdad, mérito, capacidad y publicidad, y los sistemas ordinarios son la oposición y el concurso-oposición."
+  ],
+  "errores": [
+    "Confundir la plantilla (conjunto de plazas dotadas) con la relación de puestos de trabajo (descripción de cada puesto).",
+    "Confundir al funcionario interino (temporal, no consolida la plaza) con el personal eventual (confianza o asesoramiento, cese libre).",
+    "Olvidar que la plantilla y la RPT son competencia del Pleno, no del Alcalde.",
+    "Confundir las retribuciones básicas con las complementarias: el complemento de puesto y el complemento específico no son básicas."
   ]
 }

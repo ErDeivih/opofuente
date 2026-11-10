@@ -98,55 +98,55 @@
       "stem": "¿Qué propiedad de la seguridad garantiza que solo las personas autorizadas accedan a la información?",
       "options": [
         "Integridad",
-        "Confidencialidad",
+        "Trazabilidad",
         "Disponibilidad",
-        "Trazabilidad"
+        "Confidencialidad"
       ],
-      "correct": "b",
+      "correct": "d",
       "explanation": "La confidencialidad limita el acceso a las personas y sistemas autorizados. La integridad protege la exactitud y la disponibilidad garantiza el acceso cuando se necesita."
     },
     {
       "stem": "En el análisis de riesgos, el nivel de riesgo se obtiene normalmente:",
       "options": [
-        "Sumando amenaza y vulnerabilidad",
-        "Dividiendo el impacto entre las salvaguardas",
         "Multiplicando probabilidad por impacto",
+        "Dividiendo el impacto entre las salvaguardas",
+        "Sumando amenaza y vulnerabilidad",
         "Restando el riesgo residual al riesgo inicial"
       ],
-      "correct": "c",
+      "correct": "a",
       "explanation": "El riesgo se estima combinando la probabilidad de que la amenaza aproveche una vulnerabilidad con el impacto o daño que causaría."
     },
     {
       "stem": "¿Qué es el riesgo residual?",
       "options": [
         "El riesgo antes de aplicar salvaguardas",
-        "El riesgo que asume el proveedor externo",
+        "El riesgo que queda después de aplicar las salvaguardas",
         "La suma de todas las amenazas identificadas",
-        "El riesgo que queda después de aplicar las salvaguardas"
+        "El riesgo que asume el proveedor externo"
       ],
-      "correct": "d",
+      "correct": "b",
       "explanation": "Tras aplicar las salvaguardas queda un riesgo residual, que la dirección debe aceptar de forma consciente y documentada."
     },
     {
       "stem": "¿Qué norma especifica los requisitos de un sistema de gestión de la seguridad de la información?",
       "options": [
-        "ISO/IEC 27001",
-        "ISO/IEC 27002",
         "MAGERIT",
+        "ISO/IEC 27002",
+        "ISO/IEC 27001",
         "ISO/IEC 20000-1"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "ISO/IEC 27001 contiene los requisitos del SGSI y es certificable. ISO/IEC 27002 es una guía de controles, MAGERIT una metodología de riesgos y 20000-1 se refiere a gestión de servicios."
     },
     {
       "stem": "¿Qué contiene el Anexo A de ISO/IEC 27001?",
       "options": [
         "La plantilla de la declaración de aplicabilidad",
-        "El catálogo de controles de referencia agrupados por temas",
+        "El catálogo de activos de la organización",
         "El procedimiento de auditoría interna",
-        "El catálogo de activos de la organización"
+        "El catálogo de controles de referencia agrupados por temas"
       ],
-      "correct": "b",
+      "correct": "d",
       "explanation": "El Anexo A recoge los controles de referencia agrupados en cuatro temas: organizativos, de personas, físicos y tecnológicos."
     },
     {
@@ -164,22 +164,22 @@
       "stem": "¿Qué opción de tratamiento del riesgo consiste en contratar un ciberseguro?",
       "options": [
         "Mitigar",
-        "Evitar",
+        "Transferir",
         "Aceptar",
-        "Transferir"
+        "Evitar"
       ],
-      "correct": "d",
+      "correct": "b",
       "explanation": "Transferir el riesgo consiste en trasladar total o parcialmente las consecuencias a un tercero, por ejemplo mediante un seguro o un contrato con garantías."
     },
     {
       "stem": "Si un atacante modifica una factura sin ser detectado, ¿qué propiedad de la seguridad se ha vulnerado?",
       "options": [
         "Disponibilidad",
-        "Integridad",
         "Confidencialidad",
+        "Integridad",
         "Autenticidad del usuario"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "La integridad garantiza que la información es exacta y no se modifica sin control; una alteración no detectada es un fallo de integridad."
     },
     {
@@ -187,22 +187,35 @@
       "options": [
         "El cortafuegos perimetral",
         "El antivirus del puesto de trabajo",
-        "La política de seguridad aprobada por la dirección",
-        "El cifrado del disco duro"
+        "El cifrado del disco duro",
+        "La política de seguridad aprobada por la dirección"
       ],
-      "correct": "c",
+      "correct": "d",
       "explanation": "La política de seguridad es un control organizativo; el cortafuegos, el antivirus y el cifrado son controles técnicos."
     },
     {
       "stem": "¿Qué es ISO/IEC 27002?",
       "options": [
-        "La norma certificable de requisitos del SGSI",
+        "Una guía de buenas prácticas que detalla los controles",
         "La metodología española de análisis de riesgos",
         "El reglamento europeo de protección de datos",
-        "Una guía de buenas prácticas que detalla los controles"
+        "La norma certificable de requisitos del SGSI"
       ],
-      "correct": "d",
+      "correct": "a",
       "explanation": "ISO/IEC 27002 es una guía de buenas prácticas que desarrolla y explica los controles; la norma certificable de requisitos es ISO/IEC 27001."
     }
+  ],
+  "memorizar": [
+    "Triada CIA: confidencialidad (solo accede quien está autorizado), integridad (la información es exacta y no se altera sin control) y disponibilidad (está accesible cuando se necesita).",
+    "Riesgo = probabilidad × impacto; el riesgo residual es el que queda tras aplicar las salvaguardas y nunca es cero.",
+    "Opciones de tratamiento del riesgo: mitigar o reducir, evitar, transferir (seguro, externalización) y aceptar el riesgo residual.",
+    "ISO/IEC 27001 fija los requisitos certificables del SGSI y su Anexo A agrupa los controles en organizativos, de personas, físicos y tecnológicos; ISO/IEC 27002 es la guía que detalla los controles.",
+    "MAGERIT valora cada activo en cinco dimensiones: disponibilidad, integridad, confidencialidad, autenticidad y trazabilidad."
+  ],
+  "errores": [
+    "Confundir confidencialidad con integridad: cifrar un documento no impide que se modifique sin control.",
+    "Creer que el riesgo residual puede ser cero o que la evaluación de riesgos se hace una sola vez.",
+    "Confundir ISO/IEC 27001 (requisitos certificables del SGSI) con ISO/IEC 27002 (guía de buenas prácticas de controles).",
+    "Confundir transferir el riesgo (seguro o externalización) con aceptarlo."
   ]
 }

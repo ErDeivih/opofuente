@@ -13,13 +13,37 @@
     {
       "heading": "Los impuestos municipales",
       "table": {
-        "columns": ["Impuesto", "Hecho imponible", "Exigencia"],
+        "columns": [
+          "Impuesto",
+          "Hecho imponible",
+          "Exigencia"
+        ],
         "rows": [
-          ["Impuesto sobre Bienes Inmuebles (IBI)", "Titularidad de bienes inmuebles rústicos y urbanos y de derechos reales sobre ellos", "Obligatorio"],
-          ["Impuesto sobre Actividades Económicas (IAE)", "Ejercicio de actividades económicas en el término municipal", "Obligatorio, con exenciones legales (entre ellas, las personas físicas)"],
-          ["Impuesto sobre Vehículos de Tracción Mecánica (IVTM)", "Titularidad de vehículos de tracción mecánica aptos para circular", "Obligatorio"],
-          ["Impuesto sobre el Incremento de Valor de los Terrenos de Naturaleza Urbana (IIVTNU)", "Incremento de valor de los terrenos urbanos puesto de manifiesto en la transmisión o en la constitución de derechos reales", "Obligatorio, con la regulación municipal que exige la ley"],
-          ["Impuesto sobre Construcciones, Instalaciones y Obras (ICIO)", "Realización de construcciones, instalaciones u obras que requieran licencia urbanística", "Potestativo: el ayuntamiento decide si lo exige"]
+          [
+            "Impuesto sobre Bienes Inmuebles (IBI)",
+            "Titularidad de bienes inmuebles rústicos y urbanos y de derechos reales sobre ellos",
+            "Obligatorio"
+          ],
+          [
+            "Impuesto sobre Actividades Económicas (IAE)",
+            "Ejercicio de actividades económicas en el término municipal",
+            "Obligatorio, con exenciones legales (entre ellas, las personas físicas)"
+          ],
+          [
+            "Impuesto sobre Vehículos de Tracción Mecánica (IVTM)",
+            "Titularidad de vehículos de tracción mecánica aptos para circular",
+            "Obligatorio"
+          ],
+          [
+            "Impuesto sobre el Incremento de Valor de los Terrenos de Naturaleza Urbana (IIVTNU)",
+            "Incremento de valor de los terrenos urbanos puesto de manifiesto en la transmisión o en la constitución de derechos reales",
+            "Obligatorio, con la regulación municipal que exige la ley"
+          ],
+          [
+            "Impuesto sobre Construcciones, Instalaciones y Obras (ICIO)",
+            "Realización de construcciones, instalaciones u obras que requieran licencia urbanística",
+            "Potestativo: el ayuntamiento decide si lo exige"
+          ]
         ]
       }
     },
@@ -43,63 +67,126 @@
   "questions": [
     {
       "stem": "¿Cuál es el texto vigente que regula las haciendas locales en el régimen común?",
-      "options": ["La Ley 39/1988, de 28 de diciembre, en su redacción original", "El texto refundido aprobado por el Real Decreto Legislativo 2/2004, de 5 de marzo", "La Ley 7/1985, de 2 de abril, reguladora de las Bases del Régimen Local", "La Ley Orgánica 2/2012, de 27 de abril"],
-      "correct": "b",
+      "options": [
+        "La Ley 39/1988, de 28 de diciembre, en su redacción original",
+        "La Ley 7/1985, de 2 de abril, reguladora de las Bases del Régimen Local",
+        "El texto refundido aprobado por el Real Decreto Legislativo 2/2004, de 5 de marzo",
+        "La Ley Orgánica 2/2012, de 27 de abril"
+      ],
+      "correct": "c",
       "explanation": "La Ley 39/1988 fue refundida: su texto vigente es el aprobado por el Real Decreto Legislativo 2/2004 (TRLRHL), que es la norma que se maneja hoy."
     },
     {
       "stem": "¿Qué recurso se exige por la utilización privativa o el aprovechamiento especial del dominio público local?",
-      "options": ["El precio público", "La tasa", "La contribución especial", "El impuesto"],
-      "correct": "b",
+      "options": [
+        "El precio público",
+        "El impuesto",
+        "La contribución especial",
+        "La tasa"
+      ],
+      "correct": "d",
       "explanation": "La tasa grava la utilización privativa o el aprovechamiento especial del dominio público y la prestación de servicios o actividades de solicitud o recepción obligatoria."
     },
     {
       "stem": "¿Cuál es el límite máximo de la base imponible de las contribuciones especiales?",
-      "options": ["El 50 % del coste soportado por la entidad", "El 75 % del coste soportado por la entidad", "El 90 % del coste soportado por la entidad", "El 100 % del coste de la obra"],
-      "correct": "c",
+      "options": [
+        "El 90 % del coste soportado por la entidad",
+        "El 75 % del coste soportado por la entidad",
+        "El 50 % del coste soportado por la entidad",
+        "El 100 % del coste de la obra"
+      ],
+      "correct": "a",
       "explanation": "La base imponible de las contribuciones especiales no puede superar el 90 % del coste que soporta la entidad, descontadas las subvenciones."
     },
     {
       "stem": "¿Cuándo se devengan las contribuciones especiales?",
-      "options": ["Cuando se aprueba la ordenanza fiscal", "Cuando se ejecutan las obras o comienza a prestarse el servicio", "Cuando el beneficiario presenta la solicitud de licencia", "El 1 de enero de cada ejercicio"],
+      "options": [
+        "Cuando se aprueba la ordenanza fiscal",
+        "Cuando se ejecutan las obras o comienza a prestarse el servicio",
+        "Cuando el beneficiario presenta la solicitud de licencia",
+        "El 1 de enero de cada ejercicio"
+      ],
       "correct": "b",
       "explanation": "El devengo se produce al ejecutarse las obras o al iniciarse el servicio, sin perjuicio de que la entidad pueda exigir anticipos conforme a la ley."
     },
     {
       "stem": "¿Cuál de los siguientes impuestos municipales tiene carácter potestativo?",
-      "options": ["El Impuesto sobre Bienes Inmuebles", "El Impuesto sobre Actividades Económicas", "El Impuesto sobre Vehículos de Tracción Mecánica", "El Impuesto sobre Construcciones, Instalaciones y Obras"],
-      "correct": "d",
+      "options": [
+        "El Impuesto sobre Bienes Inmuebles",
+        "El Impuesto sobre Actividades Económicas",
+        "El Impuesto sobre Construcciones, Instalaciones y Obras",
+        "El Impuesto sobre Vehículos de Tracción Mecánica"
+      ],
+      "correct": "c",
       "explanation": "El ICIO es potestativo: el ayuntamiento decide si lo exige. El IBI, el IAE y el IVTM son impuestos obligatorios del régimen común."
     },
     {
       "stem": "¿Qué órgano aprueba el presupuesto general de una entidad local?",
-      "options": ["La Intervención", "El presidente de la corporación", "El Pleno de la corporación", "La diputación provincial"],
-      "correct": "c",
+      "options": [
+        "La Intervención",
+        "El presidente de la corporación",
+        "La diputación provincial",
+        "El Pleno de la corporación"
+      ],
+      "correct": "d",
       "explanation": "El Pleno aprueba el presupuesto; la Intervención lo prepara y el presidente lo presenta, pero la competencia para aprobarlo corresponde al Pleno."
     },
     {
       "stem": "Si el presupuesto de la entidad local no está aprobado antes del 1 de enero, ¿qué ocurre?",
-      "options": ["Se prorroga automáticamente el presupuesto del ejercicio anterior", "Se aplica directamente el presupuesto del Estado", "La entidad queda disuelta hasta aprobar el nuevo", "Se aprueba por el Pleno sin información pública"],
+      "options": [
+        "Se prorroga automáticamente el presupuesto del ejercicio anterior",
+        "Se aplica directamente el presupuesto del Estado",
+        "La entidad queda disuelta hasta aprobar el nuevo",
+        "Se aprueba por el Pleno sin información pública"
+      ],
       "correct": "a",
       "explanation": "La prórroga automática del presupuesto anterior garantiza que la entidad pueda seguir funcionando hasta que se apruebe el nuevo."
     },
     {
       "stem": "¿Qué norma orgánica somete a las entidades locales a la estabilidad presupuestaria y la sostenibilidad financiera?",
-      "options": ["La Ley Orgánica 2/2012, de 27 de abril", "La Ley 39/1988, de 28 de diciembre", "La Ley 7/1985, de 2 de abril", "La Ley 19/2013, de 9 de diciembre"],
-      "correct": "a",
+      "options": [
+        "La Ley 39/1988, de 28 de diciembre",
+        "La Ley Orgánica 2/2012, de 27 de abril",
+        "La Ley 7/1985, de 2 de abril",
+        "La Ley 19/2013, de 9 de diciembre"
+      ],
+      "correct": "b",
       "explanation": "La Ley Orgánica 2/2012, de Estabilidad Presupuestaria y Sostenibilidad Financiera, extiende sus principios a todas las administraciones, incluidas las entidades locales."
     },
     {
       "stem": "Cuando surge un gasto necesario no previsto y no existe crédito suficiente, ¿qué modificación presupuestaria procede?",
-      "options": ["Una transferencia de crédito", "Un suplemento de crédito o un crédito extraordinario", "Una incorporación de remanentes", "Una baja por anulación"],
-      "correct": "b",
+      "options": [
+        "Una transferencia de crédito",
+        "Una incorporación de remanentes",
+        "Un suplemento de crédito o un crédito extraordinario",
+        "Una baja por anulación"
+      ],
+      "correct": "c",
       "explanation": "Los créditos extraordinarios y los suplementos de crédito cubren gastos no previstos o insuficientemente dotados; la transferencia solo mueve crédito entre partidas y la incorporación de remanentes se refiere a créditos del ejercicio anterior."
     },
     {
       "stem": "¿A quién corresponde el control externo de las cuentas de las entidades locales?",
-      "options": ["A la Intervención municipal", "Al Pleno de la corporación", "Al Tribunal de Cuentas, sin perjuicio de las cámaras de cuentas autonómicas", "Al Consejo de Ministros"],
-      "correct": "c",
+      "options": [
+        "A la Intervención municipal",
+        "Al Pleno de la corporación",
+        "Al Consejo de Ministros",
+        "Al Tribunal de Cuentas, sin perjuicio de las cámaras de cuentas autonómicas"
+      ],
+      "correct": "d",
       "explanation": "La Intervención ejerce el control interno; el control externo corresponde al Tribunal de Cuentas, sin perjuicio de las competencias de las cámaras de cuentas de las comunidades autónomas."
     }
+  ],
+  "memorizar": [
+    "La Ley 39/1988, de 28 de diciembre, desarrolló las haciendas locales; su texto vigente es el texto refundido aprobado por el Real Decreto Legislativo 2/2004, de 5 de marzo (TRLRHL).",
+    "Impuestos municipales obligatorios: IBI, IAE, IVTM e IIVTNU; el ICIO es potestativo y el ayuntamiento decide si lo exige.",
+    "Contribuciones especiales: la base imponible no puede superar el 90 % del coste soportado por la entidad, descontadas las subvenciones; el devengo se produce al ejecutarse las obras o al empezar el servicio.",
+    "El Pleno aprueba el presupuesto; si no está aprobado antes del 1 de enero se prorroga automáticamente el del ejercicio anterior.",
+    "La Ley Orgánica 2/2012, de 27 de abril, de Estabilidad Presupuestaria y Sostenibilidad Financiera, somete a las entidades locales a estabilidad, sostenibilidad y regla de gasto; el control externo corresponde al Tribunal de Cuentas."
+  ],
+  "errores": [
+    "Confundir la tasa (tributo por uso del dominio público o por servicios de solicitud o recepción obligatoria) con el precio público (ingreso de derecho público no tributario).",
+    "Confundir el ICIO (potestativo) con el IBI, el IAE y el IVTM, que son impuestos obligatorios.",
+    "Confundir el 90 % del coste soportado (límite de la base de las contribuciones especiales) con el 100 % del coste de la obra.",
+    "Confundir el control interno (Intervención) con el control externo (Tribunal de Cuentas y cámaras de cuentas autonómicas)."
   ]
 }

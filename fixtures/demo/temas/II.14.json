@@ -21,13 +21,37 @@
     {
       "heading": "Permisos: comparación rápida",
       "table": {
-        "columns": ["Aspecto", "Windows (NTFS)", "Linux"],
+        "columns": [
+          "Aspecto",
+          "Windows (NTFS)",
+          "Linux"
+        ],
         "rows": [
-          ["Modelo", "Listas de control de acceso (ACL)", "Bits rwx para propietario, grupo y otros"],
-          ["Administrador", "Cuenta de administrador + UAC", "root + sudo"],
-          ["Cambiar permisos", "Propiedades → Seguridad o icacls", "chmod / chown"],
-          ["Herencia", "Sí, desde la carpeta padre", "Permisos por fichero y directorio"],
-          ["Registro de eventos", "Visor de eventos", "journalctl / archivos de log"]
+          [
+            "Modelo",
+            "Listas de control de acceso (ACL)",
+            "Bits rwx para propietario, grupo y otros"
+          ],
+          [
+            "Administrador",
+            "Cuenta de administrador + UAC",
+            "root + sudo"
+          ],
+          [
+            "Cambiar permisos",
+            "Propiedades → Seguridad o icacls",
+            "chmod / chown"
+          ],
+          [
+            "Herencia",
+            "Sí, desde la carpeta padre",
+            "Permisos por fichero y directorio"
+          ],
+          [
+            "Registro de eventos",
+            "Visor de eventos",
+            "journalctl / archivos de log"
+          ]
         ]
       }
     },
@@ -44,12 +68,12 @@
     {
       "stem": "¿Cuál es una función del sistema operativo?",
       "options": [
-        "Gestionar procesos, memoria, ficheros y usuarios",
+        "Sustituir al cortafuegos de red",
         "Diseñar la base de datos de la aplicación",
         "Redactar las leyes de la organización",
-        "Sustituir al cortafuegos de red"
+        "Gestionar procesos, memoria, ficheros y usuarios"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El sistema operativo gestiona los recursos del equipo (procesos, memoria, almacenamiento, usuarios y dispositivos)."
     },
     {
@@ -65,25 +89,35 @@
     },
     {
       "stem": "¿Qué sistema de ficheros es el habitual en Windows y permite permisos NTFS?",
-      "options": ["FAT32", "NTFS", "ext4", "ISO 9660"],
+      "options": [
+        "FAT32",
+        "NTFS",
+        "ext4",
+        "ISO 9660"
+      ],
       "correct": "b",
       "explanation": "NTFS es el sistema de ficheros habitual de Windows y soporta permisos, herencia y auditoría."
     },
     {
       "stem": "¿Qué significado tiene el permiso «rwx» para el propietario en Linux?",
       "options": [
-        "Lectura, escritura y ejecución",
-        "Solo lectura",
         "Lectura y escritura, sin ejecución",
+        "Solo lectura",
+        "Lectura, escritura y ejecución",
         "Ejecución y borrado"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "r = lectura, w = escritura y x = ejecución; los tres bits pueden combinarse."
     },
     {
       "stem": "¿Con qué comando se cambian los permisos de un fichero en Linux?",
-      "options": ["chmod", "chown", "systemctl", "apt"],
-      "correct": "a",
+      "options": [
+        "apt",
+        "chown",
+        "systemctl",
+        "chmod"
+      ],
+      "correct": "d",
       "explanation": "chmod modifica los permisos; chown cambia el propietario y el grupo."
     },
     {
@@ -100,24 +134,34 @@
     {
       "stem": "¿Qué herramienta de Windows muestra los eventos y errores del sistema?",
       "options": [
-        "El Visor de eventos",
         "El Bloc de notas",
+        "El Visor de eventos",
         "La calculadora",
         "El explorador de archivos"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El Visor de eventos recoge registros de aplicación, seguridad y sistema que ayudan a diagnosticar fallos."
     },
     {
       "stem": "¿Qué comando de Linux permite consultar los registros del sistema con systemd?",
-      "options": ["journalctl", "chmod", "pacman", "top"],
-      "correct": "a",
+      "options": [
+        "pacman",
+        "chmod",
+        "journalctl",
+        "top"
+      ],
+      "correct": "c",
       "explanation": "journalctl consulta el registro de systemd; top muestra procesos y consumo de recursos."
     },
     {
       "stem": "¿Qué gestor de paquetes es habitual en Debian y Ubuntu?",
-      "options": ["apt", "dnf", "pacman", "brew"],
-      "correct": "a",
+      "options": [
+        "brew",
+        "dnf",
+        "pacman",
+        "apt"
+      ],
+      "correct": "d",
       "explanation": "apt se usa en la familia Debian/Ubuntu; dnf en Fedora y pacman en Arch."
     },
     {
@@ -131,5 +175,17 @@
       "correct": "a",
       "explanation": "Los fallos de acceso suelen estar en usuarios, grupos, ACL o herencia; conviene diagnosticarlos antes de actuaciones destructivas."
     }
+  ],
+  "memorizar": [
+    "El sistema operativo gestiona procesos, memoria, almacenamiento, usuarios y permisos, dispositivos e interfaz de usuario.",
+    "En Windows, UAC pide confirmación para acciones que requieren privilegios elevados, también con sesión de administrador; el sistema de ficheros habitual es NTFS.",
+    "En Linux cada usuario tiene UID y grupo; root es el superusuario y sudo ejecuta comandos concretos con privilegios elevados.",
+    "Los permisos de Linux se expresan en tres bloques (propietario, grupo y otros) con los bits r, w y x; chmod cambia permisos y chown el propietario.",
+    "Registros: Visor de eventos en Windows y journalctl (systemd) en Linux; gestores de paquetes: apt en Debian/Ubuntu, dnf en Fedora y pacman en Arch."
+  ],
+  "errores": [
+    "Confundir chmod (permisos) con chown (propietario y grupo).",
+    "Creer que UAC solo actúa cuando la sesión no es de administrador: también avisa al administrador.",
+    "Confundir los gestores de paquetes: apt es de Debian/Ubuntu, dnf de Fedora y pacman de Arch."
   ]
 }

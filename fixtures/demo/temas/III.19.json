@@ -17,13 +17,37 @@
     {
       "heading": "Máquina virtual frente a contenedor",
       "table": {
-        "columns": ["Criterio", "Máquina virtual", "Contenedor"],
+        "columns": [
+          "Criterio",
+          "Máquina virtual",
+          "Contenedor"
+        ],
         "rows": [
-          ["Kernel", "Propio, invitado", "Comparte el del anfitrión"],
-          ["Arranque", "Lento (minutos)", "Rápido (segundos)"],
-          ["Densidad", "Menor", "Mayor"],
-          ["Aislamiento", "Fuerte, a nivel de hardware virtual", "A nivel de proceso, más ligero"],
-          ["Uso típico", "Sistemas operativos completos y legados", "Microservicios y aplicaciones empaquetadas"]
+          [
+            "Kernel",
+            "Propio, invitado",
+            "Comparte el del anfitrión"
+          ],
+          [
+            "Arranque",
+            "Lento (minutos)",
+            "Rápido (segundos)"
+          ],
+          [
+            "Densidad",
+            "Menor",
+            "Mayor"
+          ],
+          [
+            "Aislamiento",
+            "Fuerte, a nivel de hardware virtual",
+            "A nivel de proceso, más ligero"
+          ],
+          [
+            "Uso típico",
+            "Sistemas operativos completos y legados",
+            "Microservicios y aplicaciones empaquetadas"
+          ]
         ]
       }
     },
@@ -44,51 +68,56 @@
     {
       "stem": "¿Qué es un hipervisor de tipo 1?",
       "options": [
-        "Un programa que se instala dentro de otro sistema operativo",
         "Un hipervisor que se ejecuta directamente sobre el hardware",
+        "Un programa que se instala dentro de otro sistema operativo",
         "Un contenedor de aplicaciones",
         "Un tipo de disco virtual"
       ],
-      "correct": "b",
+      "correct": "a",
       "explanation": "El hipervisor de tipo 1 (bare metal) se ejecuta directamente sobre el hardware; el de tipo 2 lo hace sobre un sistema anfitrión."
     },
     {
       "stem": "¿Qué comparte un contenedor con el sistema anfitrión?",
       "options": [
-        "El kernel",
         "Una copia completa del sistema operativo",
+        "El kernel",
         "El hipervisor",
         "El hardware de virtualización"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Los contenedores comparten el kernel del anfitrión y aíslan procesos con namespaces y cgroups."
     },
     {
       "stem": "¿Qué diferencia hay entre una imagen y un contenedor?",
       "options": [
-        "La imagen es una plantilla inmutable; el contenedor es una instancia en ejecución",
-        "El contenedor es la plantilla y la imagen la instancia",
         "Son exactamente lo mismo",
+        "El contenedor es la plantilla y la imagen la instancia",
+        "La imagen es una plantilla inmutable; el contenedor es una instancia en ejecución",
         "La imagen solo existe en la nube"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La imagen es el artefacto inmutable que se construye; el contenedor es un proceso creado a partir de ella."
     },
     {
       "stem": "¿Para qué sirven los namespaces en los contenedores?",
       "options": [
         "Para limitar el uso de CPU y memoria",
-        "Para aislar la visibilidad de procesos, red y sistema de ficheros",
+        "Para comprimir imágenes",
         "Para crear máquinas virtuales",
-        "Para comprimir imágenes"
+        "Para aislar la visibilidad de procesos, red y sistema de ficheros"
       ],
-      "correct": "b",
+      "correct": "d",
       "explanation": "Los namespaces aíslan qué ve cada contenedor; los cgroups limitan los recursos que consume."
     },
     {
       "stem": "¿Qué tecnología permite limitar la CPU y la memoria de un contenedor?",
-      "options": ["Namespaces", "Cgroups", "Hipervisor tipo 2", "Dockerfile"],
-      "correct": "b",
+      "options": [
+        "Cgroups",
+        "Namespaces",
+        "Hipervisor tipo 2",
+        "Dockerfile"
+      ],
+      "correct": "a",
       "explanation": "Los cgroups (control groups) aplican límites y cuotas de recursos a los procesos del contenedor."
     },
     {
@@ -105,46 +134,59 @@
     {
       "stem": "¿Qué es un Dockerfile?",
       "options": [
-        "Un fichero de texto con las instrucciones para construir una imagen",
-        "Una máquina virtual",
         "Un registro de imágenes",
+        "Una máquina virtual",
+        "Un fichero de texto con las instrucciones para construir una imagen",
         "Un tipo de hipervisor"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "El Dockerfile describe los pasos para construir la imagen de forma reproducible."
     },
     {
       "stem": "¿Por qué un snapshot de una VM no es una copia de seguridad?",
       "options": [
         "Porque ocupa poco espacio",
-        "Porque suele estar en el mismo almacenamiento y se pierde con él",
+        "Porque no se puede programar",
         "Porque solo funciona en Linux",
-        "Porque no se puede programar"
+        "Porque suele estar en el mismo almacenamiento y se pierde con él"
       ],
-      "correct": "b",
+      "correct": "d",
       "explanation": "El snapshot comparte el almacenamiento de la VM; si este se pierde o se cifra, también se pierde el snapshot."
     },
     {
       "stem": "¿Qué riesgo específico tienen las imágenes de contenedor?",
       "options": [
-        "Que no se pueden actualizar",
         "Que una imagen con malware o dependencias vulnerables se replica en cada despliegue",
+        "Que no se pueden actualizar",
         "Que no admiten volúmenes",
         "Que siempre necesitan un hipervisor"
       ],
-      "correct": "b",
+      "correct": "a",
       "explanation": "La imagen es la base de todos los contenedores; hay que usar registros fiables, escanear y actualizar sus dependencias."
     },
     {
       "stem": "¿Qué caso encaja mejor con un contenedor que con una VM?",
       "options": [
-        "Una aplicación web empaquetada que se despliega varias veces al día",
         "Un sistema operativo legado que exige un kernel concreto",
+        "Una aplicación web empaquetada que se despliega varias veces al día",
         "Un servidor de base de datos con requisitos de hardware especiales",
         "Un escritorio remoto completo"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Los contenedores son adecuados para aplicaciones empaquetadas y despliegues frecuentes; los sistemas completos y legados encajan mejor en VM."
     }
+  ],
+  "memorizar": [
+    "El hipervisor de tipo 1 (bare metal) se ejecuta sobre el hardware (ESXi, Hyper-V); el de tipo 2 lo hace sobre un sistema operativo anfitrión (VirtualBox).",
+    "El contenedor comparte el kernel del anfitrión: los namespaces aíslan la visibilidad y los cgroups limitan CPU, memoria y E/S.",
+    "Imagen = plantilla inmutable construida con un Dockerfile; contenedor = instancia en ejecución; registro = almacén de imágenes.",
+    "Máquina virtual: kernel propio, arranque en minutos y aislamiento fuerte. Contenedor: arranque en segundos, más densidad y aislamiento a nivel de proceso.",
+    "Un snapshot comparte el almacenamiento de la máquina virtual y no es una copia de seguridad."
+  ],
+  "errores": [
+    "Confundir imagen (plantilla inmutable) con contenedor (instancia en ejecución).",
+    "Confundir namespaces (qué ve el contenedor) con cgroups (recursos que consume).",
+    "Creer que un contenedor lleva su propio sistema operativo y kernel: comparte el del anfitrión.",
+    "Pensar que un snapshot de máquina virtual sustituye a una copia de seguridad."
   ]
 }

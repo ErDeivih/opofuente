@@ -13,13 +13,31 @@
     {
       "heading": "Clases de contrato",
       "table": {
-        "columns": ["Contrato", "Objeto y rasgo esencial"],
+        "columns": [
+          "Contrato",
+          "Objeto y rasgo esencial"
+        ],
         "rows": [
-          ["Obras", "Ejecución de una obra, así como la redacción del proyecto y la dirección facultativa cuando se contraten conjuntamente; puede ser de primer establecimiento, reforma, restauración o demolición."],
-          ["Concesión de obras", "Ejecución de obras cuya contraprestación consiste en el derecho a explotar la obra, asumiendo el concesionario el riesgo operacional."],
-          ["Concesión de servicios", "Gestión de un servicio público con contraprestación en el derecho a explotar el servicio y riesgo operacional del concesionario."],
-          ["Suministro", "Adquisición, arrendamiento financiero o arrendamiento de bienes muebles, con o sin instalación."],
-          ["Servicios", "Prestaciones de hacer, incluidas las de mantenimiento, consultoría, informática o formación."]
+          [
+            "Obras",
+            "Ejecución de una obra, así como la redacción del proyecto y la dirección facultativa cuando se contraten conjuntamente; puede ser de primer establecimiento, reforma, restauración o demolición."
+          ],
+          [
+            "Concesión de obras",
+            "Ejecución de obras cuya contraprestación consiste en el derecho a explotar la obra, asumiendo el concesionario el riesgo operacional."
+          ],
+          [
+            "Concesión de servicios",
+            "Gestión de un servicio público con contraprestación en el derecho a explotar el servicio y riesgo operacional del concesionario."
+          ],
+          [
+            "Suministro",
+            "Adquisición, arrendamiento financiero o arrendamiento de bienes muebles, con o sin instalación."
+          ],
+          [
+            "Servicios",
+            "Prestaciones de hacer, incluidas las de mantenimiento, consultoría, informática o formación."
+          ]
         ]
       }
     },
@@ -43,63 +61,126 @@
   "questions": [
     {
       "stem": "¿Qué ley regula actualmente la contratación del sector público en España?",
-      "options": ["La Ley 30/2007, de Contratos del Sector Público", "La Ley 9/2017, de Contratos del Sector Público", "La Ley 39/2015, del Procedimiento Administrativo Común", "La Ley 7/1985, de Bases del Régimen Local"],
-      "correct": "b",
+      "options": [
+        "La Ley 9/2017, de Contratos del Sector Público",
+        "La Ley 30/2007, de Contratos del Sector Público",
+        "La Ley 39/2015, del Procedimiento Administrativo Común",
+        "La Ley 7/1985, de Bases del Régimen Local"
+      ],
+      "correct": "a",
       "explanation": "La Ley 9/2017, de 8 de noviembre, de Contratos del Sector Público, es la norma vigente y transpone las Directivas 2014/23/UE y 2014/24/UE."
     },
     {
       "stem": "¿Cuál de las siguientes NO es una clase de contrato regulada por la LCSP?",
-      "options": ["Contrato de obras", "Contrato de suministro", "Concesión de servicios", "Contrato de gestión de servicios públicos"],
-      "correct": "d",
+      "options": [
+        "Contrato de obras",
+        "Contrato de gestión de servicios públicos",
+        "Concesión de servicios",
+        "Contrato de suministro"
+      ],
+      "correct": "b",
       "explanation": "La LCSP clasifica los contratos en obras, concesión de obras, concesión de servicios, suministro y servicios; la gestión de servicios públicos fue una categoría del régimen anterior y hoy se reconduce a la concesión de servicios."
     },
     {
       "stem": "En la concesión de obras, ¿qué rasgo define la contraprestación del concesionario?",
-      "options": ["Un precio cierto pagado por la Administración", "La entrega de bienes muebles", "El pago de tasas por el usuario en todo caso", "El derecho a explotar la obra asumiendo el riesgo operacional"],
-      "correct": "d",
+      "options": [
+        "Un precio cierto pagado por la Administración",
+        "La entrega de bienes muebles",
+        "El derecho a explotar la obra asumiendo el riesgo operacional",
+        "El pago de tasas por el usuario en todo caso"
+      ],
+      "correct": "c",
       "explanation": "El rasgo definitorio de la concesión es que el concesionario asume el riesgo operacional y se retribuye mediante la explotación de la obra."
     },
     {
       "stem": "¿Cuál es el importe máximo de un contrato menor de servicios o de suministro?",
-      "options": ["15.000 euros", "30.000 euros", "40.000 euros", "100.000 euros"],
-      "correct": "c",
+      "options": [
+        "15.000 euros",
+        "30.000 euros",
+        "100.000 euros",
+        "40.000 euros"
+      ],
+      "correct": "d",
       "explanation": "Los contratos menores de suministro y servicios requieren un valor estimado inferior a 40.000 euros; los de obras, inferior a 15.000 euros."
     },
     {
       "stem": "¿Qué procedimiento permite que cualquier empresario interesado presente oferta sin invitación previa?",
-      "options": ["El restringido", "El negociado", "El diálogo competitivo", "El abierto"],
-      "correct": "d",
+      "options": [
+        "El abierto",
+        "El negociado",
+        "El diálogo competitivo",
+        "El restringido"
+      ],
+      "correct": "a",
       "explanation": "El procedimiento abierto es la regla general: cualquier interesado que acredite solvencia puede presentar oferta; el restringido exige invitación previa."
     },
     {
       "stem": "¿Qué órgano valora las ofertas y propone la adjudicación en el procedimiento abierto?",
-      "options": ["La Intervención", "El Pleno", "La mesa de contratación", "El Consejo de Ministros"],
-      "correct": "c",
+      "options": [
+        "La Intervención",
+        "La mesa de contratación",
+        "El Pleno",
+        "El Consejo de Ministros"
+      ],
+      "correct": "b",
       "explanation": "La mesa de contratación es el órgano colegiado de asistencia que valora las ofertas y propone la adjudicación al órgano de contratación."
     },
     {
       "stem": "¿Qué documento establece las cláusulas administrativas y los criterios de adjudicación de un contrato?",
-      "options": ["El pliego de cláusulas administrativas particulares", "El pliego de prescripciones técnicas", "El informe de necesidad", "El anuncio de licitación"],
-      "correct": "a",
+      "options": [
+        "El informe de necesidad",
+        "El pliego de prescripciones técnicas",
+        "El pliego de cláusulas administrativas particulares",
+        "El anuncio de licitación"
+      ],
+      "correct": "c",
       "explanation": "El PCAP regula los derechos y obligaciones, los criterios de adjudicación y las condiciones del contrato; el PPT define las características técnicas."
     },
     {
       "stem": "La LCSP suprimió la garantía provisional y exige, con carácter general, una garantía definitiva de...",
-      "options": ["El 10 % del presupuesto base de licitación", "El 2 % del valor estimado", "El 5 % del precio de adjudicación", "No se exige garantía definitiva"],
-      "correct": "c",
+      "options": [
+        "El 10 % del presupuesto base de licitación",
+        "El 2 % del valor estimado",
+        "No se exige garantía definitiva",
+        "El 5 % del precio de adjudicación"
+      ],
+      "correct": "d",
       "explanation": "La garantía definitiva se fija con carácter general en el 5 % del precio de adjudicación y responde de la correcta ejecución del contrato."
     },
     {
       "stem": "¿Qué recurso específico cabe contra los actos de preparación y adjudicación de los contratos del sector público?",
-      "options": ["El recurso de alzada ante el alcalde", "El recurso de reposición en todo caso", "El recurso especial en materia de contratación", "No cabe ningún recurso"],
-      "correct": "c",
+      "options": [
+        "El recurso especial en materia de contratación",
+        "El recurso de reposición en todo caso",
+        "El recurso de alzada ante el alcalde",
+        "No cabe ningún recurso"
+      ],
+      "correct": "a",
       "explanation": "El recurso especial en materia de contratación se resuelve por el Tribunal Administrativo Central de Recursos Contractuales o el órgano autonómico equivalente."
     },
     {
       "stem": "¿Qué dos tipos de solvencia debe acreditar el licitador?",
-      "options": ["Económica y financiera, y técnica o profesional", "Política y social", "Penal y fiscal", "Técnica y comercial"],
-      "correct": "a",
+      "options": [
+        "Política y social",
+        "Económica y financiera, y técnica o profesional",
+        "Penal y fiscal",
+        "Técnica y comercial"
+      ],
+      "correct": "b",
       "explanation": "La LCSP exige acreditar solvencia económica y financiera y solvencia técnica o profesional, en los términos y con los medios que fija la ley."
     }
+  ],
+  "memorizar": [
+    "Ley 9/2017, de 8 de noviembre, de Contratos del Sector Público (LCSP), que transpone las Directivas 2014/23/UE y 2014/24/UE.",
+    "Contratos menores: obras por valor estimado inferior a 15.000 euros y suministros y servicios inferiores a 40.000 euros; exigen justificar necesidad, precio y elección del adjudicatario y no cabe fraccionar.",
+    "Clases de contrato de la LCSP: obras, concesión de obras, concesión de servicios, suministro y servicios.",
+    "Garantía definitiva: con carácter general el 5 % del precio de adjudicación; la LCSP suprimió la garantía provisional.",
+    "Recurso especial en materia de contratación: potestativo, ante el Tribunal Administrativo Central de Recursos Contractuales o el órgano autonómico equivalente, y antes de la vía contencioso-administrativa."
+  ],
+  "errores": [
+    "Confundir el PCAP (cláusulas administrativas y criterios de adjudicación) con el PPT (prescripciones técnicas).",
+    "Confundir el procedimiento abierto (cualquier interesado puede ofertar sin invitación) con el restringido (solo ofertan los seleccionados por su solvencia).",
+    "Confundir los umbrales del contrato menor: 15.000 euros en obras y 40.000 euros en suministros y servicios.",
+    "Olvidar que fraccionar el contrato para eludir la licitación está prohibido aunque cada contrato quede por debajo del umbral."
   ]
 }

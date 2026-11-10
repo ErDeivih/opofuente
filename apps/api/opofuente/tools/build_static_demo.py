@@ -64,6 +64,16 @@ def _cargar_temas(base: Path) -> dict[str, dict[str, Any]]:
                 raise RuntimeError(f"{fichero.name}: «{pregunta.get('stem')}» sin letra correcta")
             if not str(pregunta.get("explanation") or "").strip():
                 raise RuntimeError(f"{fichero.name}: «{pregunta.get('stem')}» sin explicación")
+        memorizar = data.get("memorizar")
+        errores = data.get("errores")
+        if not isinstance(memorizar, list) or not 3 <= len(memorizar) <= 5:
+            raise RuntimeError(f"{fichero.name}: `memorizar` debe tener entre 3 y 5 puntos")
+        if not all(isinstance(punto, str) and punto.strip() for punto in memorizar):
+            raise RuntimeError(f"{fichero.name}: `memorizar` tiene un punto vacío")
+        if not isinstance(errores, list) or not 2 <= len(errores) <= 4:
+            raise RuntimeError(f"{fichero.name}: `errores` debe tener entre 2 y 4 puntos")
+        if not all(isinstance(punto, str) and punto.strip() for punto in errores):
+            raise RuntimeError(f"{fichero.name}: `errores` tiene un punto vacío")
         data["source"] = data.get("source") or {"label": "Apuntes propios de la demo", "url": ""}
         temas[path] = data
     return temas
@@ -190,6 +200,8 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
             "questionCount": len(preguntas),
             "source": tema["source"],
             "sections": tema["sections"],
+            "memorizar": tema["memorizar"],
+            "errores": tema["errores"],
         }
         if practica_estado == "con_practica":
             slug = _slug(path)

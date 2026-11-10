@@ -29,12 +29,32 @@
     {
       "heading": "Tabla POUR",
       "table": {
-        "columns": ["Principio", "Pregunta", "Ejemplo"],
+        "columns": [
+          "Principio",
+          "Pregunta",
+          "Ejemplo"
+        ],
         "rows": [
-          ["Perceptible", "¿Se puede percibir?", "Texto alternativo y contraste"],
-          ["Operable", "¿Se puede usar?", "Teclado y foco visible"],
-          ["Comprensible", "¿Se entiende?", "Lenguaje claro y errores explicados"],
-          ["Robusto", "¿Funciona con ayudas?", "HTML semántico y compatibilidad"]
+          [
+            "Perceptible",
+            "¿Se puede percibir?",
+            "Texto alternativo y contraste"
+          ],
+          [
+            "Operable",
+            "¿Se puede usar?",
+            "Teclado y foco visible"
+          ],
+          [
+            "Comprensible",
+            "¿Se entiende?",
+            "Lenguaje claro y errores explicados"
+          ],
+          [
+            "Robusto",
+            "¿Funciona con ayudas?",
+            "HTML semántico y compatibilidad"
+          ]
         ]
       }
     },
@@ -47,29 +67,34 @@
     {
       "stem": "¿Qué garantiza la accesibilidad?",
       "options": [
-        "Que cualquier persona, incluidas las personas con discapacidad, pueda usar el producto",
         "Que la web cargue más rápido",
+        "Que cualquier persona, incluidas las personas con discapacidad, pueda usar el producto",
         "Que el diseño sea más bonito",
         "Que no haya contraseñas"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "La accesibilidad elimina barreras para que todas las personas puedan percibir, entender, navegar e interactuar."
     },
     {
       "stem": "¿Qué significa el principio «perceptible» de WCAG?",
       "options": [
-        "Que la información se puede percibir por distintos sentidos y tecnologías",
-        "Que la web sea visible en Google",
         "Que el servidor esté disponible",
+        "Que la web sea visible en Google",
+        "Que la información se puede percibir por distintos sentidos y tecnologías",
         "Que el contenido sea gratuito"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "Perceptible incluye alternativas textuales, contraste, subtítulos y no depender solo de un sentido."
     },
     {
       "stem": "¿Qué nivel de WCAG se suele exigir en las administraciones?",
-      "options": ["AA", "A", "AAA", "Ninguno"],
-      "correct": "a",
+      "options": [
+        "Ninguno",
+        "A",
+        "AAA",
+        "AA"
+      ],
+      "correct": "d",
       "explanation": "El nivel AA es el objetivo habitual; AAA es más exigente y no siempre alcanzable para todo el contenido."
     },
     {
@@ -86,29 +111,34 @@
     {
       "stem": "¿Qué debe tener cada campo de un formulario?",
       "options": [
-        "Una etiqueta asociada y mensajes de error claros",
         "Solo un placeholder",
+        "Una etiqueta asociada y mensajes de error claros",
         "Un color diferente",
         "Un icono sin texto"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "La etiqueta identifica el campo; los errores deben explicar qué corregir y asociarse al campo."
     },
     {
       "stem": "¿Qué texto alternativo debe llevar una imagen decorativa?",
-      "options": ["Uno vacío (`alt=\"\"`)", "El nombre del fichero", "Una descripción larga", "Ninguno, se elimina el alt"],
-      "correct": "a",
+      "options": [
+        "Una descripción larga",
+        "El nombre del fichero",
+        "Uno vacío (`alt=\"\"`)",
+        "Ninguno, se elimina el alt"
+      ],
+      "correct": "c",
       "explanation": "Las imágenes decorativas se ocultan a las tecnologías de apoyo con alt vacío; las informativas necesitan descripción."
     },
     {
       "stem": "¿Qué es una trampa de foco?",
       "options": [
-        "Una situación en la que el foco no puede salir de un componente con el teclado",
+        "Una imagen sin cargar",
         "Un error de contraste",
         "Un enlace roto",
-        "Una imagen sin cargar"
+        "Una situación en la que el foco no puede salir de un componente con el teclado"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "Las trampas de foco impiden navegar; el usuario debe poder salir con el teclado."
     },
     {
@@ -125,24 +155,37 @@
     {
       "stem": "¿Cómo se evalúa de forma completa la accesibilidad?",
       "options": [
-        "Con herramientas automáticas, revisión manual y pruebas con personas usuarias",
         "Solo con una herramienta automática",
+        "Con herramientas automáticas, revisión manual y pruebas con personas usuarias",
         "Solo mirando el diseño",
         "Solo con el validador de HTML"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Las herramientas detectan parte de los problemas; la revisión manual y las pruebas reales son imprescindibles."
     },
     {
       "stem": "¿Qué relación hay entre accesibilidad y usabilidad?",
       "options": [
-        "Son conceptos distintos pero se refuerzan: lo accesible suele ser más usable",
-        "Son exactamente lo mismo",
         "La usabilidad solo aplica a personas con discapacidad",
+        "Son exactamente lo mismo",
+        "Son conceptos distintos pero se refuerzan: lo accesible suele ser más usable",
         "La accesibilidad solo aplica a móviles"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La accesibilidad elimina barreras y la usabilidad mide la facilidad de uso; mejorar una suele mejorar la otra."
     }
+  ],
+  "memorizar": [
+    "Principios POUR: perceptible, operable, comprensible y robusto.",
+    "Niveles WCAG A, AA y AAA; el nivel AA es el objetivo habitual de las administraciones.",
+    "HTML semántico: encabezados jerárquicos, listas, tablas con cabeceras y campos de formulario con etiqueta asociada.",
+    "Imagen decorativa con alt=\"\"; imagen informativa con texto alternativo; vídeo con subtítulos y, cuando proceda, audiodescripción.",
+    "EN 301 549 armoniza en la UE los requisitos de accesibilidad de productos y servicios TIC."
+  ],
+  "errores": [
+    "Confundir accesibilidad (elimina barreras) con usabilidad (eficacia, eficiencia y satisfacción).",
+    "Creer que basta con herramientas automáticas: hacen falta revisión manual y pruebas con personas usuarias.",
+    "Dar por suficiente el nivel A de WCAG o confundirlo con el AA.",
+    "Usar el color como única forma de transmitir información o poner texto alternativo a imágenes decorativas."
   ]
 }

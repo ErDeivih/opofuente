@@ -188,44 +188,44 @@
       "stem": "¿En qué capa del modelo OSI se decide el encaminamiento de paquetes entre redes distintas?",
       "options": [
         "Enlace de datos",
-        "Red",
+        "Sesión",
         "Transporte",
-        "Sesión"
+        "Red"
       ],
-      "correct": "b",
+      "correct": "d",
       "explanation": "La capa de red (nivel 3) direcciona lógicamente y encamina paquetes; IP es su protocolo característico."
     },
     {
       "stem": "¿Cuál de estas direcciones IPv4 es privada según el RFC 1918?",
       "options": [
-        "172.32.0.1",
-        "11.0.0.1",
         "10.20.30.40",
+        "11.0.0.1",
+        "172.32.0.1",
         "192.169.1.1"
       ],
-      "correct": "c",
+      "correct": "a",
       "explanation": "El RFC 1918 reserva 10.0.0.0/8, 172.16.0.0/12 y 192.168.0.0/16. La dirección 172.32.0.1 queda fuera del rango privado 172.16.0.0-172.31.255.255, y 192.169.1.1 no está en 192.168.0.0/16."
     },
     {
       "stem": "¿Qué máscara corresponde a un prefijo /26?",
       "options": [
-        "255.255.255.192",
         "255.255.255.128",
+        "255.255.255.192",
         "255.255.255.224",
         "255.255.255.0"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Un /26 tiene 26 bits a 1: los tres primeros octetos completos y los dos primeros bits del cuarto, es decir, 255.255.255.192."
     },
     {
       "stem": "En una subred /26, ¿cuántos hosts utilizables hay?",
       "options": [
         "30",
-        "62",
         "64",
+        "62",
         "126"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "Quedan 6 bits de host: 2^6 = 64 direcciones, menos la dirección de red y la de broadcast, dan 62 hosts utilizables."
     },
     {
@@ -242,23 +242,23 @@
     {
       "stem": "¿Qué añade una etiqueta 802.1Q a una trama Ethernet?",
       "options": [
-        "La dirección MAC de destino",
-        "El puerto TCP de origen",
         "El identificador de VLAN y la prioridad",
+        "El puerto TCP de origen",
+        "La dirección MAC de destino",
         "La dirección IP del siguiente salto"
       ],
-      "correct": "c",
+      "correct": "a",
       "explanation": "802.1Q inserta 4 bytes con el identificador de VLAN (12 bits) y la prioridad de clase de servicio; es la base del trunking entre switches."
     },
     {
       "stem": "¿Qué protocolo de encaminamiento dinámico es de estado de enlace y se usa habitualmente como IGP?",
       "options": [
-        "OSPF",
         "RIP",
+        "OSPF",
         "BGP",
         "ARP"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "OSPF construye una base de datos de la topología y calcula las rutas con el algoritmo de Dijkstra. RIP es vector de distancia, BGP es un protocolo exterior y ARP no es un protocolo de encaminamiento."
     },
     {
@@ -266,22 +266,35 @@
       "options": [
         "22",
         "25",
-        "443",
-        "53"
+        "53",
+        "443"
       ],
-      "correct": "d",
+      "correct": "c",
       "explanation": "DNS usa el puerto 53, sobre UDP para las consultas y sobre TCP cuando la respuesta es grande o se transfiere una zona."
     },
     {
       "stem": "¿Cuál es el orden del intercambio DHCP clásico?",
       "options": [
-        "Discover, Offer, Request, Acknowledge",
+        "Request, Offer, Discover, Acknowledge",
         "Offer, Discover, Acknowledge, Request",
         "Discover, Request, Offer, Acknowledge",
-        "Request, Offer, Discover, Acknowledge"
+        "Discover, Offer, Request, Acknowledge"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "DORA: el cliente descubre (Discover), el servidor ofrece (Offer), el cliente solicita (Request) y el servidor confirma la concesión (Acknowledge)."
     }
+  ],
+  "memorizar": [
+    "OSI: 7 capas (física, enlace, red, transporte, sesión, presentación y aplicación); TCP/IP: 4 capas (acceso a la red, internet, transporte y aplicación).",
+    "IPv4 = 32 bits; IPv6 = 128 bits; una subred con h bits de host tiene 2^h − 2 hosts utilizables (salvo /31 y /32).",
+    "Rangos privados RFC 1918: 10.0.0.0/8, 172.16.0.0/12 (hasta 172.31.255.255) y 192.168.0.0/16; link-local 169.254.0.0/16; loopback 127.0.0.0/8.",
+    "802.1Q: etiqueta de 4 bytes con identificador de VLAN de 12 bits (1-4094) y prioridad; puerto de acceso = una VLAN sin etiquetar; troncal = varias VLAN etiquetadas.",
+    "Encaminamiento: RIP es vector de distancia (máximo 15 saltos), OSPF de estado de enlace y BGP de vector de camino entre sistemas autónomos; DNS usa 53 y DHCP 67/68."
+  ],
+  "errores": [
+    "Confundir el rango privado 172.16.0.0/12 con todo 172.x: termina en 172.31.255.255.",
+    "Creer que una subred /26 tiene 64 hosts útiles: son 62, porque se descuentan red y broadcast.",
+    "Confundir RIP (vector de distancia, máximo 15 saltos) con OSPF (estado de enlace) y BGP (exterior, entre sistemas autónomos).",
+    "Pensar que IPv6 usa broadcast o ARP: usa multicast y NDP."
   ]
 }

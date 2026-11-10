@@ -29,13 +29,31 @@
     {
       "heading": "Tabla de restricciones",
       "table": {
-        "columns": ["Restricción", "Qué garantiza"],
+        "columns": [
+          "Restricción",
+          "Qué garantiza"
+        ],
         "rows": [
-          ["PRIMARY KEY", "Identifica cada fila; única y no nula"],
-          ["FOREIGN KEY", "Integridad referencial entre tablas"],
-          ["UNIQUE", "Valores no repetidos en una columna o conjunto"],
-          ["NOT NULL", "Obliga a informar un valor"],
-          ["CHECK", "Cumple una condición lógica"]
+          [
+            "PRIMARY KEY",
+            "Identifica cada fila; única y no nula"
+          ],
+          [
+            "FOREIGN KEY",
+            "Integridad referencial entre tablas"
+          ],
+          [
+            "UNIQUE",
+            "Valores no repetidos en una columna o conjunto"
+          ],
+          [
+            "NOT NULL",
+            "Obliga a informar un valor"
+          ],
+          [
+            "CHECK",
+            "Cumple una condición lógica"
+          ]
         ]
       }
     },
@@ -48,12 +66,12 @@
     {
       "stem": "¿Qué es una clave primaria?",
       "options": [
-        "Una columna que puede repetirse y admite nulos",
         "Una clave candidata elegida que identifica de forma única cada fila y no admite nulos",
+        "Una columna que puede repetirse y admite nulos",
         "Cualquier columna de texto",
         "Un índice opcional"
       ],
-      "correct": "b",
+      "correct": "a",
       "explanation": "La clave primaria identifica cada fila de forma única y exige integridad de entidad: no puede ser nula."
     },
     {
@@ -70,23 +88,23 @@
     {
       "stem": "¿Qué exige la primera forma normal (1FN)?",
       "options": [
-        "Valores atómicos y sin listas repetidas en una celda",
-        "Que no haya claves foráneas",
         "Que todas las columnas sean numéricas",
+        "Que no haya claves foráneas",
+        "Valores atómicos y sin listas repetidas en una celda",
         "Que exista una clave foránea en cada tabla"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La 1FN exige que cada celda contenga un valor atómico, sin grupos repetidos ni listas."
     },
     {
       "stem": "¿Qué problema elimina la segunda forma normal (2FN)?",
       "options": [
-        "Las dependencias parciales de parte de la clave",
+        "Los valores nulos",
         "Los índices duplicados",
         "Las transacciones concurrentes",
-        "Los valores nulos"
+        "Las dependencias parciales de parte de la clave"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La 2FN exige 1FN y que ningún atributo no clave dependa solo de una parte de la clave compuesta."
     },
     {
@@ -103,29 +121,34 @@
     {
       "stem": "¿Qué significa la integridad de entidad?",
       "options": [
-        "Que la clave primaria no puede ser nula",
         "Que toda tabla debe tener una clave foránea",
+        "Que la clave primaria no puede ser nula",
         "Que los datos deben estar normalizados",
         "Que las transacciones deben ser duraderas"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "La integridad de entidad exige que la clave primaria identifique la fila y no sea nula."
     },
     {
       "stem": "¿Para qué sirve un índice?",
       "options": [
-        "Para acelerar búsquedas y uniones",
-        "Para garantizar la atomicidad",
         "Para sustituir la clave primaria",
+        "Para garantizar la atomicidad",
+        "Para acelerar búsquedas y uniones",
         "Para eliminar la necesidad de normalizar"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "Los índices aceleran lecturas, aunque ocupan espacio y penalizan las escrituras; no sustituyen claves ni restricciones."
     },
     {
       "stem": "¿Qué propiedad ACID garantiza que una transacción se aplique completa o no se aplique?",
-      "options": ["Atomicidad", "Consistencia", "Aislamiento", "Durabilidad"],
-      "correct": "a",
+      "options": [
+        "Durabilidad",
+        "Consistencia",
+        "Aislamiento",
+        "Atomicidad"
+      ],
+      "correct": "d",
       "explanation": "La atomicidad trata la transacción como una unidad indivisible: todo o nada."
     },
     {
@@ -141,9 +164,27 @@
     },
     {
       "stem": "¿Qué restricción obliga a que un valor no se repita?",
-      "options": ["PRIMARY KEY únicamente", "UNIQUE", "CHECK", "DEFAULT"],
+      "options": [
+        "PRIMARY KEY únicamente",
+        "UNIQUE",
+        "CHECK",
+        "DEFAULT"
+      ],
       "correct": "b",
       "explanation": "UNIQUE impide valores repetidos; PRIMARY KEY también es única, pero además identifica la fila y no admite nulos."
     }
+  ],
+  "memorizar": [
+    "Clave primaria: clave candidata elegida que identifica cada fila y no admite nulos (integridad de entidad).",
+    "Clave foránea: referencia a la clave primaria de otra tabla y garantiza la integridad referencial.",
+    "1FN: valores atómicos; 2FN: sin dependencias parciales de parte de la clave; 3FN: sin dependencias transitivas entre columnas no clave.",
+    "ACID: atomicidad (todo o nada), consistencia (restricciones), aislamiento (sin estados intermedios) y durabilidad (lo confirmado sobrevive).",
+    "Restricciones SQL: `PRIMARY KEY`, `FOREIGN KEY`, `UNIQUE`, `NOT NULL`, `CHECK` y `DEFAULT`."
+  ],
+  "errores": [
+    "Confundir `UNIQUE` con `PRIMARY KEY`: la primaria también identifica la fila y no admite nulos; `UNIQUE` solo impide valores repetidos.",
+    "Confundir superclave con clave candidata: la candidata es la superclave mínima, sin columnas sobrantes.",
+    "Confundir integridad de entidad (clave primaria no nula) con integridad referencial (clave foránea que apunta a una fila existente).",
+    "Creer que normalizar es siempre mejor: desnormalizar puede mejorar las lecturas a cambio de redundancia y riesgo de incoherencia."
   ]
 }

@@ -143,34 +143,34 @@
     {
       "stem": "¿Cuál es la diferencia esencial entre un SLA y una OLA?",
       "options": [
-        "El SLA se firma con el cliente y la OLA es un acuerdo interno entre equipos",
+        "El SLA solo mide la disponibilidad y la OLA los tiempos",
         "El SLA es interno y la OLA es con el cliente",
         "La OLA es un contrato con un proveedor externo",
-        "El SLA solo mide la disponibilidad y la OLA los tiempos"
+        "El SLA se firma con el cliente y la OLA es un acuerdo interno entre equipos"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El SLA es el acuerdo con el cliente; la OLA es un acuerdo operativo interno entre equipos de la organización que ayuda a cumplirlo. El contrato con un proveedor externo es el UC."
     },
     {
       "stem": "¿Cómo se determina la prioridad de un ticket?",
       "options": [
-        "Por la antigüedad del ticket",
-        "Por el orden de llegada",
         "Por el impacto y la urgencia",
+        "Por el orden de llegada",
+        "Por la antigüedad del ticket",
         "Por el nivel del técnico asignado"
       ],
-      "correct": "c",
+      "correct": "a",
       "explanation": "La prioridad se calcula combinando el impacto (a cuántos y con qué criticidad afecta) y la urgencia (cuánto empeora si se espera). La antigüedad no la define."
     },
     {
       "stem": "¿Qué documento formaliza una petición de cambio?",
       "options": [
-        "Una RFC",
         "Una OLA",
+        "Una RFC",
         "Un SLA",
         "Un error conocido"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "La petición de cambio (RFC) describe el cambio, su justificación, su evaluación de riesgo y su plan; la autoriza el comité de cambios (CAB)."
     },
     {
@@ -178,21 +178,21 @@
       "options": [
         "Un incidente que todavía no se ha diagnosticado",
         "Un cambio de emergencia ya aplicado",
-        "Una petición de servicio rechazada",
-        "Un problema con causa raíz documentada y una solución temporal probada"
+        "Un problema con causa raíz documentada y una solución temporal probada",
+        "Una petición de servicio rechazada"
       ],
-      "correct": "d",
+      "correct": "c",
       "explanation": "Cuando un problema tiene la causa documentada y existe una solución temporal probada, se convierte en error conocido y el service desk puede aplicarla sin reiniciar la investigación."
     },
     {
       "stem": "¿Qué mide el MTTR?",
       "options": [
         "El tiempo medio entre fallos",
-        "El tiempo medio de reparación o restauración",
+        "El número de tickets abiertos",
         "El porcentaje de casos resueltos al primer contacto",
-        "El número de tickets abiertos"
+        "El tiempo medio de reparación o restauración"
       ],
-      "correct": "b",
+      "correct": "d",
       "explanation": "El MTTR (mean time to repair/restore) mide el tiempo medio que se tarda en restaurar el servicio tras un incidente."
     },
     {
@@ -210,23 +210,36 @@
       "stem": "¿Qué tipo de cambio se usa para resolver un incidente grave con la mínima aprobación previa?",
       "options": [
         "Cambio estándar",
-        "Cambio normal",
+        "Cambio de emergencia",
         "Cambio de alcance",
-        "Cambio de emergencia"
+        "Cambio normal"
       ],
-      "correct": "d",
+      "correct": "b",
       "explanation": "El cambio de emergencia se aplica para resolver un incidente grave con aprobación mínima; después se documenta y se revisa."
     },
     {
       "stem": "¿Qué debe hacer el primer nivel de soporte antes de escalar un caso?",
       "options": [
         "Cerrar el ticket sin más",
-        "Comprobar los casos conocidos y descartar causas básicas",
         "Aplicar un cambio de emergencia",
+        "Comprobar los casos conocidos y descartar causas básicas",
         "Modificar el SLA del cliente"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "El primer nivel registra el caso, comprueba las soluciones conocidas y descarta causas básicas antes de escalar al segundo nivel."
     }
+  ],
+  "memorizar": [
+    "Incidente: interrupción o degradación; se restaura el servicio. Problema: causa raíz; se elimina. Cambio: se pide con una RFC y lo autoriza el CAB. Petición de servicio: solicitud habitual del usuario.",
+    "Tipos de cambio: estándar (preaprobado), normal (evaluación y aprobación) y de emergencia (aprobación mínima para un incidente grave).",
+    "SLA con el cliente, OLA interno entre equipos y UC con un proveedor externo; la cadena es UC → OLA → SLA.",
+    "Prioridad = impacto × urgencia (matriz P1-P4); el escalado puede ser funcional o jerárquico.",
+    "MTTR: tiempo medio de restauración; MTBF: tiempo medio entre fallos; disponibilidad = MTBF / (MTBF + MTTR) × 100; FCR: resolución en el primer contacto."
+  ],
+  "errores": [
+    "Confundir incidente (restaurar el servicio) con problema (eliminar la causa raíz).",
+    "Confundir SLA (cliente) con OLA (interno) y con UC (proveedor externo).",
+    "Creer que la prioridad la fija la antigüedad del ticket: se calcula con impacto y urgencia.",
+    "Confundir MTTR (reparación) con MTBF (tiempo entre fallos)."
   ]
 }

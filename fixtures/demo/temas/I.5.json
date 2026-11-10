@@ -18,13 +18,37 @@
       "heading": "Fases del procedimiento y plazos",
       "body": "El procedimiento se compone de **iniciación, instrucción y terminación**. La iniciación puede ser **de oficio** (por acuerdo del órgano competente, bien por propia iniciativa, orden superior, petición razonada de otro órgano o denuncia) o **a solicitud del interesado**, que presenta una solicitud con sus datos, los hechos, las razones, la petición, el lugar y la fecha y la firma. Si la solicitud no reúne los requisitos, se requiere al interesado para que los subsane en **diez días**, con advertencia de que se le tendrá por desistido si no lo hace.\n\nEn la **instrucción** se practican las pruebas, se solicitan los informes preceptivos y los necesarios y se da audiencia. El trámite de **audiencia** es anterior a la propuesta de resolución y dura entre **diez y quince días**; puede prescindirse de él cuando no figuren en el procedimiento ni se tengan en cuenta otros hechos, alegaciones o pruebas distintas de las del interesado. La **información pública** se abre cuando la naturaleza del procedimiento lo exige, con un plazo mínimo de **veinte días**.\n\nLa **terminación** se estudia en el apartado siguiente. La tabla resume las fases y sus plazos más característicos.",
       "table": {
-        "columns": ["Fase", "Contenido esencial", "Plazo característico"],
+        "columns": [
+          "Fase",
+          "Contenido esencial",
+          "Plazo característico"
+        ],
         "rows": [
-          ["Iniciación", "Acuerdo de oficio o solicitud del interesado; subsanación de defectos", "10 días para subsanar la solicitud"],
-          ["Instrucción", "Prueba e informes preceptivos y necesarios", "El que fije la norma del procedimiento"],
-          ["Audiencia", "Alegaciones y documentos antes de la propuesta de resolución", "Entre 10 y 15 días"],
-          ["Información pública", "Anuncio en el diario oficial y alegaciones de cualquier persona", "Mínimo 20 días"],
-          ["Terminación", "Resolución expresa, desistimiento, renuncia o caducidad", "El plazo máximo para resolver"]
+          [
+            "Iniciación",
+            "Acuerdo de oficio o solicitud del interesado; subsanación de defectos",
+            "10 días para subsanar la solicitud"
+          ],
+          [
+            "Instrucción",
+            "Prueba e informes preceptivos y necesarios",
+            "El que fije la norma del procedimiento"
+          ],
+          [
+            "Audiencia",
+            "Alegaciones y documentos antes de la propuesta de resolución",
+            "Entre 10 y 15 días"
+          ],
+          [
+            "Información pública",
+            "Anuncio en el diario oficial y alegaciones de cualquier persona",
+            "Mínimo 20 días"
+          ],
+          [
+            "Terminación",
+            "Resolución expresa, desistimiento, renuncia o caducidad",
+            "El plazo máximo para resolver"
+          ]
         ]
       }
     },
@@ -44,63 +68,126 @@
   "questions": [
     {
       "stem": "¿Qué ley regula el procedimiento administrativo común de las Administraciones Públicas?",
-      "options": ["La Ley 39/2015, de 1 de octubre", "La Ley 40/2015, de 1 de octubre", "La Ley 7/1985, de 2 de abril", "La Ley 19/2013, de 9 de diciembre"],
-      "correct": "a",
+      "options": [
+        "La Ley 7/1985, de 2 de abril",
+        "La Ley 40/2015, de 1 de octubre",
+        "La Ley 39/2015, de 1 de octubre",
+        "La Ley 19/2013, de 9 de diciembre"
+      ],
+      "correct": "c",
       "explanation": "La Ley 39/2015 regula el procedimiento administrativo común; la Ley 40/2015 regula el régimen jurídico del sector público y la Ley 19/2013 la transparencia y el acceso a la información."
     },
     {
       "stem": "En los procedimientos iniciados a solicitud del interesado, ¿qué sentido tiene el silencio administrativo?",
-      "options": ["Siempre desestimatorio", "Con carácter general estimatorio, salvo las excepciones legales", "Siempre estimatorio", "Depende del órgano que deba resolver"],
-      "correct": "b",
+      "options": [
+        "Siempre desestimatorio",
+        "Depende del órgano que deba resolver",
+        "Siempre estimatorio",
+        "Con carácter general estimatorio, salvo las excepciones legales"
+      ],
+      "correct": "d",
       "explanation": "El artículo 24 establece el silencio estimatorio como regla general, con excepciones legales como el derecho de petición, el dominio público, el medio ambiente o la responsabilidad patrimonial."
     },
     {
       "stem": "Si la norma que regula el procedimiento no fija plazo máximo para resolver, ¿de cuánto tiempo dispone la Administración?",
-      "options": ["Un mes", "Dos meses", "Tres meses", "Seis meses"],
-      "correct": "c",
+      "options": [
+        "Tres meses",
+        "Dos meses",
+        "Un mes",
+        "Seis meses"
+      ],
+      "correct": "a",
       "explanation": "El artículo 21.3 fija en tres meses el plazo máximo cuando la norma del procedimiento no establece otro."
     },
     {
       "stem": "¿Qué plazo hay para interponer el recurso de alzada contra un acto expreso?",
-      "options": ["Diez días", "Quince días", "Veinte días", "Un mes"],
-      "correct": "d",
+      "options": [
+        "Diez días",
+        "Un mes",
+        "Veinte días",
+        "Quince días"
+      ],
+      "correct": "b",
       "explanation": "El artículo 122 concede un mes para interponer la alzada si el acto es expreso; si el acto es presunto puede interponerse en cualquier momento."
     },
     {
       "stem": "¿Ante qué órgano se interpone el recurso de alzada?",
-      "options": ["Ante el órgano superior jerárquico del que dictó el acto", "Ante el mismo órgano que dictó el acto", "Ante el ministro correspondiente en todo caso", "Directamente ante el juez"],
-      "correct": "a",
+      "options": [
+        "Ante el ministro correspondiente en todo caso",
+        "Ante el mismo órgano que dictó el acto",
+        "Ante el órgano superior jerárquico del que dictó el acto",
+        "Directamente ante el juez"
+      ],
+      "correct": "c",
       "explanation": "El artículo 121 configura la alzada como recurso ante el órgano superior jerárquico del que dictó el acto impugnado."
     },
     {
       "stem": "¿Qué recurso puede interponerse, con carácter potestativo, contra un acto que pone fin a la vía administrativa antes de acudir a la jurisdicción?",
-      "options": ["El recurso de alzada", "El recurso de reposición", "El recurso extraordinario de revisión", "La cuestión prejudicial"],
-      "correct": "b",
+      "options": [
+        "El recurso de alzada",
+        "La cuestión prejudicial",
+        "El recurso extraordinario de revisión",
+        "El recurso de reposición"
+      ],
+      "correct": "d",
       "explanation": "El recurso de reposición es potestativo, se interpone ante el mismo órgano que dictó el acto y permite después acudir a la jurisdicción contencioso-administrativa."
     },
     {
       "stem": "¿Qué duración tiene el trámite de audiencia antes de la propuesta de resolución?",
-      "options": ["Entre cinco y diez días", "Entre diez y veinte días", "Entre diez y quince días", "Entre quince y veinte días"],
-      "correct": "c",
+      "options": [
+        "Entre diez y quince días",
+        "Entre diez y veinte días",
+        "Entre cinco y diez días",
+        "Entre quince y veinte días"
+      ],
+      "correct": "a",
       "explanation": "El artículo 82 concede un plazo no inferior a diez días ni superior a quince para alegar y presentar documentos."
     },
     {
       "stem": "¿Cuál es el plazo mínimo del trámite de información pública?",
-      "options": ["Cinco días", "Diez días", "Quince días", "Veinte días"],
-      "correct": "d",
+      "options": [
+        "Cinco días",
+        "Veinte días",
+        "Quince días",
+        "Diez días"
+      ],
+      "correct": "b",
       "explanation": "El artículo 83 exige que el plazo para formular alegaciones en información pública no sea inferior a veinte días."
     },
     {
       "stem": "¿Cómo se computan los plazos señalados por días en el procedimiento administrativo?",
-      "options": ["Por días hábiles, excluyendo sábados, domingos y festivos", "Por días naturales, incluidos sábados y domingos", "Solo por días laborables del interesado", "Siempre por días naturales"],
-      "correct": "a",
+      "options": [
+        "Solo por días laborables del interesado",
+        "Por días naturales, incluidos sábados y domingos",
+        "Por días hábiles, excluyendo sábados, domingos y festivos",
+        "Siempre por días naturales"
+      ],
+      "correct": "c",
       "explanation": "El artículo 30.2 dispone que los plazos por días son hábiles y excluye del cómputo sábados, domingos y festivos."
     },
     {
       "stem": "En un procedimiento sancionador iniciado de oficio, ¿qué efecto produce el vencimiento del plazo máximo sin resolución?",
-      "options": ["El silencio estimatorio", "La caducidad del procedimiento", "El silencio desestimatorio", "La nulidad de pleno derecho"],
-      "correct": "b",
+      "options": [
+        "El silencio estimatorio",
+        "La nulidad de pleno derecho",
+        "El silencio desestimatorio",
+        "La caducidad del procedimiento"
+      ],
+      "correct": "d",
       "explanation": "El artículo 25.1.b establece que, cuando se ejercitan potestades sancionadoras o de gravamen, el vencimiento del plazo produce la caducidad del procedimiento y el archivo de las actuaciones."
     }
+  ],
+  "memorizar": [
+    "Artículo 21.3: el plazo máximo para resolver no puede superar seis meses salvo que una ley o el Derecho de la Unión fijen otro; si la norma no fija plazo, es de tres meses.",
+    "Artículo 24: en los procedimientos a solicitud del interesado el silencio es estimatorio como regla general; es desestimatorio en derecho de petición, dominio y servicio público, medio ambiente, responsabilidad patrimonial y revisión de oficio. En los de oficio con potestades sancionadoras o de intervención el efecto es la caducidad (artículo 25).",
+    "Recurso de alzada: ante el órgano superior jerárquico, un mes si el acto es expreso y en cualquier momento si es presunto; el recurso de reposición es potestativo, ante el mismo órgano, con un mes para interponerlo y resolverlo.",
+    "Plazos: subsanación de la solicitud 10 días; audiencia entre 10 y 15 días; información pública mínimo 20 días; los plazos por días son hábiles, sin sábados, domingos ni festivos (artículo 30).",
+    "Artículo 14: están obligados a relacionarse electrónicamente las personas jurídicas, las entidades sin personalidad jurídica, quienes ejerzan una actividad profesional con colegiación obligatoria y los empleados públicos."
+  ],
+  "errores": [
+    "Confundir la Ley 39/2015 (procedimiento administrativo común) con la Ley 40/2015 (régimen jurídico del sector público).",
+    "Confundir el silencio estimatorio general de la solicitud con la caducidad que se produce cuando la Administración ejerce potestades sancionadoras o de intervención.",
+    "Confundir la alzada (órgano superior jerárquico, contra actos que no agotan la vía) con la reposición (potestativa, ante el mismo órgano, contra actos que agotan la vía).",
+    "Olvidar que los plazos por días son hábiles: excluyen sábados, domingos y festivos."
   ]
 }

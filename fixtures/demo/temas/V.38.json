@@ -29,13 +29,37 @@
     {
       "heading": "Tabla amenaza / control",
       "table": {
-        "columns": ["Amenaza", "Control principal", "Complemento"],
+        "columns": [
+          "Amenaza",
+          "Control principal",
+          "Complemento"
+        ],
         "rows": [
-          ["Ransomware", "Copias inmutables y segmentación", "Respuesta y restauración"],
-          ["Phishing", "MFA y formación", "Filtrado de correo"],
-          ["Robo de credenciales", "MFA y mínimo privilegio", "Detección de accesos anómalos"],
-          ["DDoS", "Mitigación del proveedor", "Límites y redundancia"],
-          ["Vulnerabilidad sin parche", "Gestión de vulnerabilidades", "Segmentación y detección"]
+          [
+            "Ransomware",
+            "Copias inmutables y segmentación",
+            "Respuesta y restauración"
+          ],
+          [
+            "Phishing",
+            "MFA y formación",
+            "Filtrado de correo"
+          ],
+          [
+            "Robo de credenciales",
+            "MFA y mínimo privilegio",
+            "Detección de accesos anómalos"
+          ],
+          [
+            "DDoS",
+            "Mitigación del proveedor",
+            "Límites y redundancia"
+          ],
+          [
+            "Vulnerabilidad sin parche",
+            "Gestión de vulnerabilidades",
+            "Segmentación y detección"
+          ]
         ]
       }
     },
@@ -48,12 +72,12 @@
     {
       "stem": "¿Qué es el ransomware?",
       "options": [
-        "Malware que cifra datos y exige un rescate",
+        "Una técnica de compresión",
         "Un protocolo de correo",
         "Un tipo de copia de seguridad",
-        "Una técnica de compresión"
+        "Malware que cifra datos y exige un rescate"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El ransomware cifra o bloquea datos y pide un pago; la recuperación debe basarse en copias y contención, no en pagar."
     },
     {
@@ -70,68 +94,78 @@
     {
       "stem": "¿Qué reduce el riesgo de robo de credenciales?",
       "options": [
-        "MFA y mínimo privilegio",
         "Compartir contraseñas",
+        "MFA y mínimo privilegio",
         "Desactivar los registros",
         "Usar la misma cuenta para todo"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "La autenticación multifactor y el mínimo privilegio limitan el impacto de una credencial comprometida."
     },
     {
       "stem": "¿Qué es un SIEM?",
       "options": [
-        "Un sistema que centraliza y correlaciona eventos de seguridad",
-        "Un tipo de firewall físico",
         "Un protocolo de correo",
+        "Un tipo de firewall físico",
+        "Un sistema que centraliza y correlaciona eventos de seguridad",
         "Un formato de imagen"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "El SIEM recoge logs y correlaciona eventos para detectar y alertar sobre incidentes."
     },
     {
       "stem": "¿Cuál es el primer paso ante un incidente confirmado?",
       "options": [
-        "Contener el incidente y preservar la evidencia",
+        "Publicar el incidente en redes",
         "Formatear todos los equipos",
         "Pagar el rescate",
-        "Publicar el incidente en redes"
+        "Contener el incidente y preservar la evidencia"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "Contener evita la propagación y preservar evidencia permite investigar; formatear destruye pruebas."
     },
     {
       "stem": "¿Qué fase del ciclo de respuesta corrige la causa del incidente?",
-      "options": ["Erradicación", "Detección", "Preparación", "Recuperación"],
+      "options": [
+        "Erradicación",
+        "Detección",
+        "Preparación",
+        "Recuperación"
+      ],
       "correct": "a",
       "explanation": "La erradicación elimina la causa y las puertas de entrada; la recuperación restaura el servicio."
     },
     {
       "stem": "¿Por qué no se debe pagar un rescate?",
       "options": [
-        "Porque no garantiza la recuperación y financia a los atacantes",
         "Porque siempre es ilegal",
+        "Porque no garantiza la recuperación y financia a los atacantes",
         "Porque las copias no existen",
         "Porque el ransomware no cifra"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Pagar no asegura recuperar los datos, puede financiar el delito y no elimina la persistencia del ataque."
     },
     {
       "stem": "¿Qué plazo general hay para notificar una brecha de datos personales?",
-      "options": ["72 horas", "24 horas", "30 días", "No hay plazo"],
-      "correct": "a",
+      "options": [
+        "30 días",
+        "24 horas",
+        "72 horas",
+        "No hay plazo"
+      ],
+      "correct": "c",
       "explanation": "El RGPD exige notificar a la autoridad de control sin dilación indebida y, a más tardar, en 72 horas cuando hay riesgo."
     },
     {
       "stem": "¿Qué es una vulnerabilidad?",
       "options": [
-        "Una debilidad que puede ser explotada por una amenaza",
+        "Un tipo de usuario",
         "Un ataque ya ejecutado",
         "Una copia de seguridad",
-        "Un tipo de usuario"
+        "Una debilidad que puede ser explotada por una amenaza"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La vulnerabilidad es la debilidad; la amenaza es quien puede explotarla y el riesgo combina ambos con el impacto."
     },
     {
@@ -145,5 +179,18 @@
       "correct": "a",
       "explanation": "Las copias aisladas o inmutables no se pueden cifrar desde el servidor comprometido y permiten restaurar."
     }
+  ],
+  "memorizar": [
+    "Ciclo de respuesta a incidentes: preparación, detección y análisis, contención, erradicación, recuperación y lecciones aprendidas.",
+    "Defensa en profundidad: identidad (MFA y mínimo privilegio), parcheo, segmentación, endpoints, copias externas e inmutables y formación.",
+    "Un SIEM centraliza y correlaciona eventos y un SOC los investiga; la gestión de vulnerabilidades prioriza por riesgo (CVSS y explotación real), no por número de hallazgos.",
+    "Brecha de datos personales con riesgo: notificación en 72 horas; el CCN-CERT apoya a las administraciones en la gestión de incidentes.",
+    "Frente a un ransomware: contener, preservar evidencia y restaurar desde copias limpias; pagar no garantiza la recuperación."
+  ],
+  "errores": [
+    "Confundir amenaza (quien puede causar daño), vulnerabilidad (debilidad explotable) y riesgo (probabilidad × impacto).",
+    "Creer que ante un ransomware lo primero es formatear los equipos, cuando hay que contener y preservar la evidencia.",
+    "Pensar que pagar el rescate garantiza recuperar los datos.",
+    "Confundir la fase de erradicación (eliminar la causa) con la de recuperación (restaurar el servicio)."
   ]
 }

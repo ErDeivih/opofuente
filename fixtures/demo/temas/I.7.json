@@ -13,12 +13,32 @@
     {
       "heading": "Clases de empleado público",
       "table": {
-        "columns": ["Clase", "Vínculo", "Rasgos esenciales"],
+        "columns": [
+          "Clase",
+          "Vínculo",
+          "Rasgos esenciales"
+        ],
         "rows": [
-          ["Funcionario de carrera", "Relación estatutaria, nacida del nombramiento", "Ocupa una plaza con carácter permanente; ingresa por oposición o concurso-oposición; tiene carrera administrativa y régimen retributivo estatutario."],
-          ["Funcionario interino", "Nombramiento temporal", "Cubre plazas vacantes mientras se resuelve su cobertura, sustituye titulares, ejecuta programas temporales o atiende un exceso o acumulación de tareas; cesa cuando desaparece la causa."],
-          ["Personal laboral", "Contrato de trabajo: fijo, indefinido o temporal", "Se rige por la legislación laboral y el convenio colectivo, con el TREBEP como referencia en lo que proceda; ocupa puestos que no se reservan a funcionarios."],
-          ["Personal eventual", "Nombramiento no permanente", "Realiza únicamente funciones de confianza o asesoramiento especial, retribuidas con cargo a un crédito presupuestario; su cese es libre."]
+          [
+            "Funcionario de carrera",
+            "Relación estatutaria, nacida del nombramiento",
+            "Ocupa una plaza con carácter permanente; ingresa por oposición o concurso-oposición; tiene carrera administrativa y régimen retributivo estatutario."
+          ],
+          [
+            "Funcionario interino",
+            "Nombramiento temporal",
+            "Cubre plazas vacantes mientras se resuelve su cobertura, sustituye titulares, ejecuta programas temporales o atiende un exceso o acumulación de tareas; cesa cuando desaparece la causa."
+          ],
+          [
+            "Personal laboral",
+            "Contrato de trabajo: fijo, indefinido o temporal",
+            "Se rige por la legislación laboral y el convenio colectivo, con el TREBEP como referencia en lo que proceda; ocupa puestos que no se reservan a funcionarios."
+          ],
+          [
+            "Personal eventual",
+            "Nombramiento no permanente",
+            "Realiza únicamente funciones de confianza o asesoramiento especial, retribuidas con cargo a un crédito presupuestario; su cese es libre."
+          ]
         ]
       }
     },
@@ -42,63 +62,126 @@
   "questions": [
     {
       "stem": "¿Qué norma aprueba el texto refundido de la Ley del Estatuto Básico del Empleado Público?",
-      "options": ["La Ley 7/2007, de 12 de abril", "El Real Decreto Legislativo 5/2015, de 30 de octubre", "La Ley 30/1984, de 2 de agosto", "La Ley 40/2015, de 1 de octubre"],
-      "correct": "b",
+      "options": [
+        "El Real Decreto Legislativo 5/2015, de 30 de octubre",
+        "La Ley 7/2007, de 12 de abril",
+        "La Ley 30/1984, de 2 de agosto",
+        "La Ley 40/2015, de 1 de octubre"
+      ],
+      "correct": "a",
       "explanation": "La Ley 7/2007 aprobó el EBEP; su texto refundido, hoy vigente, es el aprobado por el Real Decreto Legislativo 5/2015 (TREBEP)."
     },
     {
       "stem": "¿Quién tiene la consideración de personal eventual?",
-      "options": ["Quien cubre una plaza vacante como funcionario hasta que se resuelva su cobertura", "Quien presta servicios con un contrato de trabajo indefinido", "Quien desempeña funciones de confianza o asesoramiento especial, con nombramiento y cese libres", "Quien realiza prácticas tras superar la oposición"],
-      "correct": "c",
+      "options": [
+        "Quien cubre una plaza vacante como funcionario hasta que se resuelva su cobertura",
+        "Quien desempeña funciones de confianza o asesoramiento especial, con nombramiento y cese libres",
+        "Quien presta servicios con un contrato de trabajo indefinido",
+        "Quien realiza prácticas tras superar la oposición"
+      ],
+      "correct": "b",
       "explanation": "El personal eventual ocupa puestos de confianza o asesoramiento especial, no permanentes, con nombramiento y cese libres y retribución con cargo a un crédito presupuestario."
     },
     {
       "stem": "¿Cuál de las siguientes NO es una causa legal de nombramiento de funcionario interino?",
-      "options": ["La cobertura de plazas vacantes cuando no sea posible hacerlo con funcionarios de carrera", "La cobertura de un puesto de libre designación para funciones de confianza", "La sustitución transitoria de los titulares", "La ejecución de programas de carácter temporal"],
-      "correct": "b",
+      "options": [
+        "La cobertura de plazas vacantes cuando no sea posible hacerlo con funcionarios de carrera",
+        "La sustitución transitoria de los titulares",
+        "La cobertura de un puesto de libre designación para funciones de confianza",
+        "La ejecución de programas de carácter temporal"
+      ],
+      "correct": "c",
       "explanation": "Las funciones de confianza o asesoramiento especial se cubren con personal eventual; las demás opciones son causas legales de interinidad."
     },
     {
       "stem": "¿Qué sistema selectivo combina la superación de pruebas con la valoración de méritos?",
-      "options": ["La oposición", "El concurso", "El concurso-oposición", "La libre designación"],
-      "correct": "c",
+      "options": [
+        "La oposición",
+        "El concurso",
+        "La libre designación",
+        "El concurso-oposición"
+      ],
+      "correct": "d",
       "explanation": "El concurso-oposición valora a la vez pruebas de capacidad y méritos; la oposición es solo de pruebas, el concurso solo de méritos y la libre designación es un sistema de provisión, no de selección."
     },
     {
       "stem": "¿Cuál de las siguientes es una retribución complementaria?",
-      "options": ["El sueldo del grupo de clasificación", "El complemento de destino", "Los trienios", "Las pagas extraordinarias"],
-      "correct": "b",
+      "options": [
+        "El complemento de destino",
+        "El sueldo del grupo de clasificación",
+        "Los trienios",
+        "Las pagas extraordinarias"
+      ],
+      "correct": "a",
       "explanation": "El sueldo, los trienios y las pagas extraordinarias son retribuciones básicas; el complemento de destino, el específico y la productividad son complementarias."
     },
     {
       "stem": "Un funcionario de carrera es designado para prestar servicio en un organismo internacional. ¿En qué situación administrativa queda?",
-      "options": ["Servicio activo", "Excedencia voluntaria", "Suspensión de funciones", "Servicios especiales"],
-      "correct": "d",
+      "options": [
+        "Servicio activo",
+        "Servicios especiales",
+        "Suspensión de funciones",
+        "Excedencia voluntaria"
+      ],
+      "correct": "b",
       "explanation": "La prestación de servicios en organismos internacionales, la Unión Europea u órganos constitucionales determina la situación de servicios especiales, con reserva de plaza y cómputo del tiempo."
     },
     {
       "stem": "¿Cuál de las siguientes NO es causa de pérdida de la condición de funcionario de carrera?",
-      "options": ["La renuncia a la condición", "La jubilación", "El traslado a otro puesto de trabajo dentro de la misma Administración", "La sanción firme de separación del servicio"],
+      "options": [
+        "La renuncia a la condición",
+        "La jubilación",
+        "El traslado a otro puesto de trabajo dentro de la misma Administración",
+        "La sanción firme de separación del servicio"
+      ],
       "correct": "c",
       "explanation": "La renuncia, la jubilación, la pérdida de la nacionalidad, la separación del servicio y la pena de inhabilitación son causas de pérdida; el traslado es una forma de movilidad y no extingue la relación de servicio."
     },
     {
       "stem": "¿Qué sanción solo puede imponerse por la comisión de una falta muy grave y supone la pérdida de la condición de funcionario?",
-      "options": ["La separación del servicio", "El apercibimiento", "El demérito", "La suspensión firme de funciones"],
-      "correct": "a",
+      "options": [
+        "La suspensión firme de funciones",
+        "El apercibimiento",
+        "El demérito",
+        "La separación del servicio"
+      ],
+      "correct": "d",
       "explanation": "La separación del servicio es la sanción más grave, reservada a las faltas muy graves, y conlleva la pérdida de la condición de funcionario de carrera."
     },
     {
       "stem": "¿Qué ha de respetar necesariamente la selección del personal al servicio de la Administración?",
-      "options": ["Los principios de igualdad, mérito y capacidad", "El turno de antigüedad de los solicitantes", "La propuesta de los grupos políticos con representación", "El orden de presentación de las solicitudes"],
+      "options": [
+        "Los principios de igualdad, mérito y capacidad",
+        "El turno de antigüedad de los solicitantes",
+        "La propuesta de los grupos políticos con representación",
+        "El orden de presentación de las solicitudes"
+      ],
       "correct": "a",
       "explanation": "El acceso se somete a los principios de igualdad, mérito, capacidad y publicidad; no caben turnos de antigüedad ni propuestas políticas que sustituyan el mérito y la capacidad."
     },
     {
       "stem": "El personal laboral de la Administración se rige, en lo que no regulan su contrato y convenio, por la legislación laboral y, con carácter supletorio, por...",
-      "options": ["La Ley 39/2015, del procedimiento administrativo común", "Las instrucciones del órgano de dirección", "La Ley 19/2013, de transparencia", "El TREBEP, en lo que resulte aplicable"],
-      "correct": "d",
+      "options": [
+        "La Ley 39/2015, del procedimiento administrativo común",
+        "El TREBEP, en lo que resulte aplicable",
+        "La Ley 19/2013, de transparencia",
+        "Las instrucciones del órgano de dirección"
+      ],
+      "correct": "b",
       "explanation": "El TREBEP se aplica al personal laboral en lo que proceda; su régimen principal es el contrato de trabajo y el convenio colectivo."
     }
+  ],
+  "memorizar": [
+    "El EBEP nació como Ley 7/2007, de 12 de abril, y su texto refundido vigente es el Real Decreto Legislativo 5/2015, de 30 de octubre (TREBEP).",
+    "Cuatro clases de empleado público: funcionario de carrera, funcionario interino, personal laboral y personal eventual (funciones de confianza o asesoramiento especial, con nombramiento y cese libres).",
+    "Sistemas selectivos: oposición, concurso-oposición y, con carácter excepcional y legalmente tasado, concurso; el acceso se rige por igualdad, mérito, capacidad y publicidad.",
+    "Retribuciones básicas: sueldo, trienios y pagas extraordinarias; complementarias: complemento de destino, complemento específico, productividad, gratificaciones e indemnizaciones.",
+    "Faltas leves, graves y muy graves: la separación del servicio solo cabe por falta muy grave y supone la pérdida de la condición de funcionario de carrera; para el personal laboral, la sanción equivalente es el despido."
+  ],
+  "errores": [
+    "Confundir el personal eventual (funciones de confianza, cese libre) con el funcionario interino (causa legal de temporalidad, sin consolidar la plaza).",
+    "Confundir la oposición (solo pruebas) con el concurso-oposición (pruebas y méritos) y con el concurso (méritos, excepcional y tasado).",
+    "Confundir las retribuciones básicas (sueldo, trienios y pagas extraordinarias) con el complemento de destino, que es complementaria.",
+    "Olvidar que el traslado a otro puesto dentro de la misma Administración no es causa de pérdida de la condición de funcionario."
   ]
 }

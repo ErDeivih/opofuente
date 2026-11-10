@@ -29,12 +29,32 @@
     {
       "heading": "Tabla de modelos",
       "table": {
-        "columns": ["Modelo", "Gestiona el proveedor", "Gestiona el cliente"],
+        "columns": [
+          "Modelo",
+          "Gestiona el proveedor",
+          "Gestiona el cliente"
+        ],
         "rows": [
-          ["IaaS", "Hardware, red, virtualización", "SO, middleware, aplicación, datos"],
-          ["PaaS", "Infraestructura y entorno de ejecución", "Aplicación y datos"],
-          ["SaaS", "Toda la pila", "Configuración, identidades y datos"],
-          ["On-premise", "Nada", "Toda la pila"]
+          [
+            "IaaS",
+            "Hardware, red, virtualización",
+            "SO, middleware, aplicación, datos"
+          ],
+          [
+            "PaaS",
+            "Infraestructura y entorno de ejecución",
+            "Aplicación y datos"
+          ],
+          [
+            "SaaS",
+            "Toda la pila",
+            "Configuración, identidades y datos"
+          ],
+          [
+            "On-premise",
+            "Nada",
+            "Toda la pila"
+          ]
         ]
       }
     },
@@ -46,14 +66,24 @@
   "questions": [
     {
       "stem": "¿Qué modelo ofrece máquinas, red y almacenamiento y deja al cliente el sistema operativo?",
-      "options": ["IaaS", "PaaS", "SaaS", "On-premise"],
-      "correct": "a",
+      "options": [
+        "SaaS",
+        "PaaS",
+        "IaaS",
+        "On-premise"
+      ],
+      "correct": "c",
       "explanation": "En IaaS el proveedor gestiona la infraestructura y el cliente el sistema operativo, el middleware y la aplicación."
     },
     {
       "stem": "¿Qué modelo ofrece un entorno de ejecución y el cliente solo despliega su aplicación?",
-      "options": ["PaaS", "IaaS", "SaaS", "Colocation"],
-      "correct": "a",
+      "options": [
+        "Colocation",
+        "IaaS",
+        "SaaS",
+        "PaaS"
+      ],
+      "correct": "d",
       "explanation": "En PaaS el proveedor gestiona la infraestructura y el runtime; el cliente se centra en la aplicación y los datos."
     },
     {
@@ -70,34 +100,34 @@
     {
       "stem": "¿Qué característica del NIST permite aprovisionar recursos sin intervención del proveedor?",
       "options": [
-        "Autoservicio bajo demanda",
         "Elasticidad rápida",
+        "Autoservicio bajo demanda",
         "Servicio medido",
         "Agrupación de recursos"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El autoservicio permite al cliente obtener recursos por sí mismo; la elasticidad es la capacidad de escalar."
     },
     {
       "stem": "¿Qué es una nube híbrida?",
       "options": [
-        "Una combinación de nube pública y privada",
-        "Una nube solo para empleados",
         "Un centro de datos sin virtualización",
+        "Una nube solo para empleados",
+        "Una combinación de nube pública y privada",
         "Un modelo sin facturación"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La nube híbrida combina entornos públicos y privados y permite mover cargas según requisitos."
     },
     {
       "stem": "¿Qué es una zona de disponibilidad?",
       "options": [
-        "Una ubicación separada con infraestructura redundante dentro de una región",
+        "Una copia de seguridad",
         "Un tipo de contrato",
         "Un protocolo de correo",
-        "Una copia de seguridad"
+        "Una ubicación separada con infraestructura redundante dentro de una región"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "Las zonas de disponibilidad están separadas físicamente para que un fallo local no afecte a toda la región."
     },
     {
@@ -114,35 +144,48 @@
     {
       "stem": "¿Quién sigue siendo responsable del tratamiento de datos personales en la nube?",
       "options": [
-        "La administración que contrata el servicio",
         "El proveedor de la nube",
+        "La administración que contrata el servicio",
         "El fabricante del hardware",
         "Nadie"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El proveedor puede ser encargado del tratamiento, pero el responsable sigue siendo la administración."
     },
     {
       "stem": "¿Por qué una copia en la nube no es automáticamente una copia de seguridad?",
       "options": [
-        "Porque la sincronización replica también borrados y cifrado; hace falta una copia independiente y probada",
-        "Porque la nube no almacena datos",
         "Porque las copias solo se hacen en cinta",
+        "Porque la nube no almacena datos",
+        "Porque la sincronización replica también borrados y cifrado; hace falta una copia independiente y probada",
         "Porque la nube no tiene cifrado"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La replicación o sincronización no protege de borrados, ransomware o errores; se necesita copia independiente, retención y prueba de restauración."
     },
     {
       "stem": "¿Qué decisión debe tomarse antes de elegir nube para un sistema público?",
       "options": [
-        "Clasificar la información y revisar requisitos legales y de soberanía",
+        "Eliminar el plan de continuidad",
         "Elegir el proveedor más barato sin analizar",
         "Subir todos los datos sin cifrar",
-        "Eliminar el plan de continuidad"
+        "Clasificar la información y revisar requisitos legales y de soberanía"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La clasificación de datos y los requisitos legales determinan qué puede ir a la nube y con qué garantías."
     }
+  ],
+  "memorizar": [
+    "IaaS: el proveedor da la infraestructura y el cliente gestiona el sistema operativo; PaaS: el proveedor da el entorno de ejecución y el cliente la aplicación; SaaS: el proveedor gestiona toda la pila.",
+    "Responsabilidad compartida: el proveedor protege la infraestructura; el cliente, los datos, las identidades y la configuración.",
+    "NIST: cinco características (autoservicio bajo demanda, acceso amplio por red, agrupación de recursos, elasticidad rápida y servicio medido).",
+    "Nubes pública, privada e híbrida; una zona de disponibilidad es una ubicación separada con infraestructura redundante dentro de una región.",
+    "En la nube el responsable del tratamiento sigue siendo la administración; el proveedor suele ser encargado del tratamiento."
+  ],
+  "errores": [
+    "Confundir IaaS, PaaS y SaaS: en IaaS el cliente gestiona el sistema operativo; en PaaS, la aplicación y los datos; en SaaS, la configuración.",
+    "Creer que el proveedor asume toda la seguridad: la responsabilidad es compartida.",
+    "Pensar que una copia en la nube es automáticamente una copia de seguridad: la sincronización replica borrados y ransomware.",
+    "Confundir nube híbrida con nube pública: la híbrida combina pública y privada."
   ]
 }

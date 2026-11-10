@@ -25,13 +25,37 @@
     {
       "heading": "Tabla de servicios",
       "table": {
-        "columns": ["Servicio", "Función", "Puerto habitual"],
+        "columns": [
+          "Servicio",
+          "Función",
+          "Puerto habitual"
+        ],
         "rows": [
-          ["DNS", "Resolución de nombres", "53 (UDP/TCP)"],
-          ["DHCP", "Asignación de configuración IP", "67/68 (UDP)"],
-          ["NTP", "Sincronización de hora", "123 (UDP)"],
-          ["LDAP", "Consulta de directorio", "389 / 636 (LDAPS)"],
-          ["HTTP/HTTPS", "Servicio web y proxy", "80 / 443"]
+          [
+            "DNS",
+            "Resolución de nombres",
+            "53 (UDP/TCP)"
+          ],
+          [
+            "DHCP",
+            "Asignación de configuración IP",
+            "67/68 (UDP)"
+          ],
+          [
+            "NTP",
+            "Sincronización de hora",
+            "123 (UDP)"
+          ],
+          [
+            "LDAP",
+            "Consulta de directorio",
+            "389 / 636 (LDAPS)"
+          ],
+          [
+            "HTTP/HTTPS",
+            "Servicio web y proxy",
+            "80 / 443"
+          ]
         ]
       }
     },
@@ -54,25 +78,35 @@
     },
     {
       "stem": "¿Qué registro DNS se usa para una dirección IPv4?",
-      "options": ["A", "AAAA", "MX", "CNAME"],
-      "correct": "a",
+      "options": [
+        "AAAA",
+        "A",
+        "MX",
+        "CNAME"
+      ],
+      "correct": "b",
       "explanation": "El registro A apunta a una IPv4; AAAA a una IPv6, MX al servidor de correo y CNAME crea un alias."
     },
     {
       "stem": "¿Qué registro indica los servidores de correo de un dominio?",
-      "options": ["MX", "A", "NS", "TXT"],
-      "correct": "a",
+      "options": [
+        "NS",
+        "A",
+        "MX",
+        "TXT"
+      ],
+      "correct": "c",
       "explanation": "Los registros MX identifican los servidores que reciben correo para el dominio."
     },
     {
       "stem": "¿Qué orden sigue el intercambio básico de DHCP?",
       "options": [
-        "Discover, Offer, Request, Acknowledge",
+        "Acknowledge, Request, Offer, Discover",
         "Request, Offer, Discover, Acknowledge",
         "Offer, Discover, Acknowledge, Request",
-        "Acknowledge, Request, Offer, Discover"
+        "Discover, Offer, Request, Acknowledge"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El cliente descubre, el servidor ofrece, el cliente solicita y el servidor confirma: DORA."
     },
     {
@@ -89,29 +123,34 @@
     {
       "stem": "¿Para qué sirve NTP?",
       "options": [
-        "Sincronizar la hora de los equipos",
         "Resolver nombres",
+        "Sincronizar la hora de los equipos",
         "Asignar IP",
         "Filtrar el correo"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "NTP sincroniza relojes; una hora coherente es esencial para logs, certificados y Kerberos."
     },
     {
       "stem": "¿Qué protocolo se usa para consultar un directorio de usuarios?",
-      "options": ["LDAP", "DHCP", "NTP", "SMTP"],
-      "correct": "a",
+      "options": [
+        "NTP",
+        "DHCP",
+        "LDAP",
+        "SMTP"
+      ],
+      "correct": "c",
       "explanation": "LDAP permite consultar y modificar un directorio; Active Directory lo utiliza como base."
     },
     {
       "stem": "¿Qué hace un proxy inverso?",
       "options": [
-        "Recibe peticiones de internet y las reenvía a servidores internos",
+        "Resuelve nombres DNS",
         "Asigna direcciones IP",
         "Sincroniza la hora",
-        "Resuelve nombres DNS"
+        "Recibe peticiones de internet y las reenvía a servidores internos"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El reverse proxy publica servicios internos, puede terminar TLS, balancear y filtrar peticiones."
     },
     {
@@ -128,13 +167,26 @@
     {
       "stem": "¿Por qué DNS y DHCP deben tener redundancia?",
       "options": [
-        "Porque su caída deja sin resolución o sin configuración de red a muchos equipos",
         "Porque ocupan mucho disco",
+        "Porque su caída deja sin resolución o sin configuración de red a muchos equipos",
         "Porque solo funcionan en Windows",
         "Porque no admiten IPv6"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Son servicios básicos: si fallan, los clientes no encuentran servicios o no obtienen configuración de red."
     }
+  ],
+  "memorizar": [
+    "DNS: A para IPv4, AAAA para IPv6, CNAME alias, MX correo, NS servidores de la zona y TXT verificación y políticas; el TTL fija el tiempo de caché.",
+    "DHCP sigue DORA (Discover, Offer, Request, Acknowledge); el lease es la concesión temporal; servidor en el puerto 67 y cliente en el 68.",
+    "NTP sincroniza la hora y se organiza por estratos; sin hora coherente fallan los registros, los certificados y Kerberos.",
+    "LDAP consulta directorios en el puerto 389 (LDAPS en 636) y es la base de Active Directory.",
+    "El proxy filtra y cachea el tráfico de salida; el reverse proxy publica servicios internos y puede terminar TLS y balancear."
+  ],
+  "errores": [
+    "Confundir DNS (resuelve nombres) con DHCP (asigna configuración IP).",
+    "Confundir el registro A (IPv4) con AAAA (IPv6) y con MX (correo).",
+    "Confundir el proxy (salida de los puestos) con el reverse proxy (entrada a servicios internos).",
+    "Creer que NTP es prescindible: sin sincronía de hora fallan registros, certificados y Kerberos."
   ]
 }

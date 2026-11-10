@@ -29,13 +29,37 @@
     {
       "heading": "Tabla de órganos y funciones",
       "table": {
-        "columns": ["Órgano", "Composición", "Función principal"],
+        "columns": [
+          "Órgano",
+          "Composición",
+          "Función principal"
+        ],
         "rows": [
-          ["Pleno", "Todos los concejales, presidido por el Alcalde", "Control político, ordenanzas, presupuestos y cuentas"],
-          ["Alcalde", "Elegido por el Pleno entre los concejales", "Dirige el gobierno y la administración, representa al municipio"],
-          ["Junta de Gobierno Local", "Alcalde y concejales nombrados por él", "Asiste al Alcalde y ejerce sus delegaciones"],
-          ["Tenientes de Alcalde", "Concejales nombrados por el Alcalde", "Sustituyen al Alcalde y asumen delegaciones"],
-          ["Comisión Especial de Cuentas", "Concejales de los grupos", "Examina las cuentas antes de su aprobación"]
+          [
+            "Pleno",
+            "Todos los concejales, presidido por el Alcalde",
+            "Control político, ordenanzas, presupuestos y cuentas"
+          ],
+          [
+            "Alcalde",
+            "Elegido por el Pleno entre los concejales",
+            "Dirige el gobierno y la administración, representa al municipio"
+          ],
+          [
+            "Junta de Gobierno Local",
+            "Alcalde y concejales nombrados por él",
+            "Asiste al Alcalde y ejerce sus delegaciones"
+          ],
+          [
+            "Tenientes de Alcalde",
+            "Concejales nombrados por el Alcalde",
+            "Sustituyen al Alcalde y asumen delegaciones"
+          ],
+          [
+            "Comisión Especial de Cuentas",
+            "Concejales de los grupos",
+            "Examina las cuentas antes de su aprobación"
+          ]
         ]
       }
     },
@@ -48,23 +72,23 @@
     {
       "stem": "¿Cuáles son los elementos del municipio?",
       "options": [
-        "El territorio, la población y la organización",
         "El Pleno, el Alcalde y la Junta de Gobierno Local",
+        "El territorio, la población y la organización",
         "La provincia, la comarca y la mancomunidad",
         "El presupuesto, la plantilla y el reglamento orgánico"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El artículo 11 de la Ley 7/1985 fija como elementos del municipio el territorio, la población y la organización."
     },
     {
       "stem": "¿En qué municipios existe obligatoriamente la Junta de Gobierno Local?",
       "options": [
         "En todos, sin excepción",
-        "En los de más de 5.000 habitantes y, en los de menos, si lo prevé su reglamento orgánico o lo acuerda el Pleno",
         "Solo en los de más de 20.000 habitantes",
+        "En los de más de 5.000 habitantes y, en los de menos, si lo prevé su reglamento orgánico o lo acuerda el Pleno",
         "Solo en los de más de 50.000 habitantes"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "La Ley 7/1985 la exige por encima de 5.000 habitantes y permite crearla en los demás por decisión organizativa."
     },
     {
@@ -72,21 +96,21 @@
       "options": [
         "El Alcalde",
         "La Junta de Gobierno Local",
-        "El Pleno",
-        "El secretario municipal"
+        "El secretario municipal",
+        "El Pleno"
       ],
-      "correct": "c",
+      "correct": "d",
       "explanation": "El artículo 22 atribuye al Pleno la aprobación de las ordenanzas y del reglamento orgánico."
     },
     {
       "stem": "¿Quién dirige el gobierno y la administración municipal y representa al Ayuntamiento?",
       "options": [
-        "El Pleno",
         "El Alcalde",
+        "El Pleno",
         "El interventor",
         "La Comisión Especial de Cuentas"
       ],
-      "correct": "b",
+      "correct": "a",
       "explanation": "El Alcalde preside la corporación, dirige el gobierno y la administración y representa al municipio (artículo 21)."
     },
     {
@@ -104,56 +128,69 @@
       "stem": "¿Quién nombra a los Tenientes de Alcalde?",
       "options": [
         "El Pleno por mayoría absoluta",
-        "El Alcalde entre los concejales",
         "La Junta de Gobierno Local",
+        "El Alcalde entre los concejales",
         "El órgano autonómico competente"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "Los Tenientes de Alcalde son concejales nombrados y cesados por el Alcalde; lo sustituyen y pueden recibir delegaciones."
     },
     {
       "stem": "¿Cuál de estas funciones corresponde al Pleno?",
       "options": [
         "Ejecutar el presupuesto y ordenar los pagos",
-        "Controlar y fiscalizar a los órganos de gobierno",
+        "Nombrar al interventor",
         "Dirigir la policía local",
-        "Nombrar al interventor"
+        "Controlar y fiscalizar a los órganos de gobierno"
       ],
-      "correct": "b",
+      "correct": "d",
       "explanation": "El Pleno controla y fiscaliza a los órganos de gobierno; ejecutar el presupuesto y dirigir los servicios es tarea del Alcalde."
     },
     {
       "stem": "¿Cada cuánto tiempo se eligen los concejales?",
       "options": [
-        "Cada dos años",
         "Cada cuatro años",
+        "Cada dos años",
         "Cada cinco años",
         "Cada seis años"
       ],
-      "correct": "b",
+      "correct": "a",
       "explanation": "Las elecciones municipales se celebran cada cuatro años por sufragio universal, libre, igual, directo y secreto."
     },
     {
       "stem": "¿En qué municipios existe la Comisión Especial de Cuentas?",
       "options": [
         "Solo en los de más de 5.000 habitantes",
-        "Solo en los de más de 20.000 habitantes",
         "En todos los municipios",
+        "Solo en los de más de 20.000 habitantes",
         "Solo donde lo acuerde el Pleno"
       ],
-      "correct": "c",
+      "correct": "b",
       "explanation": "La Comisión Especial de Cuentas existe en todos los municipios y examina las cuentas antes de su aprobación por el Pleno."
     },
     {
       "stem": "¿Puede la Junta de Gobierno Local aprobar las ordenanzas municipales?",
       "options": [
         "Sí, siempre que se lo delegue el Pleno",
-        "No, porque la aprobación de ordenanzas corresponde al Pleno",
         "Sí, si el municipio tiene más de 5.000 habitantes",
+        "No, porque la aprobación de ordenanzas corresponde al Pleno",
         "Sí, cuando el Alcalde esté ausente"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "La Junta ejerce competencias delegadas por el Alcalde, pero no puede asumir las que la ley atribuye expresamente al Pleno, como las ordenanzas."
     }
+  ],
+  "memorizar": [
+    "Órganos que existen en todos los ayuntamientos: el Alcalde, los Tenientes de Alcalde, el Pleno y la Comisión Especial de Cuentas.",
+    "La Junta de Gobierno Local es obligatoria por encima de 5.000 habitantes; la forman el Alcalde y los concejales que él nombra y cesa libremente (artículo 23 LRBRL).",
+    "El Pleno aprueba el reglamento orgánico, las ordenanzas, las bases de selección, los presupuestos, la plantilla y las cuentas (artículo 22) y controla a los órganos de gobierno.",
+    "El Alcalde preside la corporación, dirige el gobierno y la administración, representa al Ayuntamiento y ejerce la jefatura superior del personal (artículo 21).",
+    "Los concejales se eligen cada cuatro años por sufragio universal, libre, igual, directo y secreto; las sesiones ordinarias del Pleno son como mínimo mensuales y las extraordinarias las convoca el Alcalde o una cuarta parte de los concejales."
+  ],
+  "errores": [
+    "Confundir el Pleno (aprueba ordenanzas, presupuestos y cuentas) con el Alcalde (dirige, ejecuta y representa).",
+    "Confundir la Junta de Gobierno Local con el Pleno: la Junta ejerce delegaciones del Alcalde y no puede asumir las competencias que la ley atribuye al Pleno, como las ordenanzas.",
+    "Confundir el nombramiento de los Tenientes de Alcalde: los nombra y cesa libremente el Alcalde entre los concejales, no el Pleno.",
+    "Olvidar que la Comisión Especial de Cuentas existe en todos los municipios, sin umbral de población."
   ]
 }

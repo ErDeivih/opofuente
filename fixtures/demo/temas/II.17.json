@@ -25,14 +25,70 @@
     {
       "heading": "Tabla de licencias",
       "table": {
-        "columns": ["Licencia", "Tipo", "Obligación principal"],
+        "columns": [
+          "Licencia",
+          "Tipo",
+          "Obligación principal"
+        ],
         "rows": [
-          ["MIT / BSD", "Permisiva", "Mantener aviso de copyright"],
-          ["Apache 2.0", "Permisiva", "Aviso, licencia y patentes"],
-          ["GPL", "Copyleft fuerte", "Distribuir derivados con GPL"],
-          ["LGPL", "Copyleft débil", "Compartir cambios de la biblioteca"],
-          ["CC BY", "Contenido", "Atribuir la autoría"],
-          ["CC0", "Dominio público", "Sin condiciones de atribución"]
+          [
+            "MIT / BSD",
+            "Permisiva",
+            "Mantener aviso de copyright"
+          ],
+          [
+            "Apache 2.0",
+            "Permisiva",
+            "Aviso, licencia y patentes"
+          ],
+          [
+            "GPL",
+            "Copyleft fuerte",
+            "Distribuir derivados con GPL"
+          ],
+          [
+            "LGPL",
+            "Copyleft débil",
+            "Compartir cambios de la biblioteca"
+          ],
+          [
+            "CC BY",
+            "Contenido",
+            "Atribuir la autoría"
+          ],
+          [
+            "CC0",
+            "Dominio público",
+            "Sin condiciones de atribución"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "Software libre en la Administración",
+      "body": "La administración pública no solo usa software libre: también lo **publica y reutiliza**. Publicar una aplicación con una licencia libre permite que otras administraciones la adapten y que el dinero público genere bienes reutilizables.\n\nBuenas prácticas:\n\n- Comprobar la **compatibilidad** de todas las dependencias antes de publicar.\n- Conservar avisos de copyright y un archivo `LICENSE` claro.\n- Documentar la versión, la procedencia y las obligaciones de cada componente.\n- Usar catálogos y repositorios institucionales para facilitar la reutilización.\n\nLa **EUPL** es una licencia copyleft pensada para obras europeas y compatible con varias licencias libres; su elección debe revisarse con el resto del stack.",
+      "table": {
+        "columns": [
+          "Práctica",
+          "Por qué"
+        ],
+        "rows": [
+          [
+            "Inventario de dependencias",
+            "Conocer licencias y obligaciones"
+          ],
+          [
+            "Archivo LICENSE",
+            "Claridad para quien reutiliza"
+          ],
+          [
+            "Avisos de copyright",
+            "Cumplir la atribución"
+          ],
+          [
+            "Revisión de compatibilidad",
+            "Evitar mezclas no distribuibles"
+          ]
         ]
       }
     },
@@ -45,23 +101,23 @@
     {
       "stem": "¿Qué significa que un programa sea software libre?",
       "options": [
-        "Que su licencia garantiza libertades para usar, estudiar, modificar y redistribuir",
-        "Que siempre es gratuito",
         "Que no tiene derechos de autor",
+        "Que siempre es gratuito",
+        "Que su licencia garantiza libertades para usar, estudiar, modificar y redistribuir",
         "Que no puede usarse en empresas"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "El software libre se define por las libertades sobre el programa y su código fuente; no implica necesariamente precio cero."
     },
     {
       "stem": "¿Qué se necesita para ejercer la libertad de estudiar y modificar un programa?",
       "options": [
-        "El código fuente",
+        "Una licencia de pago",
         "Una conexión a internet",
         "Una cuenta de correo",
-        "Una licencia de pago"
+        "El código fuente"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "Sin código fuente no se puede estudiar ni modificar el programa, por eso es esencial en el software libre."
     },
     {
@@ -77,70 +133,91 @@
     },
     {
       "stem": "¿Qué licencia es permisiva y permite usar el código en un producto propietario?",
-      "options": ["MIT", "GPL", "AGPL", "CC BY-SA"],
-      "correct": "a",
+      "options": [
+        "GPL",
+        "MIT",
+        "AGPL",
+        "CC BY-SA"
+      ],
+      "correct": "b",
       "explanation": "MIT es permisiva: permite reutilizar el código en productos propietarios manteniendo el aviso de copyright."
     },
     {
       "stem": "¿Qué diferencia a la AGPL de la GPL?",
       "options": [
-        "La AGPL extiende la obligación a quien ofrece el software como servicio en red",
-        "La AGPL prohíbe modificarlo",
         "La AGPL es propietaria",
+        "La AGPL prohíbe modificarlo",
+        "La AGPL extiende la obligación a quien ofrece el software como servicio en red",
         "No hay diferencias"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La AGPL cubre el uso en red: si se ofrece como servicio, también hay que facilitar el código fuente."
     },
     {
       "stem": "¿Qué exige una licencia CC BY?",
       "options": [
-        "Atribuir la autoría",
+        "Cifrar la obra",
         "Prohibir el uso comercial",
         "Ceder todos los derechos",
-        "Cifrar la obra"
+        "Atribuir la autoría"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "CC BY permite usar y adaptar la obra con atribución; otras variantes añaden condiciones como compartir igual."
     },
     {
       "stem": "¿Qué licencia se acerca más al dominio público?",
-      "options": ["CC0", "CC BY-SA", "GPL", "EULA"],
+      "options": [
+        "CC0",
+        "CC BY-SA",
+        "GPL",
+        "EULA"
+      ],
       "correct": "a",
       "explanation": "CC0 renuncia a los derechos en la medida permitida por la ley, facilitando el uso sin condiciones de atribución."
     },
     {
       "stem": "¿Qué es una EULA?",
       "options": [
-        "Una licencia de usuario final de software propietario",
         "Una licencia de datos abiertos",
+        "Una licencia de usuario final de software propietario",
         "Un estándar de red",
         "Un tipo de copia de seguridad"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "La EULA es el contrato de licencia de usuario final que establece los usos permitidos del software propietario."
     },
     {
       "stem": "¿Por qué es importante la compatibilidad de licencias?",
       "options": [
-        "Porque mezclar componentes con condiciones incompatibles puede impedir distribuir el conjunto",
-        "Porque cambia el color de la interfaz",
         "Porque acelera el compilador",
+        "Porque cambia el color de la interfaz",
+        "Porque mezclar componentes con condiciones incompatibles puede impedir distribuir el conjunto",
         "Porque elimina la necesidad de atribución"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "Las obligaciones de cada licencia deben poder cumplirse a la vez; si no, el conjunto no se puede distribuir legalmente."
     },
     {
       "stem": "¿Qué documento ayuda a conocer las dependencias y sus licencias en un proyecto?",
       "options": [
-        "El inventario de componentes o SBOM",
+        "La política de contraseñas",
         "El manual de usuario",
         "El cortafuegos",
-        "La política de contraseñas"
+        "El inventario de componentes o SBOM"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "Un SBOM (Software Bill of Materials) inventaría componentes y versiones, y facilita revisar licencias y vulnerabilidades."
     }
+  ],
+  "memorizar": [
+    "Software libre: libertades de usar, estudiar, modificar y redistribuir; exige código fuente.",
+    "Permisivas: MIT/BSD/Apache 2.0; copyleft: GPL/LGPL/AGPL.",
+    "GPL obliga a distribuir derivados con GPL; AGPL incluye el uso como servicio en red.",
+    "Creative Commons se usa para contenido; CC0 renuncia a derechos."
+  ],
+  "errores": [
+    "Confundir software libre con software gratuito.",
+    "Creer que una licencia permisiva no exige atribución.",
+    "Mezclar componentes con licencias incompatibles."
   ]
 }

@@ -14,12 +14,32 @@
       "heading": "Órganos, competencias y técnicas de ejercicio",
       "body": "La **competencia** es la aptitud de un órgano para resolver sobre una materia. Es **irrenunciable** y se ejerce por el órgano que la tiene atribuida como propia, salvo los casos de delegación o avocación previstos en la ley (artículo 8). La competencia se determina por la materia, el territorio y el tiempo, y su ejercicio puede modularse con las técnicas que siguen.\n\nLa **delegación de competencias** (artículo 9) supone que un órgano delega el ejercicio de una competencia propia en otro órgano de la misma Administración, aunque no sea jerárquicamente dependiente, o en un organismo público vinculado o dependiente. Debe publicarse en el boletín oficial correspondiente y es revocable en cualquier momento. No cabe delegar las competencias sobre relaciones con la Jefatura del Estado, la Presidencia del Gobierno, las Cortes Generales, las presidencias de los consejos de Gobierno y asambleas autonómicas; tampoco la adopción de disposiciones de carácter general, la resolución de recursos que haya dictado el propio órgano ni las materias con reserva de ley.\n\nLa **avocación** (artículo 10) es la operación inversa: un órgano superior atrae para sí el conocimiento de uno o varios asuntos que corresponden ordinariamente o por delegación a sus órganos dependientes, mediante **acuerdo motivado** notificado a los interesados. Contra el acuerdo de avocación no cabe recurso, aunque puede impugnarse en el recurso que se interponga contra la resolución final.\n\nLa **suplencia** (artículo 13) cubre temporalmente al titular de un órgano en casos de vacante, ausencia, enfermedad, abstención o recusación; **no altera la competencia** y no requiere publicación. En los actos dictados por suplencia debe hacerse constar esa circunstancia.\n\nLa **encomienda de gestión** (artículo 11) permite encargar a otro órgano o entidad de derecho público de la misma o de distinta Administración la realización de actividades **materiales o técnicas** de su competencia, cuando entre las competencias del encomendado estén esas actividades y por razones de eficacia o falta de medios técnicos idóneos. La encomienda **no cede la titularidad de la competencia** ni los elementos sustantivos de su ejercicio: el órgano encomendante dicta los actos jurídicos. Además, la encomienda no puede tener por objeto prestaciones propias de los contratos públicos.\n\nJunto a estas figuras, la **abstención** y la **recusación** (artículos 23 y 24) garantizan la imparcialidad de las autoridades y del personal: quien tenga interés personal, parentesco, amistad íntima o enemistad manifiesta con los interesados debe abstenerse, y el interesado puede recusarle por escrito.",
       "table": {
-        "columns": ["Figura", "Qué implica", "Requisito o efecto"],
+        "columns": [
+          "Figura",
+          "Qué implica",
+          "Requisito o efecto"
+        ],
         "rows": [
-          ["Delegación", "El órgano delegante transfiere el ejercicio de una competencia a otro órgano", "Debe publicarse en el boletín oficial; no cabe para disposiciones generales ni para resolver recursos propios"],
-          ["Avocación", "El órgano superior atrae para sí un asunto del inferior", "Acuerdo motivado y notificado; no cabe recurso autónomo contra el acuerdo"],
-          ["Suplencia", "Sustitución temporal del titular de un órgano", "No altera la competencia ni exige publicación"],
-          ["Encomienda de gestión", "Encargo de actividades materiales o técnicas a otro órgano o entidad de derecho público", "No cede la titularidad de la competencia; no puede cubrir prestaciones contractuales"]
+          [
+            "Delegación",
+            "El órgano delegante transfiere el ejercicio de una competencia a otro órgano",
+            "Debe publicarse en el boletín oficial; no cabe para disposiciones generales ni para resolver recursos propios"
+          ],
+          [
+            "Avocación",
+            "El órgano superior atrae para sí un asunto del inferior",
+            "Acuerdo motivado y notificado; no cabe recurso autónomo contra el acuerdo"
+          ],
+          [
+            "Suplencia",
+            "Sustitución temporal del titular de un órgano",
+            "No altera la competencia ni exige publicación"
+          ],
+          [
+            "Encomienda de gestión",
+            "Encargo de actividades materiales o técnicas a otro órgano o entidad de derecho público",
+            "No cede la titularidad de la competencia; no puede cubrir prestaciones contractuales"
+          ]
         ]
       }
     },
@@ -43,63 +63,126 @@
   "questions": [
     {
       "stem": "¿Qué ley regula el régimen jurídico del sector público?",
-      "options": ["La Ley 40/2015, de 1 de octubre", "La Ley 39/2015, de 1 de octubre", "La Ley 7/1985, de 2 de abril", "La Ley 9/2017, de 8 de noviembre"],
-      "correct": "a",
+      "options": [
+        "La Ley 9/2017, de 8 de noviembre",
+        "La Ley 39/2015, de 1 de octubre",
+        "La Ley 7/1985, de 2 de abril",
+        "La Ley 40/2015, de 1 de octubre"
+      ],
+      "correct": "d",
       "explanation": "La Ley 40/2015 regula el régimen jurídico del sector público; la Ley 39/2015 regula el procedimiento administrativo común y la Ley 9/2017 los contratos del sector público."
     },
     {
       "stem": "¿Cómo es la competencia de los órganos administrativos?",
-      "options": ["Renunciable si lo acuerda el titular", "Irrenunciable, aunque su ejercicio puede delegarse o avocarse", "Libremente transferible a cualquier particular", "Discrecional y no reglada"],
-      "correct": "b",
+      "options": [
+        "Irrenunciable, aunque su ejercicio puede delegarse o avocarse",
+        "Renunciable si lo acuerda el titular",
+        "Libremente transferible a cualquier particular",
+        "Discrecional y no reglada"
+      ],
+      "correct": "a",
       "explanation": "El artículo 8 declara la competencia irrenunciable y la ejerce el órgano que la tiene atribuida, salvo los casos de delegación o avocación previstos en la ley."
     },
     {
       "stem": "¿Qué requisito es imprescindible para que una delegación de competencias sea válida?",
-      "options": ["Que la autorice el Consejo de Ministros", "Que la acepte el órgano delegado", "Que se publique en el boletín oficial correspondiente", "Que la apruebe el Pleno de la corporación"],
-      "correct": "c",
+      "options": [
+        "Que la autorice el Consejo de Ministros",
+        "Que se publique en el boletín oficial correspondiente",
+        "Que la acepte el órgano delegado",
+        "Que la apruebe el Pleno de la corporación"
+      ],
+      "correct": "b",
       "explanation": "El artículo 9 exige que las delegaciones de competencias y su revocación se publiquen en el BOE, en el boletín de la comunidad autónoma o en el de la provincia, según la Administración."
     },
     {
       "stem": "¿Qué es la avocación?",
-      "options": ["Delegar la firma en un subordinado", "Sustituir temporalmente al titular de un órgano", "Encargar una actividad material a otro órgano", "Atraer un órgano superior el conocimiento de un asunto"],
-      "correct": "d",
+      "options": [
+        "Delegar la firma en un subordinado",
+        "Sustituir temporalmente al titular de un órgano",
+        "Atraer un órgano superior el conocimiento de un asunto",
+        "Encargar una actividad material a otro órgano"
+      ],
+      "correct": "c",
       "explanation": "La avocación permite al órgano superior atraer para sí un asunto que corresponde ordinariamente o por delegación a sus órganos dependientes, mediante acuerdo motivado."
     },
     {
       "stem": "¿Qué permite la encomienda de gestión?",
-      "options": ["Encargar actividades materiales o técnicas a otro órgano o entidad de derecho público", "Transferir la titularidad de la competencia", "Aprobar disposiciones generales", "Resolver un recurso de alzada"],
-      "correct": "a",
+      "options": [
+        "Resolver un recurso de alzada",
+        "Transferir la titularidad de la competencia",
+        "Aprobar disposiciones generales",
+        "Encargar actividades materiales o técnicas a otro órgano o entidad de derecho público"
+      ],
+      "correct": "d",
       "explanation": "La encomienda de gestión solo cubre actividades materiales o técnicas y no supone cesión de la titularidad de la competencia ni de los elementos sustantivos de su ejercicio."
     },
     {
       "stem": "¿Qué efecto tiene la suplencia en la competencia del órgano?",
-      "options": ["Altera la titularidad de la competencia", "No altera la competencia y no requiere publicación", "Exige publicación en el BOE", "Requiere acuerdo del Consejo de Ministros"],
-      "correct": "b",
+      "options": [
+        "No altera la competencia y no requiere publicación",
+        "Altera la titularidad de la competencia",
+        "Exige publicación en el BOE",
+        "Requiere acuerdo del Consejo de Ministros"
+      ],
+      "correct": "a",
       "explanation": "El artículo 13 dispone que la suplencia no implica alteración de la competencia y que para su validez no es necesaria su publicación."
     },
     {
       "stem": "¿Cuál es la duración máxima inicial de un convenio de colaboración?",
-      "options": ["Un año", "Dos años", "Cuatro años", "Seis años"],
-      "correct": "c",
+      "options": [
+        "Un año",
+        "Cuatro años",
+        "Dos años",
+        "Seis años"
+      ],
+      "correct": "b",
       "explanation": "El artículo 49 exige una duración determinada no superior a cuatro años, prorrogable por acuerdo unánime de las partes por hasta cuatro años adicionales."
     },
     {
       "stem": "¿Cuál es el plazo para reclamar la responsabilidad patrimonial de una Administración?",
-      "options": ["Seis meses", "Dos años", "Cinco años", "Un año"],
-      "correct": "d",
+      "options": [
+        "Seis meses",
+        "Dos años",
+        "Un año",
+        "Cinco años"
+      ],
+      "correct": "c",
       "explanation": "El derecho a reclamar prescribe al año de producido el hecho o el acto que motive la indemnización o de manifestarse su efecto lesivo."
     },
     {
       "stem": "¿Qué requisitos debe reunir el daño indemnizable por responsabilidad patrimonial?",
-      "options": ["Ser efectivo, evaluable económicamente e individualizado", "Ser solo moral o hipotético", "Ser siempre superior a 1.000 euros", "Basta con que se anule el acto administrativo"],
-      "correct": "a",
+      "options": [
+        "Basta con que se anule el acto administrativo",
+        "Ser solo moral o hipotético",
+        "Ser siempre superior a 1.000 euros",
+        "Ser efectivo, evaluable económicamente e individualizado"
+      ],
+      "correct": "d",
       "explanation": "El artículo 32 exige que el daño sea efectivo, evaluable económicamente e individualizado con relación a una persona o grupo de personas."
     },
     {
       "stem": "¿Qué rasgo diferencia a las entidades públicas empresariales de los organismos autónomos?",
-      "options": ["Se financian íntegramente con impuestos", "Se financian mayoritariamente con ingresos de mercado", "Carecen de personalidad jurídica propia", "No pueden ejercer potestades administrativas"],
-      "correct": "b",
+      "options": [
+        "Se financian mayoritariamente con ingresos de mercado",
+        "Se financian íntegramente con impuestos",
+        "Carecen de personalidad jurídica propia",
+        "No pueden ejercer potestades administrativas"
+      ],
+      "correct": "a",
       "explanation": "El artículo 103 define las entidades públicas empresariales como entidades de derecho público que se financian mayoritariamente con ingresos de mercado, a diferencia de los organismos autónomos."
     }
+  ],
+  "memorizar": [
+    "Artículo 8: la competencia es irrenunciable y se ejerce por el órgano que la tiene atribuida como propia, salvo delegación o avocación.",
+    "La delegación de competencias debe publicarse en el boletín oficial y no cabe para disposiciones de carácter general, para resolver recursos dictados por el propio órgano ni para materias con reserva de ley (artículo 9).",
+    "La avocación se acuerda de forma motivada y notificada a los interesados y no cabe recurso autónomo contra el acuerdo (artículo 10); la suplencia no altera la competencia ni exige publicación (artículo 13).",
+    "Los convenios (artículos 47 a 53) duran como máximo cuatro años, prorrogables por acuerdo unánime de las partes otros cuatro; se inscriben en el Registro Electrónico estatal y se publican en el BOE.",
+    "Responsabilidad patrimonial: el daño debe ser efectivo, evaluable económicamente e individualizado, con nexo causal (artículo 32); se reclama en un año y la Administración resuelve en seis meses con silencio desestimatorio."
+  ],
+  "errores": [
+    "Confundir la delegación (transfiere el ejercicio de una competencia, con publicación) con la avocación (el órgano superior atrae el asunto, con acuerdo motivado).",
+    "Confundir la encomienda de gestión (actividades materiales o técnicas, sin ceder la titularidad de la competencia) con un contrato público.",
+    "Confundir la Ley 40/2015 (organización y relaciones entre Administraciones) con la Ley 39/2015 (relaciones con la ciudadanía).",
+    "Olvidar que la anulación de un acto administrativo no presupone por sí misma derecho a indemnización."
   ]
 }

@@ -29,13 +29,37 @@
     {
       "heading": "Tabla de elementos",
       "table": {
-        "columns": ["Elemento", "Función", "Clave práctica"],
+        "columns": [
+          "Elemento",
+          "Función",
+          "Clave práctica"
+        ],
         "rows": [
-          ["Sede electrónica", "Dirección oficial de la Administración", "Identidad y disponibilidad"],
-          ["Registro electrónico", "Entrada y salida de documentos", "Justificante y fecha"],
-          ["Firma electrónica", "Asumir el contenido", "Tipo adecuado al trámite"],
-          ["Notificación", "Comunicar actos", "Acceso y plazo"],
-          ["ENI", "Interoperabilidad", "Formatos y metadatos comunes"]
+          [
+            "Sede electrónica",
+            "Dirección oficial de la Administración",
+            "Identidad y disponibilidad"
+          ],
+          [
+            "Registro electrónico",
+            "Entrada y salida de documentos",
+            "Justificante y fecha"
+          ],
+          [
+            "Firma electrónica",
+            "Asumir el contenido",
+            "Tipo adecuado al trámite"
+          ],
+          [
+            "Notificación",
+            "Comunicar actos",
+            "Acceso y plazo"
+          ],
+          [
+            "ENI",
+            "Interoperabilidad",
+            "Formatos y metadatos comunes"
+          ]
         ]
       }
     },
@@ -47,80 +71,90 @@
   "questions": [
     {
       "stem": "¿Qué ley regula el procedimiento administrativo común?",
-      "options": ["La Ley 39/2015", "La Ley 40/2015", "La Ley 7/1985", "La Ley 9/2017"],
+      "options": [
+        "La Ley 39/2015",
+        "La Ley 40/2015",
+        "La Ley 7/1985",
+        "La Ley 9/2017"
+      ],
       "correct": "a",
       "explanation": "La Ley 39/2015 regula el procedimiento administrativo común; la 40/2015, el régimen jurídico del sector público."
     },
     {
       "stem": "¿Qué es la sede electrónica?",
       "options": [
-        "La dirección oficial de la Administración en internet",
         "El edificio donde trabaja el alcalde",
+        "La dirección oficial de la Administración en internet",
         "Un registro de papel",
         "Una base de datos interna"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "La sede electrónica identifica al titular y publica los servicios y la normativa de la Administración."
     },
     {
       "stem": "¿Qué garantiza el registro electrónico?",
       "options": [
-        "La constancia de entrada y salida de documentos con fecha y justificante",
-        "La firma de los contratos",
         "La resolución del expediente",
+        "La firma de los contratos",
+        "La constancia de entrada y salida de documentos con fecha y justificante",
         "El pago de tasas"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "El registro anota la presentación y emite justificante, lo que acredita fecha y hora."
     },
     {
       "stem": "¿Qué diferencia hay entre identificación y firma?",
       "options": [
-        "La identificación acredita quién eres; la firma asume el contenido",
+        "La identificación sustituye al registro",
         "Son lo mismo",
         "La firma acredita quién eres",
-        "La identificación sustituye al registro"
+        "La identificación acredita quién eres; la firma asume el contenido"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "Identificarse es decir quién eres; firmar es asumir el documento y su contenido."
     },
     {
       "stem": "¿Qué sistema de identificación es habitual en la Administración española?",
-      "options": ["Cl@ve", "SMTP", "DNS", "DHCP"],
+      "options": [
+        "Cl@ve",
+        "SMTP",
+        "DNS",
+        "DHCP"
+      ],
       "correct": "a",
       "explanation": "Cl@ve es un sistema común de identificación; también se usan certificados electrónicos cualificados."
     },
     {
       "stem": "¿Qué ocurre si no se accede a una notificación electrónica en plazo?",
       "options": [
-        "Se entiende rechazada y el procedimiento continúa",
         "El expediente se cancela para siempre",
+        "Se entiende rechazada y el procedimiento continúa",
         "Se envía por correo postal obligatoriamente",
         "Se reinicia el plazo sin consecuencias"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "La notificación electrónica se entiende rechazada si no se accede en el plazo, con los efectos previstos."
     },
     {
       "stem": "¿Para qué sirve el registro electrónico de apoderamientos?",
       "options": [
-        "Para acreditar la representación ante la Administración",
-        "Para registrar vehículos",
         "Para firmar contratos privados",
+        "Para registrar vehículos",
+        "Para acreditar la representación ante la Administración",
         "Para pagar impuestos"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "El registro de apoderamientos acredita que una persona actúa en representación de otra."
     },
     {
       "stem": "¿Qué es el ENI?",
       "options": [
-        "El Esquema Nacional de Interoperabilidad",
+        "Un registro de empleados",
         "El Esquema Nacional de Seguridad",
         "Una red de área local",
-        "Un registro de empleados"
+        "El Esquema Nacional de Interoperabilidad"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El ENI fija estándares de interoperabilidad; el ENS es el esquema de seguridad."
     },
     {
@@ -137,13 +171,26 @@
     {
       "stem": "¿Qué requisito transversal debe cumplir un trámite electrónico?",
       "options": [
-        "Accesibilidad, seguridad y protección de datos",
         "Solo tener un formulario bonito",
+        "Accesibilidad, seguridad y protección de datos",
         "Usar una única contraseña compartida",
         "Eliminar las notificaciones"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Accesibilidad, seguridad y protección de datos son requisitos de cualquier servicio electrónico."
     }
+  ],
+  "memorizar": [
+    "La Ley 39/2015 regula el procedimiento administrativo común; la Ley 40/2015, el régimen jurídico del sector público.",
+    "Sede electrónica = dirección oficial de la Administración; registro electrónico = entrada y salida de documentos con justificante y fecha; el PAG centraliza el acceso.",
+    "Identificación (quién eres: certificado cualificado o Cl@ve) no es lo mismo que firma (asumir el contenido).",
+    "La notificación electrónica no accedida en plazo se entiende rechazada y el procedimiento continúa.",
+    "ENI = Esquema Nacional de Interoperabilidad (formatos y metadatos); el registro electrónico de apoderamientos acredita la representación."
+  ],
+  "errores": [
+    "Confundir la Ley 39/2015 (procedimiento común) con la Ley 40/2015 (régimen jurídico).",
+    "Confundir identificación con firma electrónica.",
+    "Confundir el ENI (interoperabilidad) con el ENS (seguridad).",
+    "Olvidar que la notificación no accedida en plazo se entiende rechazada y el procedimiento sigue."
   ]
 }

@@ -29,14 +29,35 @@
     {
       "heading": "Tabla de principios",
       "table": {
-        "columns": ["Principio", "Qué exige"],
+        "columns": [
+          "Principio",
+          "Qué exige"
+        ],
         "rows": [
-          ["Licitud", "Base jurídica para el tratamiento"],
-          ["Minimización", "Solo los datos necesarios"],
-          ["Limitación de finalidad", "Usar los datos para lo informado"],
-          ["Exactitud", "Datos correctos y actualizados"],
-          ["Conservación", "Plazo limitado y justificado"],
-          ["Seguridad", "Integridad y confidencialidad"]
+          [
+            "Licitud",
+            "Base jurídica para el tratamiento"
+          ],
+          [
+            "Minimización",
+            "Solo los datos necesarios"
+          ],
+          [
+            "Limitación de finalidad",
+            "Usar los datos para lo informado"
+          ],
+          [
+            "Exactitud",
+            "Datos correctos y actualizados"
+          ],
+          [
+            "Conservación",
+            "Plazo limitado y justificado"
+          ],
+          [
+            "Seguridad",
+            "Integridad y confidencialidad"
+          ]
         ]
       }
     },
@@ -48,19 +69,24 @@
   "questions": [
     {
       "stem": "¿Qué norma principal regula la protección de datos en la UE?",
-      "options": ["El RGPD", "La Ley 39/2015", "La Ley 9/2017", "El ENS"],
-      "correct": "a",
+      "options": [
+        "La Ley 9/2017",
+        "La Ley 39/2015",
+        "El RGPD",
+        "El ENS"
+      ],
+      "correct": "c",
       "explanation": "El RGPD (Reglamento UE 2016/679) es la norma principal, desarrollada en España por la LOPDGDD."
     },
     {
       "stem": "¿Qué exige el principio de minimización?",
       "options": [
-        "Recoger solo los datos necesarios para la finalidad",
+        "Publicar todos los datos",
         "Recoger cuantos más datos mejor",
         "Conservar los datos indefinidamente",
-        "Publicar todos los datos"
+        "Recoger solo los datos necesarios para la finalidad"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La minimización limita los datos a lo adecuado, pertinente y necesario para el fin."
     },
     {
@@ -77,29 +103,34 @@
     {
       "stem": "¿Qué caracteriza al consentimiento válido?",
       "options": [
-        "Libre, específico, informado e inequívoco",
         "Genérico y tácito",
+        "Libre, específico, informado e inequívoco",
         "Obligatorio para cualquier servicio",
         "Verbal y sin información"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El consentimiento debe ser una manifestación libre, específica, informada e inequívoca de la voluntad."
     },
     {
       "stem": "¿En qué plazo general deben atenderse los derechos?",
-      "options": ["Un mes", "24 horas", "Un año", "No hay plazo"],
-      "correct": "a",
+      "options": [
+        "Un año",
+        "24 horas",
+        "Un mes",
+        "No hay plazo"
+      ],
+      "correct": "c",
       "explanation": "Con carácter general, el plazo es de un mes, ampliable en casos complejos según el RGPD."
     },
     {
       "stem": "¿Qué es el derecho de portabilidad?",
       "options": [
-        "Recibir los datos en un formato estructurado y transmitirlos a otro responsable",
+        "Cambiar de administración",
         "Borrar todos los datos",
         "Oponerse a cualquier tratamiento",
-        "Cambiar de administración"
+        "Recibir los datos en un formato estructurado y transmitirlos a otro responsable"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La portabilidad permite obtener y reutilizar los datos en un formato interoperable cuando se cumplen los requisitos."
     },
     {
@@ -116,35 +147,48 @@
     {
       "stem": "¿Cuándo debe notificarse una brecha de seguridad a la autoridad de control?",
       "options": [
-        "Cuando supone un riesgo para los derechos, en un plazo de 72 horas",
         "Solo si afecta a más de un millón de personas",
+        "Cuando supone un riesgo para los derechos, en un plazo de 72 horas",
         "Nunca",
         "Al año siguiente"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "La brecha con riesgo debe notificarse sin dilación indebida y, a más tardar, en 72 horas."
     },
     {
       "stem": "¿Qué significa privacidad desde el diseño?",
       "options": [
-        "Incorporar la protección de datos desde el inicio del proyecto",
-        "Añadir una política al final",
         "Cifrar solo el disco",
+        "Añadir una política al final",
+        "Incorporar la protección de datos desde el inicio del proyecto",
         "Ocultar el formulario"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La privacidad desde el diseño y por defecto se integra en el diseño del sistema y en la configuración inicial."
     },
     {
       "stem": "¿Qué debe hacer una administración antes de recoger datos personales?",
       "options": [
-        "Definir finalidad, base jurídica, plazo y medidas de seguridad",
+        "Compartirlos con terceros sin contrato",
         "Recogerlos y decidir después",
         "Publicarlos en abierto",
-        "Compartirlos con terceros sin contrato"
+        "Definir finalidad, base jurídica, plazo y medidas de seguridad"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La licitud y la transparencia exigen definir el tratamiento antes de recoger los datos."
     }
+  ],
+  "memorizar": [
+    "RGPD (Reglamento UE 2016/679), directamente aplicable, más LOPDGDD (LO 3/2018), que lo desarrolla en España.",
+    "El consentimiento debe ser libre, específico, informado e inequívoco; en las administraciones la base habitual es la obligación legal o el ejercicio de potestades públicas.",
+    "Derechos: acceso, rectificación, supresión, limitación, portabilidad y oposición; plazo general de un mes, ampliable en casos complejos.",
+    "Brecha con riesgo para los derechos: notificación a la autoridad de control en 72 horas; si el riesgo es alto, también se informa a las personas afectadas.",
+    "Evaluación de impacto (EIPD) para tratamientos de alto riesgo y privacidad desde el diseño y por defecto."
+  ],
+  "errores": [
+    "Confundir minimización (solo los datos necesarios) con limitación del plazo de conservación: son principios distintos.",
+    "Dar por válido el consentimiento en una relación de poder entre administración y ciudadano, donde rara vez es una base sólida.",
+    "Confundir entre sí los derechos de supresión (olvido), portabilidad, limitación y oposición.",
+    "Aplicar las 72 horas para atender los derechos: los derechos se atienden en un mes y las 72 horas son para notificar una brecha."
   ]
 }

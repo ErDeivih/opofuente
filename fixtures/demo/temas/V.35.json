@@ -63,23 +63,23 @@
     {
       "stem": "¿Qué norma regula actualmente el Esquema Nacional de Seguridad?",
       "options": [
-        "El Real Decreto 3/2010",
         "El Real Decreto 311/2022",
+        "El Real Decreto 3/2010",
         "La Ley 39/2015",
         "El Reglamento (UE) 2016/679"
       ],
-      "correct": "b",
+      "correct": "a",
       "explanation": "El ENS se regula por el Real Decreto 311/2022, de 3 de mayo, que sustituye al Real Decreto 3/2010."
     },
     {
       "stem": "¿A quién se aplica el ENS?",
       "options": [
         "Solo a la Administración General del Estado",
-        "Solo a las empresas privadas",
         "A las administraciones públicas y a las entidades privadas que contraten con ellas en los supuestos previstos",
+        "Solo a las empresas privadas",
         "Únicamente a los sistemas que tratan datos de salud"
       ],
-      "correct": "c",
+      "correct": "b",
       "explanation": "El ENS es normativa básica para el sector público y se extiende a las entidades privadas que contratan con él cuando tratan información pública o prestan servicios TIC."
     },
     {
@@ -87,76 +87,76 @@
       "options": [
         "Disponibilidad",
         "Trazabilidad",
-        "Autenticidad",
-        "Rentabilidad"
+        "Rentabilidad",
+        "Autenticidad"
       ],
-      "correct": "d",
+      "correct": "c",
       "explanation": "Las dimensiones son disponibilidad, autenticidad, integridad, confidencialidad y trazabilidad; la rentabilidad es un criterio económico, no de seguridad."
     },
     {
       "stem": "¿Qué categorías de sistemas establece el ENS?",
       "options": [
-        "Básica, media y alta",
+        "Bronce, plata y oro",
         "Baja, media y alta",
         "Pública, privada y mixta",
-        "Bronce, plata y oro"
+        "Básica, media y alta"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El ENS distingue categoría básica, media y alta según el impacto de un incidente en las dimensiones de seguridad."
     },
     {
       "stem": "¿Qué principio del ENS exige que quien autoriza, opera y audita no sea la misma persona?",
       "options": [
-        "Seguridad como proceso integral",
         "Función diferenciada",
+        "Seguridad como proceso integral",
         "Líneas de defensa",
         "Reevaluación periódica"
       ],
-      "correct": "b",
+      "correct": "a",
       "explanation": "El principio de función diferenciada separa las responsabilidades de autorización, operación y auditoría para evitar conflictos de interés."
     },
     {
       "stem": "¿Dónde se recogen las medidas de seguridad que debe aplicar cada categoría?",
       "options": [
-        "En el anexo II del Real Decreto 311/2022",
         "En la Ley 39/2015",
+        "En el anexo II del Real Decreto 311/2022",
         "En el Reglamento de protección de datos",
         "En la Ley de contratos"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El anexo II del Real Decreto 311/2022 contiene las medidas, agrupadas en marcos, que se aplican según la categoría del sistema."
     },
     {
       "stem": "¿Qué documento justifica qué medidas del ENS se aplican y por qué?",
       "options": [
         "El presupuesto anual",
-        "La declaración de aplicabilidad",
         "El pliego de cláusulas administrativas",
+        "La declaración de aplicabilidad",
         "El inventario de equipos"
       ],
-      "correct": "b",
+      "correct": "c",
       "explanation": "La declaración de aplicabilidad recoge las medidas seleccionadas y su justificación a partir del análisis de riesgos."
     },
     {
       "stem": "¿Qué papel tiene el CCN-CERT en el ENS?",
       "options": [
         "Aprueba los presupuestos de las administraciones",
-        "Actúa como centro de respuesta a incidentes de referencia para el sector público",
+        "Dicta las leyes de protección de datos",
         "Sustituye a la auditoría interna",
-        "Dicta las leyes de protección de datos"
+        "Actúa como centro de respuesta a incidentes de referencia para el sector público"
       ],
-      "correct": "b",
+      "correct": "d",
       "explanation": "El CCN-CERT es el CERT de referencia del sector público y apoya en la gestión de incidentes de ciberseguridad."
     },
     {
       "stem": "¿Qué debe hacer una administración antes de aplicar las medidas de una categoría?",
       "options": [
-        "Comprar el software más caro",
         "Realizar un análisis de riesgos y determinar la categoría del sistema",
+        "Comprar el software más caro",
         "Publicar el código fuente",
         "Suprimir los registros de actividad"
       ],
-      "correct": "b",
+      "correct": "a",
       "explanation": "La categoría se determina valorando el impacto en las dimensiones de seguridad; el análisis de riesgos es la base para elegir las medidas."
     },
     {
@@ -170,5 +170,18 @@
       "correct": "b",
       "explanation": "El ENS concibe la seguridad como un proceso integral y continuo, con reevaluación periódica del riesgo y de las medidas."
     }
+  ],
+  "memorizar": [
+    "El ENS se regula por el Real Decreto 311/2022, que sustituyó al Real Decreto 3/2010, y es normativa básica para el sector público.",
+    "Cinco dimensiones de seguridad: disponibilidad, autenticidad, integridad, confidencialidad y trazabilidad.",
+    "Tres categorías de sistemas: básica, media y alta; las medidas se recogen en el Anexo II del real decreto.",
+    "Seis principios rectores: seguridad como proceso integral, gestión de riesgos, prevención/detección/respuesta/recuperación, líneas de defensa, reevaluación periódica y función diferenciada.",
+    "Documentos exigidos: análisis de riesgos, declaración de aplicabilidad y política de seguridad; el CCN-CERT es el CERT de referencia del sector público."
+  ],
+  "errores": [
+    "Confundir el Real Decreto 311/2022 con el Real Decreto 3/2010, que es el anterior y está sustituido.",
+    "Creer que el ENS solo obliga a la Administración General del Estado: también alcanza a entidades privadas que contraten con las administraciones en los supuestos previstos.",
+    "Confundir las categorías básica, media y alta con baja, media y alta, o creer que la categoría la elige el proveedor a su gusto.",
+    "Confundir el Anexo II (medidas que deben aplicarse) con la declaración de aplicabilidad (justifica qué medidas se aplican y por qué)."
   ]
 }

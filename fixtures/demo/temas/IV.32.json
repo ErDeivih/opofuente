@@ -29,13 +29,37 @@
     {
       "heading": "Tabla de elementos",
       "table": {
-        "columns": ["Elemento", "Uso", "Riesgo si falta"],
+        "columns": [
+          "Elemento",
+          "Uso",
+          "Riesgo si falta"
+        ],
         "rows": [
-          ["JSON/XML", "Formato de intercambio", "Datos ilegibles o mal interpretados"],
-          ["Esquema", "Validar estructura", "Errores silenciosos"],
-          ["API documentada", "Consumo por terceros", "Integraciones frágiles"],
-          ["Autenticación", "Identificar al cliente", "Acceso no autorizado"],
-          ["Idempotencia", "Repetir sin duplicar", "Duplicados y cobros dobles"]
+          [
+            "JSON/XML",
+            "Formato de intercambio",
+            "Datos ilegibles o mal interpretados"
+          ],
+          [
+            "Esquema",
+            "Validar estructura",
+            "Errores silenciosos"
+          ],
+          [
+            "API documentada",
+            "Consumo por terceros",
+            "Integraciones frágiles"
+          ],
+          [
+            "Autenticación",
+            "Identificar al cliente",
+            "Acceso no autorizado"
+          ],
+          [
+            "Idempotencia",
+            "Repetir sin duplicar",
+            "Duplicados y cobros dobles"
+          ]
         ]
       }
     },
@@ -48,29 +72,34 @@
     {
       "stem": "¿Qué es la interoperabilidad?",
       "options": [
-        "La capacidad de dos sistemas de intercambiar información y usarla de forma útil",
         "La velocidad de la red",
+        "La capacidad de dos sistemas de intercambiar información y usarla de forma útil",
         "Un tipo de base de datos",
         "Un lenguaje de programación"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "La interoperabilidad combina acuerdo técnico, semántico y organizativo para que la información sea usable."
     },
     {
       "stem": "¿Qué formato es habitual en APIs REST?",
-      "options": ["JSON", "PDF", "DOCX", "ZIP"],
-      "correct": "a",
+      "options": [
+        "DOCX",
+        "PDF",
+        "JSON",
+        "ZIP"
+      ],
+      "correct": "c",
       "explanation": "JSON es ligero y legible y se usa habitualmente en APIs REST; XML es común en SOAP."
     },
     {
       "stem": "¿Qué añade un esquema como JSON Schema?",
       "options": [
-        "Valida la estructura y los tipos del JSON",
+        "Convierte el JSON en PDF",
         "Cifra el JSON",
         "Comprime el JSON",
-        "Convierte el JSON en PDF"
+        "Valida la estructura y los tipos del JSON"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El esquema define campos, tipos y obligatoriedad, y permite rechazar mensajes mal formados."
     },
     {
@@ -86,25 +115,35 @@
     },
     {
       "stem": "¿Qué método HTTP es idempotente por definición?",
-      "options": ["GET", "POST", "CONNECT", "NINGUNO"],
-      "correct": "a",
+      "options": [
+        "POST",
+        "GET",
+        "CONNECT",
+        "NINGUNO"
+      ],
+      "correct": "b",
       "explanation": "GET no modifica el recurso y puede repetirse; POST no es idempotente por defecto."
     },
     {
       "stem": "¿Qué hace un API gateway?",
       "options": [
-        "Centraliza el acceso a APIs con autenticación, límites y monitorización",
-        "Sustituye la base de datos",
         "Compila el front-end",
+        "Sustituye la base de datos",
+        "Centraliza el acceso a APIs con autenticación, límites y monitorización",
         "Cifra los discos"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "El gateway es un punto único de entrada que aplica políticas y facilita la observabilidad."
     },
     {
       "stem": "¿Qué protocolo de autorización se usa habitualmente para APIs?",
-      "options": ["OAuth 2.0", "SMTP", "DHCP", "NTP"],
-      "correct": "a",
+      "options": [
+        "NTP",
+        "SMTP",
+        "DHCP",
+        "OAuth 2.0"
+      ],
+      "correct": "d",
       "explanation": "OAuth 2.0 permite autorizar el acceso con alcances y tokens; no es un protocolo de correo ni de red."
     },
     {
@@ -121,24 +160,37 @@
     {
       "stem": "¿Qué debe incluir una respuesta de error de API?",
       "options": [
-        "Código, mensaje claro y detalle útil sin exponer secretos",
         "La traza completa del servidor",
+        "Código, mensaje claro y detalle útil sin exponer secretos",
         "La contraseña de la base de datos",
         "Solo un código 200"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Los errores deben ser consistentes y accionables, sin filtrar información interna."
     },
     {
       "stem": "¿Para qué sirve un identificador de correlación?",
       "options": [
-        "Para seguir una operación entre sistemas en los registros",
-        "Para cifrar la petición",
         "Para comprimir la respuesta",
+        "Para cifrar la petición",
+        "Para seguir una operación entre sistemas en los registros",
         "Para cambiar el formato"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "El correlation ID permite rastrear una misma operación a través de varios servicios y logs."
     }
+  ],
+  "memorizar": [
+    "Niveles de interoperabilidad: técnico (protocolos y formatos), semántico (mismo significado) y organizativo (procesos y responsabilidades).",
+    "Formatos: JSON ligero para APIs REST; XML con esquemas XSD y namespaces (SOAP y estándares administrativos); CSV tabular sin tipos ni jerarquía.",
+    "Patrones: punto a punto, bus de servicios (ESB), API gateway y ETL/ELT.",
+    "Idempotencia: `GET`, `PUT` y `DELETE` pueden repetirse sin efectos adicionales; `POST` no lo es por defecto.",
+    "Errores de API: código, mensaje y detalle útil sin exponer trazas ni secretos; el identificador de correlación permite seguir una operación entre sistemas."
+  ],
+  "errores": [
+    "Confundir interoperabilidad técnica con semántica: que dos sistemas hablen no garantiza que se entiendan.",
+    "Confundir JSON con XML: ambos sirven para intercambiar, pero XML permite XSD y namespaces y es más verboso.",
+    "Creer que `POST` es idempotente: repetirlo puede duplicar el efecto; `GET`, `PUT` y `DELETE` sí son idempotentes.",
+    "Creer que basta con reintentar: sin idempotencia, un reintento en una operación sensible produce duplicados."
   ]
 }

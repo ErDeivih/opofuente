@@ -29,13 +29,37 @@
     {
       "heading": "Tabla de recursos",
       "table": {
-        "columns": ["Recurso", "Uso", "Cuidado"],
+        "columns": [
+          "Recurso",
+          "Uso",
+          "Cuidado"
+        ],
         "rows": [
-          ["KPI", "Medir un objetivo", "Definir fórmula y periodo"],
-          ["Tabla dinámica", "Resumir y cruzar datos", "Revisar agregaciones"],
-          ["Vista materializada", "Acelerar consultas", "Actualización y espacio"],
-          ["Panel", "Comunicar resultados", "No saturar de gráficos"],
-          ["Modelo en estrella", "Facilitar análisis", "Dimensiones coherentes"]
+          [
+            "KPI",
+            "Medir un objetivo",
+            "Definir fórmula y periodo"
+          ],
+          [
+            "Tabla dinámica",
+            "Resumir y cruzar datos",
+            "Revisar agregaciones"
+          ],
+          [
+            "Vista materializada",
+            "Acelerar consultas",
+            "Actualización y espacio"
+          ],
+          [
+            "Panel",
+            "Comunicar resultados",
+            "No saturar de gráficos"
+          ],
+          [
+            "Modelo en estrella",
+            "Facilitar análisis",
+            "Dimensiones coherentes"
+          ]
         ]
       }
     },
@@ -48,57 +72,67 @@
     {
       "stem": "¿Qué es un KPI?",
       "options": [
-        "Un indicador clave con fórmula, periodo y meta para medir un objetivo",
-        "Un tipo de tabla de base de datos",
         "Un lenguaje de programación",
+        "Un tipo de tabla de base de datos",
+        "Un indicador clave con fórmula, periodo y meta para medir un objetivo",
         "Un protocolo de red"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "El KPI mide un objetivo de forma accionable; debe tener fórmula, unidad, periodo y meta."
     },
     {
       "stem": "¿Qué significa ETL?",
       "options": [
-        "Extraer, transformar y cargar datos",
+        "Editar, tabular y leer",
         "Enviar, transmitir y listar",
         "Evaluar, testear y lanzar",
-        "Editar, tabular y leer"
+        "Extraer, transformar y cargar datos"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "ETL mueve datos desde fuentes, los limpia y transforma, y los carga en un destino analítico."
     },
     {
       "stem": "¿Qué gráfico es más adecuado para comparar categorías?",
-      "options": ["Barras", "Líneas", "Tarta", "Dispersión"],
+      "options": [
+        "Barras",
+        "Líneas",
+        "Tarta",
+        "Dispersión"
+      ],
       "correct": "a",
       "explanation": "Las barras comparan magnitudes entre categorías; las líneas muestran evolución temporal."
     },
     {
       "stem": "¿Qué gráfico muestra mejor una evolución temporal?",
-      "options": ["Líneas", "Tarta", "Barras horizontales", "Mapa"],
-      "correct": "a",
+      "options": [
+        "Tarta",
+        "Líneas",
+        "Barras horizontales",
+        "Mapa"
+      ],
+      "correct": "b",
       "explanation": "La línea representa la evolución de un valor a lo largo del tiempo."
     },
     {
       "stem": "¿Qué es una vista materializada?",
       "options": [
-        "Una consulta cuyo resultado se guarda para acelerar lecturas",
-        "Una tabla temporal que se borra al cerrar",
         "Un índice de texto",
+        "Una tabla temporal que se borra al cerrar",
+        "Una consulta cuyo resultado se guarda para acelerar lecturas",
         "Un tipo de gráfico"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La vista materializada almacena el resultado y debe actualizarse; acelera consultas costosas."
     },
     {
       "stem": "¿Qué permite un modelo en estrella?",
       "options": [
-        "Separar hechos y dimensiones para facilitar el análisis",
+        "Sustituir el ETL",
         "Eliminar la necesidad de SQL",
         "Cifrar los datos",
-        "Sustituir el ETL"
+        "Separar hechos y dimensiones para facilitar el análisis"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El modelo en estrella organiza hechos y dimensiones y simplifica filtros y agregaciones."
     },
     {
@@ -115,35 +149,48 @@
     {
       "stem": "¿Qué es drill-down?",
       "options": [
-        "Pasar de un resumen a un nivel de detalle mayor",
         "Eliminar filtros",
+        "Pasar de un resumen a un nivel de detalle mayor",
         "Cambiar el color del gráfico",
         "Exportar a PDF"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El drill-down permite navegar del agregado al detalle para investigar una cifra."
     },
     {
       "stem": "¿Qué riesgo tiene un panel con datos personales?",
       "options": [
-        "Exponer información si no se controla el acceso y se minimiza",
-        "Que los gráficos sean más lentos",
         "Que no se pueda exportar",
+        "Que los gráficos sean más lentos",
+        "Exponer información si no se controla el acceso y se minimiza",
         "Ninguno, si está en la intranet"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "Los datos personales requieren base jurídica, minimización, control de acceso y, a menudo, agregación."
     },
     {
       "stem": "¿Por qué hay que validar la calidad del dato antes de publicar un informe?",
       "options": [
-        "Porque nulos, duplicados o rangos erróneos producen conclusiones falsas",
+        "Porque mejora el color",
         "Porque el informe ocupa más",
         "Porque lo exige el lenguaje SQL",
-        "Porque mejora el color"
+        "Porque nulos, duplicados o rangos erróneos producen conclusiones falsas"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "Un informe con datos sucios transmite errores con apariencia de rigor; la validación es parte del proceso."
     }
+  ],
+  "memorizar": [
+    "ETL: extraer, transformar y cargar; ELT si la transformación se hace después de cargar.",
+    "KPI: fórmula, unidad, periodo y meta, y accionable; sin contexto (periodo, unidad, fuente) la cifra engaña.",
+    "Gráficos: barras para comparar categorías, líneas para evolución temporal, tarta para proporciones simples y tablas para detalle.",
+    "Modelo en estrella: hechos (medidas y eventos) y dimensiones (quién, qué, cuándo, dónde).",
+    "Vista materializada: guarda el resultado para acelerar lecturas, a cambio de actualizarlo; `drill-down` pasa del resumen al detalle."
+  ],
+  "errores": [
+    "Confundir ETL con ELT: en ELT la transformación se hace después de cargar.",
+    "Confundir vista normal con vista materializada: la materializada almacena el resultado y hay que actualizarla.",
+    "Elegir el gráfico antes de definir la pregunta: el gráfico depende de lo que se quiera mostrar.",
+    "Presentar un KPI sin periodo, unidad o denominador: una cifra correcta se interpreta mal."
   ]
 }

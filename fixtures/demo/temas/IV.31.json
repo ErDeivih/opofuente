@@ -29,13 +29,37 @@
     {
       "heading": "Tabla front-end / back-end",
       "table": {
-        "columns": ["Capa", "Tecnologías", "Responsabilidad"],
+        "columns": [
+          "Capa",
+          "Tecnologías",
+          "Responsabilidad"
+        ],
         "rows": [
-          ["Front-end", "HTML, CSS, JavaScript, React", "Interfaz y experiencia de usuario"],
-          ["Back-end", "Python, Java, Node.js, PHP", "Lógica, validación y acceso a datos"],
-          ["API", "REST/JSON, SOAP/XML", "Comunicación entre sistemas"],
-          ["Datos", "SQL, NoSQL", "Persistencia"],
-          ["Entrega", "CDN, servidor web, contenedores", "Publicación y escalado"]
+          [
+            "Front-end",
+            "HTML, CSS, JavaScript, React",
+            "Interfaz y experiencia de usuario"
+          ],
+          [
+            "Back-end",
+            "Python, Java, Node.js, PHP",
+            "Lógica, validación y acceso a datos"
+          ],
+          [
+            "API",
+            "REST/JSON, SOAP/XML",
+            "Comunicación entre sistemas"
+          ],
+          [
+            "Datos",
+            "SQL, NoSQL",
+            "Persistencia"
+          ],
+          [
+            "Entrega",
+            "CDN, servidor web, contenedores",
+            "Publicación y escalado"
+          ]
         ]
       }
     },
@@ -47,75 +71,90 @@
   "questions": [
     {
       "stem": "¿Qué método HTTP se usa normalmente para obtener un recurso?",
-      "options": ["GET", "POST", "DELETE", "PATCH"],
+      "options": [
+        "GET",
+        "POST",
+        "DELETE",
+        "PATCH"
+      ],
       "correct": "a",
       "explanation": "GET recupera un recurso sin modificarlo; POST crea, PUT/PATCH actualizan y DELETE elimina."
     },
     {
       "stem": "¿Qué significa un código de estado 404?",
       "options": [
-        "El recurso no existe o no se encuentra",
         "El servidor ha fallado",
+        "El recurso no existe o no se encuentra",
         "La petición se ha creado",
         "El usuario no está autenticado"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "404 es error del cliente: el recurso solicitado no existe; 401 es no autenticado y 500 error del servidor."
     },
     {
       "stem": "¿Qué lenguaje define la estructura de una página web?",
-      "options": ["HTML", "CSS", "JavaScript", "SQL"],
-      "correct": "a",
+      "options": [
+        "JavaScript",
+        "CSS",
+        "HTML",
+        "SQL"
+      ],
+      "correct": "c",
       "explanation": "HTML aporta estructura y significado; CSS la presentación y JavaScript el comportamiento."
     },
     {
       "stem": "¿Qué es un diseño responsive?",
       "options": [
-        "Un diseño que se adapta y sigue siendo usable en distintos tamaños de pantalla",
+        "Un protocolo de red",
         "Un diseño que solo funciona en escritorio",
         "Una base de datos distribuida",
-        "Un protocolo de red"
+        "Un diseño que se adapta y sigue siendo usable en distintos tamaños de pantalla"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El diseño responsive adapta la interfaz y la experiencia a móvil, tableta y escritorio."
     },
     {
       "stem": "¿Qué formato es habitual en una API REST?",
-      "options": ["JSON", "PDF", "DOCX", "CSV siempre"],
+      "options": [
+        "JSON",
+        "PDF",
+        "DOCX",
+        "CSV siempre"
+      ],
       "correct": "a",
       "explanation": "JSON es el formato más habitual en APIs REST, aunque también puede usarse XML."
     },
     {
       "stem": "¿Qué es XSS?",
       "options": [
-        "Inyección de scripts en una página que ejecuta el navegador",
         "Un ataque de fuerza bruta al servidor",
+        "Inyección de scripts en una página que ejecuta el navegador",
         "Un error de base de datos",
         "Un protocolo de correo"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "XSS (Cross-Site Scripting) inyecta código en la página; se mitiga escapando la salida y aplicando CSP."
     },
     {
       "stem": "¿Cómo se evita la inyección SQL en el back-end?",
       "options": [
-        "Con consultas parametrizadas y validación",
-        "Concatenando la entrada del usuario",
         "Desactivando HTTPS",
+        "Concatenando la entrada del usuario",
+        "Con consultas parametrizadas y validación",
         "Ocultando los errores"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "Las consultas parametrizadas separan datos y código; concatenar entrada permite inyección."
     },
     {
       "stem": "¿Para qué sirve una cookie HttpOnly?",
       "options": [
-        "Para que JavaScript no pueda leerla y reducir el robo de sesión",
+        "Para bloquear el correo",
         "Para cifrar la base de datos",
         "Para acelerar la web",
-        "Para bloquear el correo"
+        "Para que JavaScript no pueda leerla y reducir el robo de sesión"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "HttpOnly impide el acceso desde JavaScript, lo que limita el impacto de un XSS sobre la cookie de sesión."
     },
     {
@@ -132,13 +171,26 @@
     {
       "stem": "¿Dónde debe validarse de forma obligatoria una entrada del usuario?",
       "options": [
-        "En el servidor, aunque también se valide en el cliente",
         "Solo en el cliente",
+        "En el servidor, aunque también se valide en el cliente",
         "Solo en la base de datos",
         "En la CDN"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El cliente puede omitirse o manipularse; la validación definitiva debe hacerse en el servidor."
     }
+  ],
+  "memorizar": [
+    "Métodos HTTP: `GET` obtener, `POST` crear, `PUT`/`PATCH` actualizar y `DELETE` eliminar.",
+    "Códigos de estado: 2xx éxito, 3xx redirección, 4xx error del cliente (404 no encontrado, 401 no autenticado) y 5xx error del servidor.",
+    "Front-end: HTML estructura, CSS presentación y JavaScript comportamiento; el back-end valida y ejecuta la lógica en el servidor.",
+    "XSS se mitiga escapando la salida y con CSP; CSRF con tokens y SameSite; la inyección SQL con consultas parametrizadas.",
+    "Cookies de sesión: `HttpOnly`, `Secure` y `SameSite`; HTTPS cifra la comunicación y autentica al servidor."
+  ],
+  "errores": [
+    "Confundir autenticación (quién eres) con autorización (qué puedes hacer).",
+    "Confundir XSS (inyectar script en la página) con CSRF (forzar acciones autenticadas).",
+    "Creer que la validación en el cliente basta: la validación obligatoria se hace en el servidor.",
+    "Creer que `HttpOnly` cifra la cookie: impide que JavaScript la lea, pero no la cifra; para eso está HTTPS con `Secure`."
   ]
 }

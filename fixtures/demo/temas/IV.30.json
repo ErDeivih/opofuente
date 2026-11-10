@@ -29,13 +29,37 @@
     {
       "heading": "Tabla de conceptos",
       "table": {
-        "columns": ["Concepto", "Qué es", "Ejemplo"],
+        "columns": [
+          "Concepto",
+          "Qué es",
+          "Ejemplo"
+        ],
         "rows": [
-          ["Variable", "Nombre que referencia un valor", "`total = 0`"],
-          ["Lista", "Secuencia ordenada por índice", "`[10, 20, 30]`"],
-          ["Diccionario", "Pares clave-valor", "`{\"a\": 1, \"b\": 2}`"],
-          ["Función", "Bloque reutilizable con parámetros", "`def suma(a, b): ...`"],
-          ["Clase", "Plantilla de objetos", "`class Expediente: ...`"]
+          [
+            "Variable",
+            "Nombre que referencia un valor",
+            "`total = 0`"
+          ],
+          [
+            "Lista",
+            "Secuencia ordenada por índice",
+            "`[10, 20, 30]`"
+          ],
+          [
+            "Diccionario",
+            "Pares clave-valor",
+            "`{\"a\": 1, \"b\": 2}`"
+          ],
+          [
+            "Función",
+            "Bloque reutilizable con parámetros",
+            "`def suma(a, b): ...`"
+          ],
+          [
+            "Clase",
+            "Plantilla de objetos",
+            "`class Expediente: ...`"
+          ]
         ]
       }
     },
@@ -48,51 +72,56 @@
     {
       "stem": "¿Qué es una variable?",
       "options": [
-        "Un nombre que referencia un valor",
+        "Una función del sistema",
         "Un tipo de bucle",
         "Un archivo de configuración",
-        "Una función del sistema"
+        "Un nombre que referencia un valor"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La variable asocia un nombre a un valor en memoria; su tipo determina las operaciones posibles."
     },
     {
       "stem": "¿Qué estructura guarda pares clave-valor?",
-      "options": ["Diccionario o mapa", "Lista", "Pila", "Cola"],
+      "options": [
+        "Diccionario o mapa",
+        "Lista",
+        "Pila",
+        "Cola"
+      ],
       "correct": "a",
       "explanation": "El diccionario/mapa asocia cada clave con un valor y permite acceso rápido por clave."
     },
     {
       "stem": "¿Para qué sirve un bucle?",
       "options": [
-        "Para repetir instrucciones mientras se cumpla una condición",
         "Para declarar una variable",
+        "Para repetir instrucciones mientras se cumpla una condición",
         "Para definir una clase",
         "Para compilar el programa"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Los bucles repiten un bloque; deben tener una condición de salida para no quedar infinitos."
     },
     {
       "stem": "¿Qué caracteriza a una función?",
       "options": [
-        "Agrupa código reutilizable con parámetros y puede devolver un valor",
-        "Solo puede ejecutarse una vez",
         "No puede recibir datos",
+        "Solo puede ejecutarse una vez",
+        "Agrupa código reutilizable con parámetros y puede devolver un valor",
         "Siempre imprime en pantalla"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La función encapsula lógica, recibe parámetros y puede retornar un resultado; facilita pruebas y reutilización."
     },
     {
       "stem": "¿Qué es una clase en POO?",
       "options": [
-        "Una plantilla que define atributos y métodos de los objetos",
+        "Un archivo de texto",
         "Una variable global",
         "Un bucle",
-        "Un archivo de texto"
+        "Una plantilla que define atributos y métodos de los objetos"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La clase describe el estado y el comportamiento; los objetos son instancias de esa plantilla."
     },
     {
@@ -109,34 +138,34 @@
     {
       "stem": "¿Qué es un commit en Git?",
       "options": [
-        "Un registro de cambios con su mensaje",
         "Una rama remota",
+        "Un registro de cambios con su mensaje",
         "Un conflicto",
         "Un archivo ignorado"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El commit guarda un conjunto de cambios y su mensaje en la historia del repositorio."
     },
     {
       "stem": "¿Para qué sirve una rama en Git?",
       "options": [
-        "Para trabajar de forma aislada y luego integrar los cambios",
-        "Para borrar el historial",
         "Para compilar el código",
+        "Para borrar el historial",
+        "Para trabajar de forma aislada y luego integrar los cambios",
         "Para subir el código a producción sin revisar"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La rama permite desarrollar una funcionalidad o corrección sin afectar a la rama principal hasta integrarla."
     },
     {
       "stem": "¿Qué es una excepción?",
       "options": [
-        "Un error previsto que se puede capturar y tratar",
+        "Una rama de Git",
         "Un tipo de variable",
         "Una función matemática",
-        "Una rama de Git"
+        "Un error previsto que se puede capturar y tratar"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "Las excepciones permiten separar el flujo normal del tratamiento de errores."
     },
     {
@@ -150,5 +179,18 @@
       "correct": "a",
       "explanation": "Las pruebas detectan regresiones y documentan el comportamiento esperado; no sustituyen la revisión ni el diseño."
     }
+  ],
+  "memorizar": [
+    "Paradigmas: imperativo, orientado a objetos, funcional y declarativo; compilado (C, Go) frente a interpretado (Python, JavaScript) y mixto (Java: bytecode y JVM).",
+    "Tipado dinámico (se comprueba en ejecución) frente a tipado estático (se comprueba al compilar).",
+    "Estructuras: lista/array (ordenada por índice), diccionario/mapa (clave-valor) y conjunto (sin duplicados).",
+    "POO: la clase es la plantilla y el objeto la instancia; pilares: encapsulación, herencia y polimorfismo.",
+    "Git: commit (cambio con mensaje), rama (trabajo aislado), merge (integración) y conflicto (resolución manual)."
+  ],
+  "errores": [
+    "Confundir compilado con interpretado: Java compila a bytecode y lo ejecuta la JVM.",
+    "Confundir clase con objeto: la clase es la plantilla; el objeto es una instancia concreta.",
+    "Creer que un lenguaje de tipado dinámico no tiene tipos: los tiene, pero se comprueban en ejecución.",
+    "Confundir encapsulación con herencia: son pilares distintos de la POO; encapsular es ocultar detalles internos."
   ]
 }

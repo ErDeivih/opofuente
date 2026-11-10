@@ -18,13 +18,37 @@
       "heading": "Las siete instituciones de la Unión",
       "body": "El **artículo 13 del TUE** enumera siete instituciones. No hay que confundir el **Consejo Europeo** con el **Consejo**: son órganos distintos, y los dos órganos consultivos (Comité Económico y Social y Comité de las Regiones) no son instituciones.\n\nEl **Parlamento Europeo** representa a la ciudadanía, se elige por sufragio universal directo cada cinco años desde 1979 y ejerce funciones legislativas, presupuestarias y de control político; comparte la función legislativa con el Consejo y su sede está en Estrasburgo, donde celebra las sesiones plenarias.\n\nEl **Consejo Europeo** reúne a los jefes de Estado o de Gobierno de los Estados miembros, a su propio presidente y al presidente de la Comisión. Define las orientaciones y prioridades políticas generales, pero **no ejerce función legislativa**. Su presidente se elige por mayoría cualificada para un mandato de dos años y medio, renovable una vez.\n\nEl **Consejo** (de la Unión) está formado por un representante de cada Estado miembro con rango ministerial, que cambia según la materia (asuntos exteriores, agricultura, economía, medio ambiente). Ejerce la función legislativa y presupuestaria junto con el Parlamento. Su presidencia rota entre los Estados cada **seis meses**, y los grupos de tres Estados coordinan un programa de dieciocho meses.\n\nLa **Comisión Europea** está formada por un comisario por Estado miembro, incluido su presidente, y su mandato es de cinco años. Es la guardiana de los Tratados, tiene la iniciativa normativa, ejecuta el presupuesto y representa a la Unión en el exterior. El **Alto Representante** de la Unión para Asuntos Exteriores y Política de Seguridad es vicepresidente de la Comisión y preside el Consejo de Asuntos Exteriores.\n\nEl **Tribunal de Justicia de la Unión Europea**, con sede en Luxemburgo, integra el Tribunal de Justicia y el Tribunal General, con un juez por Estado miembro. Garantiza la interpretación y aplicación uniformes del Derecho de la Unión: conoce de las cuestiones prejudiciales, de los recursos de anulación y de los recursos por incumplimiento.\n\nEl **Banco Central Europeo**, con sede en Fráncfort, dirige la política monetaria de la eurozona y tiene como objetivo principal la estabilidad de precios; actúa con independencia. El **Tribunal de Cuentas**, con sede en Luxemburgo, fiscaliza las cuentas de la Unión.",
       "table": {
-        "columns": ["Institución", "Composición", "Función principal"],
+        "columns": [
+          "Institución",
+          "Composición",
+          "Función principal"
+        ],
         "rows": [
-          ["Parlamento Europeo", "Elegido por sufragio universal directo cada cinco años", "Legislación, presupuesto y control político"],
-          ["Consejo Europeo", "Jefes de Estado o de Gobierno, su presidente y el presidente de la Comisión", "Orientaciones y prioridades políticas; no legisla"],
-          ["Consejo", "Un ministro por Estado miembro según la materia", "Legislación y presupuesto junto con el Parlamento"],
-          ["Comisión Europea", "Un comisario por Estado miembro, incluido su presidente", "Iniciativa normativa, guarda de los Tratados y ejecución del presupuesto"],
-          ["Tribunal de Justicia de la Unión Europea", "Un juez por Estado miembro; Tribunal de Justicia y Tribunal General", "Interpretación uniforme del Derecho de la Unión y control de legalidad"]
+          [
+            "Parlamento Europeo",
+            "Elegido por sufragio universal directo cada cinco años",
+            "Legislación, presupuesto y control político"
+          ],
+          [
+            "Consejo Europeo",
+            "Jefes de Estado o de Gobierno, su presidente y el presidente de la Comisión",
+            "Orientaciones y prioridades políticas; no legisla"
+          ],
+          [
+            "Consejo",
+            "Un ministro por Estado miembro según la materia",
+            "Legislación y presupuesto junto con el Parlamento"
+          ],
+          [
+            "Comisión Europea",
+            "Un comisario por Estado miembro, incluido su presidente",
+            "Iniciativa normativa, guarda de los Tratados y ejecución del presupuesto"
+          ],
+          [
+            "Tribunal de Justicia de la Unión Europea",
+            "Un juez por Estado miembro; Tribunal de Justicia y Tribunal General",
+            "Interpretación uniforme del Derecho de la Unión y control de legalidad"
+          ]
         ]
       }
     },
@@ -44,63 +68,126 @@
   "questions": [
     {
       "stem": "¿Qué tratado creó la Unión Europea como organización distinta de las Comunidades Europeas?",
-      "options": ["El Tratado de Roma de 1957", "El Tratado de Maastricht de 1992", "El Tratado de Niza de 2001", "El Tratado de Lisboa de 2007"],
-      "correct": "b",
+      "options": [
+        "El Tratado de Roma de 1957",
+        "El Tratado de Lisboa de 2007",
+        "El Tratado de Niza de 2001",
+        "El Tratado de Maastricht de 1992"
+      ],
+      "correct": "d",
       "explanation": "El Tratado de Maastricht, firmado en 1992 y en vigor desde 1993, creó la Unión Europea; el Tratado de Lisboa fue una reforma posterior."
     },
     {
       "stem": "¿Cuándo se convirtió España en Estado miembro de las Comunidades Europeas?",
-      "options": ["El 12 de junio de 1985", "El 1 de enero de 1986", "El 1 de enero de 1993", "El 1 de enero de 1995"],
-      "correct": "b",
+      "options": [
+        "El 1 de enero de 1986",
+        "El 12 de junio de 1985",
+        "El 1 de enero de 1993",
+        "El 1 de enero de 1995"
+      ],
+      "correct": "a",
       "explanation": "El Tratado de Adhesión se firmó el 12 de junio de 1985, pero la adhesión surtió efecto el 1 de enero de 1986."
     },
     {
       "stem": "¿Qué tratado entró en vigor el 1 de diciembre de 2009?",
-      "options": ["El Tratado de Niza", "El Tratado de Ámsterdam", "El Tratado de Lisboa", "El Tratado de Maastricht"],
-      "correct": "c",
+      "options": [
+        "El Tratado de Niza",
+        "El Tratado de Lisboa",
+        "El Tratado de Ámsterdam",
+        "El Tratado de Maastricht"
+      ],
+      "correct": "b",
       "explanation": "El Tratado de Lisboa se firmó el 13 de diciembre de 2007 y entró en vigor el 1 de diciembre de 2009, tras el periodo de ratificación."
     },
     {
       "stem": "¿Qué institución representa directamente a los ciudadanos de la Unión y se elige por sufragio universal directo?",
-      "options": ["El Parlamento Europeo", "El Consejo Europeo", "La Comisión Europea", "El Consejo"],
-      "correct": "a",
+      "options": [
+        "La Comisión Europea",
+        "El Consejo Europeo",
+        "El Parlamento Europeo",
+        "El Consejo"
+      ],
+      "correct": "c",
       "explanation": "El Parlamento Europeo es la institución que representa a la ciudadanía y se elige por sufragio universal directo cada cinco años."
     },
     {
       "stem": "¿Qué institución tiene atribuida, con carácter general, la iniciativa legislativa en la Unión?",
-      "options": ["El Consejo Europeo", "El Parlamento Europeo", "La Comisión Europea", "El Tribunal de Cuentas"],
-      "correct": "c",
+      "options": [
+        "El Consejo Europeo",
+        "El Parlamento Europeo",
+        "El Tribunal de Cuentas",
+        "La Comisión Europea"
+      ],
+      "correct": "d",
       "explanation": "La Comisión Europea es la que propone con carácter general las normas de la Unión; el Parlamento y el Consejo las debaten y aprueban."
     },
     {
       "stem": "¿Qué institución define las orientaciones y prioridades políticas generales de la Unión sin ejercer función legislativa?",
-      "options": ["El Consejo", "La Comisión Europea", "El Parlamento Europeo", "El Consejo Europeo"],
-      "correct": "d",
+      "options": [
+        "El Consejo Europeo",
+        "La Comisión Europea",
+        "El Parlamento Europeo",
+        "El Consejo"
+      ],
+      "correct": "a",
       "explanation": "El Consejo Europeo reúne a los jefes de Estado o de Gobierno y define las orientaciones políticas, pero no aprueba leyes."
     },
     {
       "stem": "¿Cuál de estas normas de la Unión es directamente aplicable en España sin necesidad de transposición?",
-      "options": ["La directiva", "El reglamento", "La recomendación", "El dictamen"],
+      "options": [
+        "La directiva",
+        "El reglamento",
+        "La recomendación",
+        "El dictamen"
+      ],
       "correct": "b",
       "explanation": "El reglamento es obligatorio en todos sus elementos y directamente aplicable; la directiva exige transposición y las recomendaciones y dictámenes no son vinculantes."
     },
     {
       "stem": "¿Qué precepto de la Constitución permite atribuir a una organización internacional el ejercicio de competencias derivadas de la Constitución?",
-      "options": ["El artículo 93", "El artículo 95", "El artículo 96", "El artículo 97"],
-      "correct": "a",
+      "options": [
+        "El artículo 96",
+        "El artículo 95",
+        "El artículo 93",
+        "El artículo 97"
+      ],
+      "correct": "c",
       "explanation": "El artículo 93 CE permite autorizar por ley orgánica la celebración de tratados que atribuyan a una organización internacional el ejercicio de competencias constitucionales."
     },
     {
       "stem": "¿Cada cuánto tiempo rota la presidencia del Consejo?",
-      "options": ["Cada año", "Cada dos años", "Cada seis meses", "Cada cinco años"],
-      "correct": "c",
+      "options": [
+        "Cada año",
+        "Cada dos años",
+        "Cada cinco años",
+        "Cada seis meses"
+      ],
+      "correct": "d",
       "explanation": "La presidencia del Consejo rota entre los Estados miembros cada seis meses; los tríos de Estados coordinan un programa de dieciocho meses."
     },
     {
       "stem": "¿Qué institución garantiza la interpretación y aplicación uniformes del Derecho de la Unión?",
-      "options": ["El Tribunal de Cuentas", "La Comisión Europea", "El Consejo Europeo", "El Tribunal de Justicia de la Unión Europea"],
-      "correct": "d",
+      "options": [
+        "El Tribunal de Justicia de la Unión Europea",
+        "La Comisión Europea",
+        "El Consejo Europeo",
+        "El Tribunal de Cuentas"
+      ],
+      "correct": "a",
       "explanation": "El Tribunal de Justicia de la Unión Europea vela por el respeto del Derecho en la interpretación y aplicación de los Tratados."
     }
+  ],
+  "memorizar": [
+    "España firmó el Tratado de Adhesión el 12 de junio de 1985 y es Estado miembro desde el 1 de enero de 1986, junto con Portugal.",
+    "Tratado de Lisboa: firmado el 13 de diciembre de 2007 y en vigor desde el 1 de diciembre de 2009; dio personalidad jurídica única a la Unión y la reordenó en TUE y TFUE.",
+    "El artículo 13 del TUE enumera siete instituciones: el Consejo Europeo no legisla y la presidencia del Consejo rota cada seis meses (los tríos coordinan un programa de dieciocho meses).",
+    "Artículo 288 del TFUE: el reglamento es obligatorio en todos sus elementos y directamente aplicable; la directiva obliga al resultado y exige transposición; las recomendaciones y dictámenes no son vinculantes.",
+    "Artículo 93 CE: la adhesión se autoriza por ley orgánica para atribuir a una organización internacional el ejercicio de competencias; el artículo 96.1 CE integra los tratados publicados en el BOE."
+  ],
+  "errores": [
+    "Confundir el Consejo Europeo (jefes de Estado o de Gobierno; orientaciones políticas, no legisla) con el Consejo (un ministro por Estado; legisla con el Parlamento).",
+    "Confundir el reglamento (directamente aplicable, sin transposición) con la directiva (exige transposición y obliga en cuanto al resultado).",
+    "Confundir la firma del Tratado de Adhesión (12 de junio de 1985) con la entrada en vigor como Estado miembro (1 de enero de 1986).",
+    "Confundir el Tratado de París de 1951 (CECA y sus seis Estados fundadores) con los Tratados de Roma de 1957 (CEE y Euratom)."
   ]
 }

@@ -17,13 +17,37 @@
     {
       "heading": "Plazos y órganos clave",
       "table": {
-        "columns": ["Materia", "Plazo", "Órgano o referencia"],
+        "columns": [
+          "Materia",
+          "Plazo",
+          "Órgano o referencia"
+        ],
         "rows": [
-          ["Resolución de una solicitud de acceso a información pública", "1 mes desde la recepción, ampliable por otro mes si la complejidad lo justifica", "Órgano competente; el silencio es desestimatorio"],
-          ["Respuesta a los derechos del interesado en materia de protección de datos", "1 mes, ampliable dos meses más si el tratamiento es complejo", "Responsable del tratamiento"],
-          ["Notificación de una brecha de seguridad a la autoridad de control", "72 horas desde que el responsable tiene conocimiento", "Agencia Española de Protección de Datos (AEPD)"],
-          ["Reclamación frente a la denegación de acceso a información pública", "1 mes desde la notificación de la resolución", "Consejo de Transparencia y Buen Gobierno u órgano autonómico equivalente"],
-          ["Evaluación de impacto relativa a la protección de datos (EIPD)", "Antes de iniciar el tratamiento de alto riesgo", "Responsable, con asesoramiento del Delegado de Protección de Datos"]
+          [
+            "Resolución de una solicitud de acceso a información pública",
+            "1 mes desde la recepción, ampliable por otro mes si la complejidad lo justifica",
+            "Órgano competente; el silencio es desestimatorio"
+          ],
+          [
+            "Respuesta a los derechos del interesado en materia de protección de datos",
+            "1 mes, ampliable dos meses más si el tratamiento es complejo",
+            "Responsable del tratamiento"
+          ],
+          [
+            "Notificación de una brecha de seguridad a la autoridad de control",
+            "72 horas desde que el responsable tiene conocimiento",
+            "Agencia Española de Protección de Datos (AEPD)"
+          ],
+          [
+            "Reclamación frente a la denegación de acceso a información pública",
+            "1 mes desde la notificación de la resolución",
+            "Consejo de Transparencia y Buen Gobierno u órgano autonómico equivalente"
+          ],
+          [
+            "Evaluación de impacto relativa a la protección de datos (EIPD)",
+            "Antes de iniciar el tratamiento de alto riesgo",
+            "Responsable, con asesoramiento del Delegado de Protección de Datos"
+          ]
         ]
       }
     },
@@ -43,63 +67,126 @@
   "questions": [
     {
       "stem": "¿Qué ley regula la publicidad activa y el derecho de acceso a la información pública?",
-      "options": ["La Ley 39/2015, del Procedimiento Administrativo Común", "La Ley 19/2013, de transparencia, acceso a la información pública y buen gobierno", "La Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales", "La Ley 9/2017, de Contratos del Sector Público"],
-      "correct": "b",
+      "options": [
+        "La Ley 39/2015, del Procedimiento Administrativo Común",
+        "La Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales",
+        "La Ley 19/2013, de transparencia, acceso a la información pública y buen gobierno",
+        "La Ley 9/2017, de Contratos del Sector Público"
+      ],
+      "correct": "c",
       "explanation": "La Ley 19/2013 regula la publicidad activa, el derecho de acceso y las obligaciones de buen gobierno; la LOPDGDD y el RGPD regulan la protección de datos."
     },
     {
       "stem": "¿Es necesario motivar la solicitud de acceso a la información pública?",
-      "options": ["Sí, siempre y por escrito", "Sí, salvo que la presente un periodista", "No, la solicitud no requiere motivación", "Solo cuando afecte a datos personales"],
-      "correct": "c",
+      "options": [
+        "Sí, siempre y por escrito",
+        "Sí, salvo que la presente un periodista",
+        "Solo cuando afecte a datos personales",
+        "No, la solicitud no requiere motivación"
+      ],
+      "correct": "d",
       "explanation": "El derecho de acceso se reconoce a todas las personas y puede ejercerse sin necesidad de motivar la solicitud ni de invocar un interés concreto."
     },
     {
       "stem": "¿Cuál es el plazo máximo para resolver una solicitud de acceso a la información pública?",
-      "options": ["10 días hábiles", "1 mes desde la recepción, ampliable por otro mes si la complejidad lo justifica", "3 meses improrrogables", "6 meses"],
-      "correct": "b",
+      "options": [
+        "1 mes desde la recepción, ampliable por otro mes si la complejidad lo justifica",
+        "10 días hábiles",
+        "3 meses improrrogables",
+        "6 meses"
+      ],
+      "correct": "a",
       "explanation": "La ley fija un plazo de un mes, ampliable por otro mes cuando la complejidad o el volumen de la información lo justifiquen."
     },
     {
       "stem": "Si la Administración no resuelve la solicitud de acceso en el plazo legal, ¿qué ocurre?",
-      "options": ["Se entiende desestimada por silencio", "Se entiende estimada por silencio", "Se prorroga automáticamente el plazo un mes más", "Debe resolver el Consejo de Ministros"],
-      "correct": "a",
+      "options": [
+        "Se entiende estimada por silencio",
+        "Se entiende desestimada por silencio",
+        "Se prorroga automáticamente el plazo un mes más",
+        "Debe resolver el Consejo de Ministros"
+      ],
+      "correct": "b",
       "explanation": "En materia de acceso a la información pública el silencio tiene efecto desestimatorio: la falta de resolución se entiende como denegación."
     },
     {
       "stem": "Cuando la información solicitada contiene datos personales de terceros, ¿qué regla se aplica?",
-      "options": ["Se deniega siempre el acceso", "Se concede siempre el acceso sin condiciones", "Se pondera el daño a los derechos de los titulares y puede concederse acceso parcial con disociación de datos", "Se exige el consentimiento de todos los empleados públicos citados"],
+      "options": [
+        "Se deniega siempre el acceso",
+        "Se concede siempre el acceso sin condiciones",
+        "Se pondera el daño a los derechos de los titulares y puede concederse acceso parcial con disociación de datos",
+        "Se exige el consentimiento de todos los empleados públicos citados"
+      ],
       "correct": "c",
       "explanation": "El art. 15 de la Ley 19/2013 y el RGPD exigen ponderar el interés público y el daño a los derechos de los titulares, permitiendo el acceso parcial y la anonimización de los datos no relevantes."
     },
     {
       "stem": "¿Cuál de las siguientes es una obligación de publicidad activa?",
-      "options": ["Publicar el organigrama y las retribuciones de los altos cargos", "Publicar las conversaciones telefónicas de los concejales", "Publicar los datos de salud de los ciudadanos", "Publicar las contraseñas de los sistemas municipales"],
-      "correct": "a",
+      "options": [
+        "Publicar las contraseñas de los sistemas municipales",
+        "Publicar las conversaciones telefónicas de los concejales",
+        "Publicar los datos de salud de los ciudadanos",
+        "Publicar el organigrama y las retribuciones de los altos cargos"
+      ],
+      "correct": "d",
       "explanation": "La publicidad activa comprende la información institucional y organizativa, la de relevancia jurídica y la económica, presupuestaria y estadística, incluidas las retribuciones de los altos cargos."
     },
     {
       "stem": "¿Qué principio del RGPD exige que los datos sean adecuados, pertinentes y limitados a lo necesario?",
-      "options": ["Limitación de la finalidad", "Exactitud", "Responsabilidad proactiva", "Minimización de datos"],
-      "correct": "d",
+      "options": [
+        "Minimización de datos",
+        "Exactitud",
+        "Responsabilidad proactiva",
+        "Limitación de la finalidad"
+      ],
+      "correct": "a",
       "explanation": "La minimización de datos impide recoger más información de la necesaria para la finalidad del tratamiento."
     },
     {
       "stem": "En la Administración, ¿cuál es la base jurídica habitual para tratar datos personales?",
-      "options": ["El consentimiento de los interesados en todo caso", "El interés legítimo del órgano administrativo", "El cumplimiento de una obligación legal o el ejercicio de poderes públicos", "La decisión discrecional del responsable"],
-      "correct": "c",
+      "options": [
+        "El consentimiento de los interesados en todo caso",
+        "El cumplimiento de una obligación legal o el ejercicio de poderes públicos",
+        "El interés legítimo del órgano administrativo",
+        "La decisión discrecional del responsable"
+      ],
+      "correct": "b",
       "explanation": "Las administraciones tratan datos principalmente porque una norma les obliga o porque ejercen potestades públicas; el consentimiento es una base más propia de relaciones privadas."
     },
     {
       "stem": "¿Qué caracteriza al Delegado de Protección de Datos en las administraciones públicas?",
-      "options": ["Es un órgano judicial que resuelve reclamaciones", "Su designación es obligatoria y asesora y supervisa el cumplimiento en materia de protección de datos", "Es un cargo electivo de la corporación local", "Solo puede designarlo la Agencia Española de Protección de Datos"],
-      "correct": "b",
+      "options": [
+        "Es un órgano judicial que resuelve reclamaciones",
+        "Es un cargo electivo de la corporación local",
+        "Su designación es obligatoria y asesora y supervisa el cumplimiento en materia de protección de datos",
+        "Solo puede designarlo la Agencia Española de Protección de Datos"
+      ],
+      "correct": "c",
       "explanation": "El DPD es obligatorio en las administraciones públicas, actúa con independencia, asesora al responsable, supervisa el cumplimiento y coopera con la autoridad de control."
     },
     {
       "stem": "¿En qué plazo debe notificarse una brecha de seguridad a la autoridad de control?",
-      "options": ["24 horas", "1 mes", "72 horas desde que el responsable tiene conocimiento", "No es obligatorio notificarla"],
-      "correct": "c",
+      "options": [
+        "24 horas",
+        "1 mes",
+        "No es obligatorio notificarla",
+        "72 horas desde que el responsable tiene conocimiento"
+      ],
+      "correct": "d",
       "explanation": "El RGPD impone notificar las brechas a la autoridad de control en 72 horas desde que el responsable tiene conocimiento, salvo que sea improbable que suponga un riesgo."
     }
+  ],
+  "memorizar": [
+    "Ley 19/2013, de 9 de diciembre: publicidad activa, derecho de acceso a la información pública y buen gobierno; desde el 25 de mayo de 2018 se aplica el RGPD, y en España la Ley Orgánica 3/2018 (LOPDGDD).",
+    "Plazo de un mes, ampliable por otro mes si la complejidad lo justifica, para resolver la solicitud de acceso; el silencio es desestimatorio y cabe reclamación potestativa ante el Consejo de Transparencia y Buen Gobierno.",
+    "La solicitud de acceso no necesita motivación y no obliga a crear información nueva: son causas de inadmisión la información en curso de elaboración, la auxiliar o de apoyo, las solicitudes repetitivas o abusivas y las que exijan reelaboración.",
+    "Brechas de seguridad: notificación a la AEPD en 72 horas desde que el responsable tiene conocimiento; derechos del interesado: un mes, ampliable dos meses más si el tratamiento es complejo.",
+    "Publicidad activa: obliga también a partidos, sindicatos y organizaciones empresariales y a entidades privadas con ayudas o subvenciones superiores a 100.000 euros o cuando al menos el 40 % de sus ingresos anuales sea subvención con un mínimo de 5.000 euros."
+  ],
+  "errores": [
+    "Confundir la Ley 19/2013 (transparencia y acceso a la información pública) con el RGPD y la LOPDGDD (protección de datos).",
+    "Confundir el silencio desestimatorio del acceso a la información pública con el silencio estimatorio general del procedimiento administrativo.",
+    "Olvidar que el plazo para notificar una brecha de seguridad a la AEPD es de 72 horas, no de un mes.",
+    "Confundir el plazo de un mes para responder a los derechos del interesado en protección de datos (ampliable dos meses) con el plazo de un mes para resolver la solicitud de acceso (ampliable otro mes)."
   ]
 }

@@ -13,11 +13,27 @@
     {
       "heading": "Protocolos y puertos",
       "table": {
-        "columns": ["Protocolo", "Función", "Puertos habituales"],
+        "columns": [
+          "Protocolo",
+          "Función",
+          "Puertos habituales"
+        ],
         "rows": [
-          ["SMTP", "Enviar correo entre clientes y servidores", "25, 465 (SMTPS), 587 (sumisión)"],
-          ["POP3", "Descargar el correo al cliente", "110, 995 (POP3S)"],
-          ["IMAP", "Sincronizar carpetas y estado en el servidor", "143, 993 (IMAPS)"]
+          [
+            "SMTP",
+            "Enviar correo entre clientes y servidores",
+            "25, 465 (SMTPS), 587 (sumisión)"
+          ],
+          [
+            "POP3",
+            "Descargar el correo al cliente",
+            "110, 995 (POP3S)"
+          ],
+          [
+            "IMAP",
+            "Sincronizar carpetas y estado en el servidor",
+            "143, 993 (IMAPS)"
+          ]
         ]
       }
     },
@@ -34,6 +50,34 @@
       "body": "Las suites de colaboración añaden **calendarios** (a menudo CalDAV), **contactos**, **tareas**, **chat**, **videollamadas** y **almacenamiento compartido**. La clave es la identidad única y los permisos por grupo.\n\nEn la administración pública, la colaboración debe respetar la **protección de datos**, la **accesibilidad** y la **trazabilidad**. No todos los documentos pueden subirse a cualquier nube: hay que clasificar la información y usar el servicio aprobado."
     },
     {
+      "heading": "Autenticación del correo y diagnóstico de entrega",
+      "body": "Un correo puede ser legítimo y acabar en spam. Para mejorar la entregabilidad se usan tres mecanismos complementarios:\n\n- **SPF**: un registro DNS indica qué servidores pueden enviar en nombre del dominio.\n- **DKIM**: una firma criptográfica en las cabeceras permite verificar que el mensaje no se alteró.\n- **DMARC**: una política DNS indica qué hacer si SPF o DKIM fallan (ninguno, cuarentena o rechazo) y envía informes.\n\nCuando un correo rebota, hay que leer el código y el mensaje del servidor: buzón inexistente, límite de tamaño, política antispam o problema de DNS. Las **colas** retienen mensajes cuando el destino no responde; se revisan y se depuran.",
+      "table": {
+        "columns": [
+          "Mecanismo",
+          "Dónde se publica",
+          "Qué aporta"
+        ],
+        "rows": [
+          [
+            "SPF",
+            "Registro TXT del dominio",
+            "Autoriza servidores de envío"
+          ],
+          [
+            "DKIM",
+            "Firma en la cabecera",
+            "Integridad y autenticidad"
+          ],
+          [
+            "DMARC",
+            "Registro TXT _dmarc",
+            "Política y alineación con SPF/DKIM"
+          ]
+        ]
+      }
+    },
+    {
       "heading": "Ejemplo resuelto",
       "body": "**Supuesto.** Un ayuntamiento configura el correo de una nueva técnica: usará el portátil, el móvil y el webmail, y debe conservar las carpetas.\n\n**Resolución.**\n\n- Se configura **IMAP** con TLS en el cliente, no POP3, para sincronizar carpetas y estados.\n- El envío se configura por **SMTP con autenticación** (puerto 587 o 465).\n- Se activa **segundo factor** y se revisan las reglas de reenvío automático.\n- Se firma el correo con la política de la organización y se forma al usuario en phishing.\n- Los documentos sensibles se comparten por el repositorio corporativo, no como adjuntos masivos.\n\n**Conclusión.** La elección de protocolo depende de cuántos dispositivos y de si se necesita sincronización; la seguridad no está en el cliente, sino en la configuración y los hábitos."
     }
@@ -41,25 +85,35 @@
   "questions": [
     {
       "stem": "¿Qué protocolo se usa para enviar correo electrónico?",
-      "options": ["SMTP", "POP3", "IMAP", "CalDAV"],
-      "correct": "a",
+      "options": [
+        "POP3",
+        "SMTP",
+        "IMAP",
+        "CalDAV"
+      ],
+      "correct": "b",
       "explanation": "SMTP (Simple Mail Transfer Protocol) se usa para el envío entre cliente y servidor y entre servidores."
     },
     {
       "stem": "¿Qué protocolo sincroniza carpetas y estados entre varios dispositivos?",
-      "options": ["IMAP", "POP3", "SMTP", "DNS"],
-      "correct": "a",
+      "options": [
+        "SMTP",
+        "POP3",
+        "IMAP",
+        "DNS"
+      ],
+      "correct": "c",
       "explanation": "IMAP mantiene el correo en el servidor y sincroniza carpetas, leídos y marcas entre dispositivos."
     },
     {
       "stem": "¿Qué hace POP3 al descargar el correo?",
       "options": [
-        "Puede descargar los mensajes y, según la configuración, borrarlos del servidor",
+        "Cifra el disco del usuario",
         "Sincroniza siempre todas las carpetas",
         "Envía el correo a otro dominio",
-        "Cifra el disco del usuario"
+        "Puede descargar los mensajes y, según la configuración, borrarlos del servidor"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "POP3 está orientado a descargar; según la configuración puede eliminar los mensajes del servidor, a diferencia de IMAP."
     },
     {
@@ -75,25 +129,35 @@
     },
     {
       "stem": "¿Qué puerto es habitual para la sumisión de correo con autenticación?",
-      "options": ["587", "110", "143", "53"],
-      "correct": "a",
+      "options": [
+        "110",
+        "587",
+        "143",
+        "53"
+      ],
+      "correct": "b",
       "explanation": "El puerto 587 se usa para sumisión de correo autenticada; 465 es SMTPS y 25 el envío entre servidores."
     },
     {
       "stem": "¿Qué protocolo usa el puerto 993?",
-      "options": ["IMAPS", "POP3S", "SMTP", "HTTP"],
-      "correct": "a",
+      "options": [
+        "SMTP",
+        "POP3S",
+        "IMAPS",
+        "HTTP"
+      ],
+      "correct": "c",
       "explanation": "993 es el puerto seguro de IMAP (IMAPS); 995 es POP3S y 465 SMTPS."
     },
     {
       "stem": "¿Qué es el phishing?",
       "options": [
-        "Un fraude que suplanta a una entidad para robar credenciales o datos",
+        "Un tipo de firma digital",
         "Un protocolo de correo",
         "Un formato de adjunto",
-        "Un tipo de firma digital"
+        "Un fraude que suplanta a una entidad para robar credenciales o datos"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El phishing suplanta a una entidad de confianza para que la víctima entregue datos o abra un adjunto malicioso."
     },
     {
@@ -110,24 +174,35 @@
     {
       "stem": "¿Qué ventaja tiene IMAP para un usuario con móvil, portátil y webmail?",
       "options": [
-        "Mantiene el mismo estado y carpetas en todos los dispositivos",
         "Ocupa menos en el servidor",
+        "Mantiene el mismo estado y carpetas en todos los dispositivos",
         "No necesita contraseña",
         "Envía el correo más rápido"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "IMAP sincroniza el buzón en el servidor, por lo que el estado se ve igual desde todos los dispositivos."
     },
     {
       "stem": "¿Qué documento no conviene enviar como adjunto masivo sin más?",
       "options": [
-        "Un documento con datos personales sensibles",
-        "Una convocatoria pública",
         "Un horario sin datos personales",
+        "Una convocatoria pública",
+        "Un documento con datos personales sensibles",
         "Un cartel de un evento"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "Los datos personales sensibles deben compartirse por canales aprobados, con cifrado y control de acceso, no como adjunto abierto."
     }
+  ],
+  "memorizar": [
+    "SMTP envía; POP3 descarga; IMAP sincroniza carpetas y estados.",
+    "Puertos: 25/465/587 (SMTP), 110/995 (POP3), 143/993 (IMAP).",
+    "MIME permite texto, HTML y adjuntos en un mensaje.",
+    "SPF, DKIM y DMARC son mecanismos de autenticación del dominio."
+  ],
+  "errores": [
+    "Confundir POP3 (descarga) con IMAP (sincronización).",
+    "Pensar que usar TLS en el cliente ya autentica el dominio.",
+    "Abrir adjuntos inesperados o enlaces de remitentes desconocidos."
   ]
 }

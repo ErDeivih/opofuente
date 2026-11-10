@@ -27,15 +27,26 @@ oficiales (BOE, CCN-CERT, IETF, NIST, documentación pública) y se cita la fuen
       "correct": "a",
       "explanation": "La Ley 39/2015 regula el procedimiento administrativo común de las administraciones públicas."
     }
+  ],
+  "memorizar": [
+    "La Ley 39/2015 regula el procedimiento común; la 40/2015, el régimen jurídico.",
+    "Plazos, silencio y recursos son los puntos que más se preguntan."
+  ],
+  "errores": [
+    "Confundir Ley 39/2015 con Ley 40/2015.",
+    "Olvidar el sentido del silencio administrativo."
   ]
 }
 ```
 
 ## Reglas de contenido
 
-- **4-6 secciones** por tema; al menos **una tabla** y **un ejemplo** resuelto.
+- **6-7 secciones** por tema (o 5 como mínimo); al menos **una tabla** y **un ejemplo** resuelto.
 - **10 preguntas** por tema, 4 opciones cada una, una sola correcta, con explicación razonada. Varía
   la letra correcta.
+- **`memorizar`**: 3-5 puntos concretos que hay que retener (cifras, plazos, clasificaciones,
+  artículos/normas). No frases genéricas.
+- **`errores`**: 2-4 confusiones típicas de test, redactadas como «confundir X con Y» u «olvidar Z».
 - Español de España, sin jerga de desarrollo, sin afirmaciones sin fuente.
 - Si no estás seguro del número exacto de un artículo, **no lo inventes**: describe la materia y cita
   la ley, no el artículo. Prefiere precisión a aparentar detalle.

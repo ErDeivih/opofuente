@@ -25,12 +25,32 @@
     {
       "heading": "Tabla comparativa",
       "table": {
-        "columns": ["Gestor", "Herramienta de copia", "Rasgo distintivo"],
+        "columns": [
+          "Gestor",
+          "Herramienta de copia",
+          "Rasgo distintivo"
+        ],
         "rows": [
-          ["Oracle", "RMAN / Data Pump", "Amplio ecosistema empresarial"],
-          ["SQL Server", "Backup / restore, log de transacciones", "Integración con Windows y AD"],
-          ["PostgreSQL", "pg_dump, pg_basebackup, WAL", "Código abierto y extensiones"],
-          ["MySQL/MariaDB", "mysqldump, XtraBackup", "Despliegue sencillo y extendido"]
+          [
+            "Oracle",
+            "RMAN / Data Pump",
+            "Amplio ecosistema empresarial"
+          ],
+          [
+            "SQL Server",
+            "Backup / restore, log de transacciones",
+            "Integración con Windows y AD"
+          ],
+          [
+            "PostgreSQL",
+            "pg_dump, pg_basebackup, WAL",
+            "Código abierto y extensiones"
+          ],
+          [
+            "MySQL/MariaDB",
+            "mysqldump, XtraBackup",
+            "Despliegue sencillo y extendido"
+          ]
         ]
       }
     },
@@ -43,57 +63,67 @@
     {
       "stem": "¿Qué es un SGBD?",
       "options": [
-        "Un sistema que almacena, organiza y protege datos y ofrece acceso mediante un lenguaje",
-        "Un lenguaje de programación",
         "Un protocolo de red",
+        "Un lenguaje de programación",
+        "Un sistema que almacena, organiza y protege datos y ofrece acceso mediante un lenguaje",
         "Un tipo de copia de seguridad"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "El SGBD gestiona datos, usuarios, transacciones, copias y rendimiento, además de ejecutar consultas."
     },
     {
       "stem": "¿Qué herramienta se usa en PostgreSQL para un volcado lógico?",
-      "options": ["pg_dump", "RMAN", "mysqldump", "XtraBackup"],
-      "correct": "a",
+      "options": [
+        "XtraBackup",
+        "RMAN",
+        "mysqldump",
+        "pg_dump"
+      ],
+      "correct": "d",
       "explanation": "pg_dump genera un volcado lógico de una base; pg_dumpall incluye roles y bases."
     },
     {
       "stem": "¿Qué herramienta es característica de Oracle para copias y recuperación?",
-      "options": ["RMAN", "pg_dump", "mysqldump", "SQL Server Backup"],
+      "options": [
+        "RMAN",
+        "pg_dump",
+        "mysqldump",
+        "SQL Server Backup"
+      ],
       "correct": "a",
       "explanation": "RMAN (Recovery Manager) es la herramienta de Oracle para copias y recuperación."
     },
     {
       "stem": "¿Qué permite la recuperación a un punto en el tiempo (PITR)?",
       "options": [
-        "Volver a un instante concreto usando copias y registros de cambios",
         "Eliminar los índices",
+        "Volver a un instante concreto usando copias y registros de cambios",
         "Cambiar el gestor de base de datos",
         "Crear un usuario nuevo"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "PITR combina una copia base con registros de transacciones (WAL en PostgreSQL) para restaurar hasta un momento."
     },
     {
       "stem": "¿Qué es un esquema en una base de datos?",
       "options": [
-        "Un espacio que agrupa objetos como tablas, vistas y funciones",
-        "Una copia de seguridad",
         "Un tipo de índice",
+        "Una copia de seguridad",
+        "Un espacio que agrupa objetos como tablas, vistas y funciones",
         "Un usuario administrador"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "El esquema organiza objetos dentro de la base; no es lo mismo que la base de datos."
     },
     {
       "stem": "¿Qué principio debe aplicarse a las cuentas de la aplicación?",
       "options": [
-        "Mínimo privilegio: solo los permisos necesarios",
+        "Desactivar la autenticación",
         "Usar el usuario administrador para todo",
         "Compartir una cuenta entre aplicaciones",
-        "Desactivar la autenticación"
+        "Mínimo privilegio: solo los permisos necesarios"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La aplicación debe tener permisos limitados; el administrador se reserva para tareas de administración."
     },
     {
@@ -110,35 +140,48 @@
     {
       "stem": "¿Qué hay que probar en una estrategia de alta disponibilidad?",
       "options": [
-        "El failover o conmutación ante la caída del primario",
         "Solo el color del panel",
+        "El failover o conmutación ante la caída del primario",
         "La velocidad de la impresora",
         "El tamaño del disco"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Una conmutación no probada es una hipótesis; hay que medir tiempo y comprobar que la aplicación se recupera."
     },
     {
       "stem": "¿Por qué las migraciones deben estar versionadas?",
       "options": [
-        "Para aplicar cambios de forma reproducible y poder revertirlos",
-        "Para que la base ocupe más",
         "Para eliminar las copias",
+        "Para que la base ocupe más",
+        "Para aplicar cambios de forma reproducible y poder revertirlos",
         "Para que el usuario no vea los datos"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "Las migraciones versionadas permiten revisar, reproducir y revertir cambios de esquema."
     },
     {
       "stem": "¿Qué debe cumplir una copia de seguridad de base de datos?",
       "options": [
-        "Ser externa, cifrada, con retención y probada con restauraciones",
+        "No cifrarse nunca",
         "Estar solo en el mismo disco",
         "No documentarse",
-        "No cifrarse nunca"
+        "Ser externa, cifrada, con retención y probada con restauraciones"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La copia solo es útil si se puede restaurar; debe estar protegida, fuera del servidor y probada."
     }
+  ],
+  "memorizar": [
+    "Copia lógica frente a física: `pg_dump`/`pg_dumpall` son volcados lógicos; `pg_basebackup` y el archivado WAL son copias físicas.",
+    "PITR: recuperación a un punto en el tiempo combinando una copia base con los registros de cambios (WAL en PostgreSQL).",
+    "Herramientas por gestor: Oracle `RMAN` y Data Pump; SQL Server copias completa, diferencial y de registro de transacciones; MySQL/MariaDB `mysqldump` y XtraBackup.",
+    "Mínimo privilegio: cuentas separadas para administración, aplicación y lectura; la aplicación no se conecta como administrador.",
+    "Una copia útil es externa, cifrada, con retención y probada con restauraciones; y el failover se prueba, no se supone."
+  ],
+  "errores": [
+    "Confundir copia lógica con copia física: la lógica exporta datos y estructura; la física copia archivos de datos y WAL.",
+    "Confundir esquema con base de datos o con copia de seguridad: el esquema solo agrupa objetos.",
+    "Creer que tener una réplica evita las copias: la réplica reproduce también un borrado accidental.",
+    "Dar por buena una copia porque el proceso terminó sin error: sin restauración probada es una hipótesis."
   ]
 }

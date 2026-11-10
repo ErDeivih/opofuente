@@ -25,13 +25,37 @@
     {
       "heading": "Tabla de soporte",
       "table": {
-        "columns": ["Ámbito", "Herramienta o práctica", "Objetivo"],
+        "columns": [
+          "Ámbito",
+          "Herramienta o práctica",
+          "Objetivo"
+        ],
         "rows": [
-          ["Incidencias", "Service desk y colas", "Registrar, priorizar y resolver"],
-          ["Inventario", "CMDB / hoja de activos", "Conocer equipos y licencias"],
-          ["Despliegue", "Imagen y gestión de software", "Puestos reproducibles"],
-          ["Remoto", "RDP, VNC, herramientas corporativas", "Resolver sin desplazamiento"],
-          ["Móvil", "MDM", "Políticas y borrado remoto"]
+          [
+            "Incidencias",
+            "Service desk y colas",
+            "Registrar, priorizar y resolver"
+          ],
+          [
+            "Inventario",
+            "CMDB / hoja de activos",
+            "Conocer equipos y licencias"
+          ],
+          [
+            "Despliegue",
+            "Imagen y gestión de software",
+            "Puestos reproducibles"
+          ],
+          [
+            "Remoto",
+            "RDP, VNC, herramientas corporativas",
+            "Resolver sin desplazamiento"
+          ],
+          [
+            "Móvil",
+            "MDM",
+            "Políticas y borrado remoto"
+          ]
         ]
       }
     },
@@ -44,12 +68,12 @@
     {
       "stem": "¿Qué es el service desk?",
       "options": [
-        "El punto único de contacto para incidencias y peticiones de soporte",
+        "El sistema de copias",
         "El servidor de correo",
         "El cortafuegos perimetral",
-        "El sistema de copias"
+        "El punto único de contacto para incidencias y peticiones de soporte"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El service desk centraliza la atención, registra los casos y coordina su resolución."
     },
     {
@@ -66,34 +90,34 @@
     {
       "stem": "¿Para qué sirve el inventario de equipos?",
       "options": [
-        "Para conocer equipos, usuarios, garantías, licencias y software",
         "Para sustituir las copias de seguridad",
+        "Para conocer equipos, usuarios, garantías, licencias y software",
         "Para cifrar el disco",
         "Para asignar direcciones IP"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El inventario permite controlar activos y licencias y planificar el ciclo de vida."
     },
     {
       "stem": "¿Qué es una imagen de equipo?",
       "options": [
-        "Una plantilla del sistema y el software base para desplegar puestos",
-        "Una copia de los datos del usuario",
         "Un tipo de monitor",
+        "Una copia de los datos del usuario",
+        "Una plantilla del sistema y el software base para desplegar puestos",
         "Un protocolo de red"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La imagen estandariza la instalación y reduce errores; después se aplican configuraciones y políticas."
     },
     {
       "stem": "¿Qué debe acompañar al soporte remoto?",
       "options": [
-        "Autenticación, registro y consentimiento del usuario",
+        "Abrir la sesión sin avisar",
         "Desactivar el cortafuegos",
         "Compartir la contraseña del administrador",
-        "Abrir la sesión sin avisar"
+        "Autenticación, registro y consentimiento del usuario"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "El acceso remoto debe ser seguro, trazable y autorizado; abrir sesiones sin consentimiento vulnera la privacidad."
     },
     {
@@ -110,34 +134,34 @@
     {
       "stem": "¿Qué permite un MDM en dispositivos móviles?",
       "options": [
-        "Aplicar políticas, instalar aplicaciones y borrar el dispositivo de forma remota",
         "Aumentar la memoria RAM",
+        "Aplicar políticas, instalar aplicaciones y borrar el dispositivo de forma remota",
         "Sustituir la VPN",
         "Gestionar la impresora de red"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "El MDM (Mobile Device Management) permite matricular, configurar y proteger dispositivos corporativos."
     },
     {
       "stem": "¿Qué precaución hay que tomar al dar de baja un equipo?",
       "options": [
-        "Borrar de forma segura los datos y recuperar licencias",
-        "Entregarlo sin borrar el disco",
         "Mantener las cuentas activas",
+        "Entregarlo sin borrar el disco",
+        "Borrar de forma segura los datos y recuperar licencias",
         "Guardar la contraseña en el teclado"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "La baja debe incluir borrado seguro, recuperación de licencias y actualización del inventario para evitar fugas."
     },
     {
       "stem": "¿Por qué hay que derivar con toda la información al siguiente nivel?",
       "options": [
-        "Para que el usuario no repita el problema y se resuelva antes",
+        "Para eliminar el historial",
         "Para cerrar el ticket sin resolverlo",
         "Para que el usuario aprenda a arreglarlo",
-        "Para eliminar el historial"
+        "Para que el usuario no repita el problema y se resuelva antes"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "Una derivación completa evita duplicar diagnóstico y mejora el tiempo de resolución."
     },
     {
@@ -151,5 +175,18 @@
       "correct": "a",
       "explanation": "Saber qué equipos existen y cuándo se retiran permite aplicar borrado seguro y evitar fugas de información."
     }
+  ],
+  "memorizar": [
+    "Niveles de soporte: nivel 1 atención inicial y casos conocidos; nivel 2 especialistas; nivel 3 fabricante, desarrollo o proveedor externo.",
+    "Ciclo de vida del equipo: alta, uso, cambio y baja; la baja incluye borrado seguro y recuperación de licencias.",
+    "Imagen de equipo: plantilla de sistema operativo, controladores y software base; el despliegue puede ser manual o automatizado.",
+    "Soporte remoto (RDP, VNC) con autenticación, registro y consentimiento del usuario.",
+    "MDM: matrícula, políticas, aplicaciones y borrado remoto; en BYOD se separan los datos personales y los corporativos."
+  ],
+  "errores": [
+    "Creer que el service desk es solo un teléfono: es el punto único de contacto y registra cada caso.",
+    "Pensar que se puede derivar de nivel sin información: una derivación completa evita repetir el diagnóstico.",
+    "Confundir la imagen de equipo (plantilla del sistema) con una copia de seguridad de los datos del usuario.",
+    "Dar de baja un equipo sin borrar el disco ni recuperar las licencias."
   ]
 }

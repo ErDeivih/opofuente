@@ -70,6 +70,8 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
         assert any("table" in section for section in contenido["sections"]), (
             f"{path}: un tema completo debe incluir una tabla"
         )
+        assert 3 <= len(contenido["memorizar"]) <= 5, f"{path}: memorizar incompleto"
+        assert 2 <= len(contenido["errores"]) <= 4, f"{path}: errores incompletos"
         assert contenido["practicaStatus"] == "con_practica"
         practica = next(item for item in data["practices"] if item["tema_path"] == path)
         assert len(practica["questions"]) == 10

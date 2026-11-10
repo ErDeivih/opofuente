@@ -29,12 +29,32 @@
     {
       "heading": "Tabla de órdenes",
       "table": {
-        "columns": ["Categoría", "Órdenes", "Uso"],
+        "columns": [
+          "Categoría",
+          "Órdenes",
+          "Uso"
+        ],
         "rows": [
-          ["DDL", "CREATE, ALTER, DROP", "Estructuras"],
-          ["DML", "SELECT, INSERT, UPDATE, DELETE", "Datos"],
-          ["DCL", "GRANT, REVOKE", "Permisos"],
-          ["TCL", "BEGIN, COMMIT, ROLLBACK", "Transacciones"]
+          [
+            "DDL",
+            "CREATE, ALTER, DROP",
+            "Estructuras"
+          ],
+          [
+            "DML",
+            "SELECT, INSERT, UPDATE, DELETE",
+            "Datos"
+          ],
+          [
+            "DCL",
+            "GRANT, REVOKE",
+            "Permisos"
+          ],
+          [
+            "TCL",
+            "BEGIN, COMMIT, ROLLBACK",
+            "Transacciones"
+          ]
         ]
       }
     },
@@ -46,20 +66,35 @@
   "questions": [
     {
       "stem": "¿Qué órdenes pertenecen al DDL?",
-      "options": ["CREATE, ALTER y DROP", "SELECT, INSERT y UPDATE", "GRANT y REVOKE", "COMMIT y ROLLBACK"],
-      "correct": "a",
+      "options": [
+        "SELECT, INSERT y UPDATE",
+        "CREATE, ALTER y DROP",
+        "GRANT y REVOKE",
+        "COMMIT y ROLLBACK"
+      ],
+      "correct": "b",
       "explanation": "El DDL define estructuras: crear, modificar y eliminar tablas, índices y otros objetos."
     },
     {
       "stem": "¿Qué orden se usa para recuperar datos?",
-      "options": ["SELECT", "INSERT", "UPDATE", "DELETE"],
-      "correct": "a",
+      "options": [
+        "UPDATE",
+        "INSERT",
+        "SELECT",
+        "DELETE"
+      ],
+      "correct": "c",
       "explanation": "SELECT consulta datos; INSERT, UPDATE y DELETE los modifican."
     },
     {
       "stem": "¿Qué cláusula filtra filas antes de agrupar?",
-      "options": ["WHERE", "HAVING", "ORDER BY", "GROUP BY"],
-      "correct": "a",
+      "options": [
+        "GROUP BY",
+        "HAVING",
+        "ORDER BY",
+        "WHERE"
+      ],
+      "correct": "d",
       "explanation": "WHERE filtra filas; HAVING filtra grupos después de agrupar."
     },
     {
@@ -76,63 +111,81 @@
     {
       "stem": "¿Qué devuelve un INNER JOIN?",
       "options": [
-        "Solo las filas que coinciden en ambas tablas",
         "Todas las filas de la izquierda",
+        "Solo las filas que coinciden en ambas tablas",
         "Todas las filas de ambas tablas",
         "Ninguna fila"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "INNER JOIN descarta las filas sin coincidencia; LEFT JOIN conserva todas las de la izquierda."
     },
     {
       "stem": "¿Qué hace un LEFT JOIN?",
       "options": [
-        "Conserva todas las filas de la tabla izquierda y añade las coincidencias de la derecha",
-        "Conserva solo las coincidencias",
         "Conserva solo la tabla derecha",
+        "Conserva solo las coincidencias",
+        "Conserva todas las filas de la tabla izquierda y añade las coincidencias de la derecha",
         "Elimina las filas duplicadas"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "LEFT JOIN mantiene las filas de la izquierda aunque no tengan pareja, con nulos en las columnas de la derecha."
     },
     {
       "stem": "¿Qué es una vista?",
       "options": [
-        "Una consulta guardada que se comporta como una tabla virtual",
+        "Una transacción",
         "Una copia física de la base de datos",
         "Un índice",
-        "Una transacción"
+        "Una consulta guardada que se comporta como una tabla virtual"
       ],
-      "correct": "a",
+      "correct": "d",
       "explanation": "La vista guarda una consulta y se puede usar como tabla; no almacena necesariamente los datos."
     },
     {
       "stem": "¿Qué orden confirma una transacción?",
-      "options": ["COMMIT", "ROLLBACK", "BEGIN", "GRANT"],
+      "options": [
+        "COMMIT",
+        "ROLLBACK",
+        "BEGIN",
+        "GRANT"
+      ],
       "correct": "a",
       "explanation": "COMMIT confirma los cambios; ROLLBACK los deshace y BEGIN inicia la transacción."
     },
     {
       "stem": "¿Cómo se evita la inyección SQL?",
       "options": [
-        "Usando consultas parametrizadas o preparadas",
         "Concatenando el texto del usuario",
+        "Usando consultas parametrizadas o preparadas",
         "Desactivando los permisos",
         "Ejecutando SQL dinámico sin validar"
       ],
-      "correct": "a",
+      "correct": "b",
       "explanation": "Las consultas parametrizadas separan el código de los datos y evitan que la entrada se interprete como SQL."
     },
     {
       "stem": "¿Qué hace GRANT?",
       "options": [
-        "Concede permisos a un usuario o rol",
-        "Crea una tabla",
         "Elimina una fila",
+        "Crea una tabla",
+        "Concede permisos a un usuario o rol",
         "Confirma una transacción"
       ],
-      "correct": "a",
+      "correct": "c",
       "explanation": "GRANT concede privilegios; REVOKE los retira. Forman parte del DCL."
     }
+  ],
+  "memorizar": [
+    "Categorías SQL: DDL (`CREATE`, `ALTER`, `DROP`), DML (`SELECT`, `INSERT`, `UPDATE`, `DELETE`), DCL (`GRANT`, `REVOKE`) y TCL (`BEGIN`, `COMMIT`, `ROLLBACK`).",
+    "`WHERE` filtra filas antes de agrupar; `HAVING` filtra grupos después de `GROUP BY`.",
+    "Uniones: `INNER JOIN` solo coincidencias; `LEFT JOIN` todas las de la izquierda; `RIGHT JOIN` todas las de la derecha; `FULL JOIN` todas las de ambas.",
+    "Agregación: `COUNT`, `SUM`, `AVG`, `MIN` y `MAX`, combinadas con `GROUP BY`.",
+    "`COMMIT` confirma la transacción y `ROLLBACK` la deshace; las consultas parametrizadas evitan la inyección SQL."
+  ],
+  "errores": [
+    "Confundir `WHERE` con `HAVING`: `WHERE` actúa sobre filas y `HAVING` sobre grupos ya formados.",
+    "Olvidar el `WHERE` en un `UPDATE` o un `DELETE`: sin filtro se modifican o borran todas las filas.",
+    "Creer que `SELECT` es DDL: es DML; DDL son `CREATE`, `ALTER` y `DROP`.",
+    "Pensar que un `JOIN` conserva las filas sin coincidencia: eso solo ocurre en `LEFT`, `RIGHT` o `FULL`, no en `INNER`."
   ]
 }
