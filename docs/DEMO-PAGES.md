@@ -88,6 +88,9 @@ Capturas a **390 y 1280** en [`docs/capturas/demo-pages/`](capturas/demo-pages/)
 - Sin backend: no hay cuentas, ni progreso entre dispositivos, ni banco completo, ni biblioteca.
 - El progreso del visitante vive en su navegador; borrar datos del sitio lo elimina.
 - 27 temas aún no están redactados: la demo lo dice, no los rellena.
+- El temario TAI recuperado (33/33 temas, 330 preguntas) está **en local y es privado**: procede de
+  material de terceros y no se publica aquí. Inventario y derechos en
+  [`TEMARIO-RECUPERADO.md`](TEMARIO-RECUPERADO.md).
 - La demo publica únicamente contenido propio; el repositorio principal sigue privado.
 - GitHub Pages sirve estático sin cabeceras propias; el HTML lleva una CSP por `<meta>` que bloquea
   cualquier conexión de red (`connect-src 'none'`).
