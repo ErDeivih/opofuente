@@ -520,3 +520,22 @@ Aquí queda el resumen con el motivo y la reversión.
 - **Alternativa descartada:** reservas fijas por bloque (no todas las convocatorias las usan) y
   reservas sin tope (no queda material fuera de la sesión).
 - **Reversión:** quitar el campo y el selector; no hay migración (las columnas de reserva ya existen).
+
+## D-034 — El material de academia y de terceros no se publica (2026-11-10)
+
+- **Fecha:** 2026-11-10 · **Nivel:** 1 · **Estado:** aplicada.
+- **Decisión:** los apuntes, preguntas y explicaciones que se publican en la demo de GitHub Pages
+  son de **redacción propia** y citan una fuente oficial (BOE, TUE/TFUE, RFC, ISO, NIST o
+  documentación oficial). El material de academia y de terceros —los PDF de `Downloads`, el temario
+  TAI recuperado de `F:\OpoFuente` (incluido Hellcito), los tests de academia y cualquier compilación
+  ajena— se usa solo como **referencia interna** en `data/` (ignorado por git) o en el disco local.
+  No se copia a `fixtures/`, no entra en el build de la demo y no se redistribuye.
+- **Motivo:** la demo es un repositorio público. Citar la fuente no concede licencia para
+  redistribuir el texto; el temario recuperado declara expresamente su origen en un temario de
+  academia ampliado con material de terceros. Publicarlo sería una infracción de derechos, no una
+  mejora de producto.
+- **Consecuencia:** el mapa de cobertura distingue **publicado** (apuntes propios) de **referencia
+  interna** (PDFs y TAI recuperado). Un tema con PDF de apoyo sigue estando «Pendiente» si no tiene
+  apuntes propios publicados; la cobertura publicada no cuenta material privado.
+- **Reversión:** solo con autorización o licencia documentada por escrito para el material concreto.
+  En ese caso se revisa, se cita y se decide de nuevo; no se habilita por defecto.

@@ -30,4 +30,5 @@ base para inventarlo: el nombre no lo dice y el contenido no corresponde a otro 
 
 - Se guardan como **complemento de II.13**, no como apunte completo de la demo pública.
 - No se publican en GitHub Pages: son material docente de terceros.
-- Si se usan en local, conviene revisar la licencia del curso antes de redistribuirlos.
+- Decisión aplicada: **D-034** (el material de academia y terceros no se publica; solo referencia
+  interna). Si se usan en local, conviene revisar la licencia del curso antes de redistribuirlos.

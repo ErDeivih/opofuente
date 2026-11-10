@@ -68,6 +68,15 @@ check('los sellos de apuntes y práctica están visibles', /Apuntes completos/.t
 check('hay al menos 5 temas con apuntes', data.progress.apuntesCompletos >= 5, `${data.progress.apuntesCompletos}`);
 await captura('temario', 'temario', 390);
 
+// Mapa de cobertura publicado: 40 filas con apuntes y práctica.
+const cobertura = await captura('cobertura', 'cobertura', 1280);
+check('el mapa de cobertura publica los 40 temas', /Mapa de cobertura/.test(cobertura));
+check(
+  'la tabla de cobertura tiene 40 filas',
+  (await page.locator('.demo-cobertura tbody tr').count()) === 40,
+);
+await captura('cobertura', 'cobertura', 390);
+
 // Búsqueda y filtro.
 await page.setViewportSize({ width: 1280, height: 900 });
 await page.goto(`${BASE}/#/temario`, { waitUntil: 'networkidle' });

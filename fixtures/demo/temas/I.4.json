@@ -1,0 +1,159 @@
+{
+  "node_path": "I.4",
+  "title": "La organización municipal",
+  "source": {
+    "label": "Ley 7/1985, de 2 de abril, reguladora de las bases del régimen local (texto consolidado)",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1985-5392"
+  },
+  "sections": [
+    {
+      "heading": "El municipio y sus elementos",
+      "body": "El **municipio** es la entidad local básica de la organización territorial del Estado. Tiene personalidad jurídica propia y plena capacidad para el cumplimiento de sus fines (artículo 11 de la Ley 7/1985).\n\nSus elementos son tres: el **territorio** (el término municipal), la **población** (las personas empadronadas) y la **organización** (los órganos que gobiernan y administran). El gobierno y la administración municipal corresponden al **Ayuntamiento**, formado por el Alcalde y los concejales.\n\nEl municipio no es una simple oficina: ejerce potestades públicas (reglamentaria, tributaria, expropiatoria, sancionadora) y presta los servicios que la ley le atribuye. La organización concreta se desarrolla en el **reglamento orgánico** que aprueba el Pleno."
+    },
+    {
+      "heading": "Los órganos necesarios y los complementarios",
+      "body": "La ley distingue entre órganos que existen siempre y órganos que dependen de la población o del reglamento orgánico.\n\n- **Alcalde, Tenientes de Alcalde y Pleno** existen en todos los ayuntamientos.\n- La **Junta de Gobierno Local** existe en los municipios de más de **5.000 habitantes** y también en los de menos cuando lo prevea su reglamento orgánico o lo acuerde el Pleno.\n- La **Comisión Especial de Cuentas** existe en todos los municipios.\n- Son órganos complementarios, regulados por el reglamento orgánico, las **concejalías delegadas**, las **comisiones informativas**, los consejos sectoriales y los órganos desconcentrados.\n\nEn el régimen de **concejo abierto**, propio de municipios pequeños con tradición o circunstancias que lo justifican, el gobierno corresponde a un Alcalde y a una asamblea vecinal de la que forman parte todos los electores."
+    },
+    {
+      "heading": "El Pleno",
+      "body": "El **Pleno** es el órgano de máxima representación política del municipio. Está integrado por todos los concejales y lo preside el Alcalde.\n\nSus atribuciones más importantes (artículo 22) son:\n\n- El **control y la fiscalización** de los órganos de gobierno.\n- La aprobación del **reglamento orgánico**, de las **ordenanzas** y de las **bases de selección** de personal.\n- La aprobación de los **presupuestos**, de la **plantilla** y de las **cuentas**.\n- La aprobación de los convenios y de las formas de gestión de los servicios que la ley le reserve.\n\nEl Pleno celebra sesiones **ordinarias** con la periodicidad que fija la ley (como mínimo mensual en el régimen general) y **extraordinarias** cuando lo convoca el Alcalde o lo solicita una cuarta parte de los concejales. Para adoptar acuerdos necesita el quórum y las mayorías que establece la legislación de régimen local."
+    },
+    {
+      "heading": "El Alcalde y la Junta de Gobierno Local",
+      "body": "El **Alcalde** preside la corporación, dirige el gobierno y la administración municipal, representa al Ayuntamiento y ejerce la jefatura superior del personal (artículo 21). Convoca y preside las sesiones del Pleno y de la Junta de Gobierno, ejecuta los presupuestos, ordena los pagos y ejerce la potestad sancionadora en los términos legales.\n\nLos **Tenientes de Alcalde** son concejales nombrados y cesados libremente por el Alcalde; lo sustituyen en caso de ausencia y pueden recibir delegaciones.\n\nLa **Junta de Gobierno Local** asiste al Alcalde y ejerce las competencias que este le delegue (artículo 23). Se compone del Alcalde y de los concejales que él nombra y cesa libremente. No puede asumir las competencias que la ley atribuye al Pleno."
+    },
+    {
+      "heading": "Concejales, grupos y participación",
+      "body": "Los **concejales** se eligen por sufragio universal, libre, igual, directo y secreto cada **cuatro años**. Tienen derecho a la información necesaria para ejercer su función, a participar en los debates y a percibir las retribuciones o indemnizaciones que correspondan.\n\nSe organizan en **grupos políticos**. Las **comisiones informativas** estudian los asuntos antes de que lleguen al Pleno y pueden estar formadas por concejales de todos los grupos. Los **concejales delegados** dirigen áreas concretas por delegación del Alcalde.\n\nEl **Reglamento Orgánico** regula la participación ciudadana, la organización de los grupos y el funcionamiento de las comisiones, dentro del marco legal."
+    },
+    {
+      "heading": "Tabla de órganos y funciones",
+      "table": {
+        "columns": ["Órgano", "Composición", "Función principal"],
+        "rows": [
+          ["Pleno", "Todos los concejales, presidido por el Alcalde", "Control político, ordenanzas, presupuestos y cuentas"],
+          ["Alcalde", "Elegido por el Pleno entre los concejales", "Dirige el gobierno y la administración, representa al municipio"],
+          ["Junta de Gobierno Local", "Alcalde y concejales nombrados por él", "Asiste al Alcalde y ejerce sus delegaciones"],
+          ["Tenientes de Alcalde", "Concejales nombrados por el Alcalde", "Sustituyen al Alcalde y asumen delegaciones"],
+          ["Comisión Especial de Cuentas", "Concejales de los grupos", "Examina las cuentas antes de su aprobación"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento de 9.000 habitantes quiere aprobar una ordenanza de terrazas, contratar a dos técnicos y comprobar las cuentas del año anterior. ¿Qué órgano decide cada cosa?\n\n**Resolución.**\n\n- La **ordenanza** la aprueba el **Pleno**, previa tramitación e información pública.\n- La **plantilla** y la oferta de empleo también pasan por el Pleno; la contratación concreta la ejecuta el Alcalde y los servicios municipales conforme a la ley.\n- Las **cuentas** las examina la **Comisión Especial de Cuentas** y las aprueba el Pleno.\n- Al superar los 5.000 habitantes, el municipio tiene **Junta de Gobierno Local**, además de Alcalde, Tenientes de Alcalde y Pleno.\n\n**Conclusión.** El Pleno decide lo político y normativo; el Alcalde ejecuta y dirige; la Junta asiste al Alcalde. Confundir esas tareas es el error típico en los test."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Cuáles son los elementos del municipio?",
+      "options": [
+        "El territorio, la población y la organización",
+        "El Pleno, el Alcalde y la Junta de Gobierno Local",
+        "La provincia, la comarca y la mancomunidad",
+        "El presupuesto, la plantilla y el reglamento orgánico"
+      ],
+      "correct": "a",
+      "explanation": "El artículo 11 de la Ley 7/1985 fija como elementos del municipio el territorio, la población y la organización."
+    },
+    {
+      "stem": "¿En qué municipios existe obligatoriamente la Junta de Gobierno Local?",
+      "options": [
+        "En todos, sin excepción",
+        "En los de más de 5.000 habitantes y, en los de menos, si lo prevé su reglamento orgánico o lo acuerda el Pleno",
+        "Solo en los de más de 20.000 habitantes",
+        "Solo en los de más de 50.000 habitantes"
+      ],
+      "correct": "b",
+      "explanation": "La Ley 7/1985 la exige por encima de 5.000 habitantes y permite crearla en los demás por decisión organizativa."
+    },
+    {
+      "stem": "¿Qué órgano aprueba las ordenanzas municipales?",
+      "options": [
+        "El Alcalde",
+        "La Junta de Gobierno Local",
+        "El Pleno",
+        "El secretario municipal"
+      ],
+      "correct": "c",
+      "explanation": "El artículo 22 atribuye al Pleno la aprobación de las ordenanzas y del reglamento orgánico."
+    },
+    {
+      "stem": "¿Quién dirige el gobierno y la administración municipal y representa al Ayuntamiento?",
+      "options": [
+        "El Pleno",
+        "El Alcalde",
+        "El interventor",
+        "La Comisión Especial de Cuentas"
+      ],
+      "correct": "b",
+      "explanation": "El Alcalde preside la corporación, dirige el gobierno y la administración y representa al municipio (artículo 21)."
+    },
+    {
+      "stem": "¿Cómo se forma la Junta de Gobierno Local?",
+      "options": [
+        "Por todos los concejales de la corporación",
+        "Por el Alcalde y los concejales que él nombra y cesa libremente",
+        "Por los portavoces de los grupos, elegidos por el Pleno",
+        "Por el secretario y el interventor"
+      ],
+      "correct": "b",
+      "explanation": "La Junta se compone del Alcalde y de concejales nombrados y cesados libremente por él; asiste al Alcalde y ejerce sus delegaciones."
+    },
+    {
+      "stem": "¿Quién nombra a los Tenientes de Alcalde?",
+      "options": [
+        "El Pleno por mayoría absoluta",
+        "El Alcalde entre los concejales",
+        "La Junta de Gobierno Local",
+        "El órgano autonómico competente"
+      ],
+      "correct": "b",
+      "explanation": "Los Tenientes de Alcalde son concejales nombrados y cesados por el Alcalde; lo sustituyen y pueden recibir delegaciones."
+    },
+    {
+      "stem": "¿Cuál de estas funciones corresponde al Pleno?",
+      "options": [
+        "Ejecutar el presupuesto y ordenar los pagos",
+        "Controlar y fiscalizar a los órganos de gobierno",
+        "Dirigir la policía local",
+        "Nombrar al interventor"
+      ],
+      "correct": "b",
+      "explanation": "El Pleno controla y fiscaliza a los órganos de gobierno; ejecutar el presupuesto y dirigir los servicios es tarea del Alcalde."
+    },
+    {
+      "stem": "¿Cada cuánto tiempo se eligen los concejales?",
+      "options": [
+        "Cada dos años",
+        "Cada cuatro años",
+        "Cada cinco años",
+        "Cada seis años"
+      ],
+      "correct": "b",
+      "explanation": "Las elecciones municipales se celebran cada cuatro años por sufragio universal, libre, igual, directo y secreto."
+    },
+    {
+      "stem": "¿En qué municipios existe la Comisión Especial de Cuentas?",
+      "options": [
+        "Solo en los de más de 5.000 habitantes",
+        "Solo en los de más de 20.000 habitantes",
+        "En todos los municipios",
+        "Solo donde lo acuerde el Pleno"
+      ],
+      "correct": "c",
+      "explanation": "La Comisión Especial de Cuentas existe en todos los municipios y examina las cuentas antes de su aprobación por el Pleno."
+    },
+    {
+      "stem": "¿Puede la Junta de Gobierno Local aprobar las ordenanzas municipales?",
+      "options": [
+        "Sí, siempre que se lo delegue el Pleno",
+        "No, porque la aprobación de ordenanzas corresponde al Pleno",
+        "Sí, si el municipio tiene más de 5.000 habitantes",
+        "Sí, cuando el Alcalde esté ausente"
+      ],
+      "correct": "b",
+      "explanation": "La Junta ejerce competencias delegadas por el Alcalde, pero no puede asumir las que la ley atribuye expresamente al Pleno, como las ordenanzas."
+    }
+  ]
+}

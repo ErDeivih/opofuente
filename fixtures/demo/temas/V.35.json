@@ -1,0 +1,174 @@
+{
+  "node_path": "V.35",
+  "title": "El Esquema Nacional de Seguridad (ENS, RD 311/2022)",
+  "source": {
+    "label": "Real Decreto 311/2022, de 3 de mayo, por el que se regula el Esquema Nacional de Seguridad",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2022-7191"
+  },
+  "sections": [
+    {
+      "heading": "Qué es el ENS y a quién obliga",
+      "body": "El **Esquema Nacional de Seguridad (ENS)** es el marco común de seguridad de la información para el sector público español. Fija los principios, los requisitos y las medidas que deben cumplir los sistemas que tratan información pública.\n\nSe regula por el **Real Decreto 311/2022**, que sustituyó al Real Decreto 3/2010. Se aplica a las **administraciones públicas** y a las **entidades privadas** que contraten con ellas cuando el contrato implique tratar información pública o prestar servicios TIC.\n\nNo es una norma voluntaria de buenas prácticas: es **normativa básica** y su cumplimiento se exige en la contratación pública y en la auditoría de los sistemas."
+    },
+    {
+      "heading": "Las cinco dimensiones de la seguridad",
+      "body": "El ENS entiende la seguridad como un conjunto de dimensiones que deben protegerse a la vez. Si una falla, la información o el servicio quedan comprometidos. La categoría del sistema se determina valorando el impacto de un incidente en cada dimensión: no es lo mismo un fallo en la web de un ayuntamiento que en el sistema de nóminas o en la historia clínica.",
+      "table": {
+        "columns": [
+          "Dimensión",
+          "Qué protege"
+        ],
+        "rows": [
+          [
+            "Disponibilidad",
+            "Que el sistema y los datos estén accesibles cuando se necesitan"
+          ],
+          [
+            "Autenticidad",
+            "Que la identidad de quien accede o firma sea la que dice ser"
+          ],
+          [
+            "Integridad",
+            "Que la información no se altere sin autorización"
+          ],
+          [
+            "Confidencialidad",
+            "Que solo acceda quien tiene permiso"
+          ],
+          [
+            "Trazabilidad",
+            "Que quede registro de quién hizo qué y cuándo"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "Los principios rectores",
+      "body": "El ENS se apoya en seis principios que orientan cómo se diseña y se gobierna la seguridad:\n\n1. **Seguridad como proceso integral**: no es un producto que se compra, sino un proceso que se mantiene.\n2. **Gestión de riesgos**: hay que identificar activos, amenazas y vulnerabilidades y decidir qué se protege y cuánto.\n3. **Prevención, detección, respuesta y recuperación**: no basta con evitar el incidente; hay que detectarlo, responder y recuperarse.\n4. **Líneas de defensa**: varias capas de protección coordinadas, no un único control.\n5. **Reevaluación periódica**: el riesgo cambia; la seguridad se revisa y se actualiza.\n6. **Función diferenciada**: quien autoriza, quien opera y quien audita no deben ser la misma persona."
+    },
+    {
+      "heading": "Categorías y medidas",
+      "body": "El ENS clasifica los sistemas en tres categorías según el riesgo:\n\n- **Básica**: la mayoría de los sistemas con información pública de impacto limitado.\n- **Media**: cuando el impacto de un incidente es grave para la organización o para los ciudadanos.\n- **Alta**: cuando el impacto es muy grave o afecta a derechos fundamentales, seguridad pública o servicios esenciales.\n\nCada categoría exige un conjunto de medidas del **Anexo II**. Las medidas se agrupan en marcos: organizativo, operacional y de protección. Algunas son comunes y otras se refuerzan en las categorías superiores.\n\nEl sistema debe documentar su **análisis de riesgos**, su **declaración de aplicabilidad** y su **política de seguridad**. La categoría no la elige el proveedor a gusto: se justifica y se revisa."
+    },
+    {
+      "heading": "Gobernanza y auditoría",
+      "body": "El ENS exige repartir responsabilidades. Los roles habituales son:\n\n- **Responsable de la seguridad**: coordina la política y el cumplimiento.\n- **Responsable del sistema**: decide sobre el sistema y asume su explotación.\n- **Responsable de la información**: responde de los datos y de su uso.\n- **Responsable del servicio**: responde de la prestación del servicio.\n\nEl **CCN-CERT** actúa como centro de respuesta a incidentes de referencia para el sector público. Los sistemas de categoría media y alta se auditan periódicamente; la auditoría no sustituye la gestión diaria del riesgo.\n\nEn la contratación, el ENS se traduce en requisitos concretos: el pliego debe exigir la categoría, las medidas y la evidencia de cumplimiento."
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento implanta una sede electrónica para presentar solicitudes y consultar expedientes. ¿Cómo aplica el ENS?\n\n**Resolución.**\n\n1. **Identifica el sistema y la información**: sede electrónica, datos personales de los solicitantes y documentos administrativos.\n2. **Valora el impacto** en las cinco dimensiones: una caída impide presentar solicitudes (disponibilidad); una alteración de documentos rompe la integridad; una fuga afecta a la confidencialidad.\n3. **Categoriza** el sistema (habitualmente **media** o **alta**, según el alcance y la criticidad) y justifica la decisión.\n4. **Aplica las medidas** de la categoría: control de acceso, registro de actividad, copias, gestión de incidentes, continuidad y protección de las comunicaciones.\n5. **Documenta** la política, el análisis de riesgos y la declaración de aplicabilidad; designa responsables.\n6. **Revisa y audita** periódicamente, y exige al proveedor las mismas garantías en el contrato.\n\n**Conclusión.** El ENS no es un trámite final: es un ciclo de gobierno y mejora continua. Aprobar la auditoría con papeles no sirve si el sistema no está protegido de verdad."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué norma regula actualmente el Esquema Nacional de Seguridad?",
+      "options": [
+        "El Real Decreto 3/2010",
+        "El Real Decreto 311/2022",
+        "La Ley 39/2015",
+        "El Reglamento (UE) 2016/679"
+      ],
+      "correct": "b",
+      "explanation": "El ENS se regula por el Real Decreto 311/2022, de 3 de mayo, que sustituye al Real Decreto 3/2010."
+    },
+    {
+      "stem": "¿A quién se aplica el ENS?",
+      "options": [
+        "Solo a la Administración General del Estado",
+        "Solo a las empresas privadas",
+        "A las administraciones públicas y a las entidades privadas que contraten con ellas en los supuestos previstos",
+        "Únicamente a los sistemas que tratan datos de salud"
+      ],
+      "correct": "c",
+      "explanation": "El ENS es normativa básica para el sector público y se extiende a las entidades privadas que contratan con él cuando tratan información pública o prestan servicios TIC."
+    },
+    {
+      "stem": "¿Cuál de estas no es una dimensión de seguridad del ENS?",
+      "options": [
+        "Disponibilidad",
+        "Trazabilidad",
+        "Autenticidad",
+        "Rentabilidad"
+      ],
+      "correct": "d",
+      "explanation": "Las dimensiones son disponibilidad, autenticidad, integridad, confidencialidad y trazabilidad; la rentabilidad es un criterio económico, no de seguridad."
+    },
+    {
+      "stem": "¿Qué categorías de sistemas establece el ENS?",
+      "options": [
+        "Básica, media y alta",
+        "Baja, media y alta",
+        "Pública, privada y mixta",
+        "Bronce, plata y oro"
+      ],
+      "correct": "a",
+      "explanation": "El ENS distingue categoría básica, media y alta según el impacto de un incidente en las dimensiones de seguridad."
+    },
+    {
+      "stem": "¿Qué principio del ENS exige que quien autoriza, opera y audita no sea la misma persona?",
+      "options": [
+        "Seguridad como proceso integral",
+        "Función diferenciada",
+        "Líneas de defensa",
+        "Reevaluación periódica"
+      ],
+      "correct": "b",
+      "explanation": "El principio de función diferenciada separa las responsabilidades de autorización, operación y auditoría para evitar conflictos de interés."
+    },
+    {
+      "stem": "¿Dónde se recogen las medidas de seguridad que debe aplicar cada categoría?",
+      "options": [
+        "En el anexo II del Real Decreto 311/2022",
+        "En la Ley 39/2015",
+        "En el Reglamento de protección de datos",
+        "En la Ley de contratos"
+      ],
+      "correct": "a",
+      "explanation": "El anexo II del Real Decreto 311/2022 contiene las medidas, agrupadas en marcos, que se aplican según la categoría del sistema."
+    },
+    {
+      "stem": "¿Qué documento justifica qué medidas del ENS se aplican y por qué?",
+      "options": [
+        "El presupuesto anual",
+        "La declaración de aplicabilidad",
+        "El pliego de cláusulas administrativas",
+        "El inventario de equipos"
+      ],
+      "correct": "b",
+      "explanation": "La declaración de aplicabilidad recoge las medidas seleccionadas y su justificación a partir del análisis de riesgos."
+    },
+    {
+      "stem": "¿Qué papel tiene el CCN-CERT en el ENS?",
+      "options": [
+        "Aprueba los presupuestos de las administraciones",
+        "Actúa como centro de respuesta a incidentes de referencia para el sector público",
+        "Sustituye a la auditoría interna",
+        "Dicta las leyes de protección de datos"
+      ],
+      "correct": "b",
+      "explanation": "El CCN-CERT es el CERT de referencia del sector público y apoya en la gestión de incidentes de ciberseguridad."
+    },
+    {
+      "stem": "¿Qué debe hacer una administración antes de aplicar las medidas de una categoría?",
+      "options": [
+        "Comprar el software más caro",
+        "Realizar un análisis de riesgos y determinar la categoría del sistema",
+        "Publicar el código fuente",
+        "Suprimir los registros de actividad"
+      ],
+      "correct": "b",
+      "explanation": "La categoría se determina valorando el impacto en las dimensiones de seguridad; el análisis de riesgos es la base para elegir las medidas."
+    },
+    {
+      "stem": "¿Cuál de estas afirmaciones sobre el ENS es correcta?",
+      "options": [
+        "Es un trámite que se hace una vez y no se revisa",
+        "Es un proceso de gestión continua que incluye prevención, detección, respuesta y recuperación",
+        "Solo afecta a la confidencialidad",
+        "Solo se aplica a los sistemas conectados a internet"
+      ],
+      "correct": "b",
+      "explanation": "El ENS concibe la seguridad como un proceso integral y continuo, con reevaluación periódica del riesgo y de las medidas."
+    }
+  ]
+}

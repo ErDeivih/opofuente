@@ -320,6 +320,9 @@ function Header() {
         <button className="button" type="button" onClick={() => { go('temario'); }}>
           Temario
         </button>
+        <button className="button" type="button" onClick={() => { go('cobertura'); }}>
+          Cobertura
+        </button>
         <button className="button" type="button" onClick={() => { go('practicas'); }}>
           Prácticas
         </button>
@@ -382,6 +385,67 @@ function Home() {
           );
         })}
       </div>
+    </>
+  );
+}
+
+function Cobertura() {
+  return (
+    <>
+      <section className="page__header">
+        <h1>Mapa de cobertura</h1>
+        <p className="page__lead">
+          Estado de los 40 temas: apuntes completos, solo resumen o pendientes, y si tienen práctica.
+          Solo cuenta el contenido publicado en esta demo.
+        </p>
+      </section>
+      <ProgressCard />
+      {data.curriculum.blocks.map((block) => (
+        <section className="card" key={block.path}>
+          <h2>
+            {block.path} · {block.title}
+          </h2>
+          <p className="demo-block-progress">
+            {block.path}: {block.coverage.conApuntes}/{block.coverage.total} con apuntes ·{' '}
+            {block.coverage.conPractica}/{block.coverage.total} con práctica
+            {block.coverage.pendientes > 0 ? ` · ${block.coverage.pendientes} pendientes` : ''}
+          </p>
+          <div className="table-wrap">
+            <table className="table demo-cobertura">
+              <thead>
+                <tr>
+                  <th scope="col">Tema</th>
+                  <th scope="col">Apuntes</th>
+                  <th scope="col">Práctica</th>
+                </tr>
+              </thead>
+              <tbody>
+                {block.topics.map((topic) => (
+                  <tr key={topic.path}>
+                    <td>
+                      <button
+                        className="button button--link"
+                        type="button"
+                        onClick={() => {
+                          go(`tema/${topic.path}`);
+                        }}
+                      >
+                        {topic.path} · {topic.title}
+                      </button>
+                    </td>
+                    <td>
+                      <ApuntesBadge status={topic.apuntesStatus} />
+                    </td>
+                    <td>
+                      <PracticaBadge status={topic.practicaStatus} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ))}
     </>
   );
 }
@@ -905,6 +969,8 @@ function App() {
   let content: ReactElement;
   if (parts[0] === 'temario') {
     content = <Temario />;
+  } else if (parts[0] === 'cobertura') {
+    content = <Cobertura />;
   } else if (parts[0] === 'tema' && parts[1] !== undefined) {
     content = <Tema path={parts[1]} />;
   } else if (parts[0] === 'practicas') {
