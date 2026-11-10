@@ -11,8 +11,8 @@ Demo de lectura y práctica, sin backend: el temario va empaquetado y el progres
 guarda en `localStorage`. **No hay cuenta, no hay servidor y no se envía nada.**
 
 - Temario común completo: **5 bloques / 40 temas**.
-- **26 temas con apuntes completos** y **26 prácticas de 10 preguntas** (260 preguntas con respuesta
-  razonada); **14 pendientes**, marcados como tales; **0 solo resumen** por ahora.
+- **28 temas con apuntes completos** y **28 prácticas de 10 preguntas** (280 preguntas con respuesta
+  razonada); **12 pendientes**, marcados como tales; **0 solo resumen** por ahora.
 - **12 convocatorias C1 de informática** a las que sirve el temario (10 por confirmar y 2 cerradas),
   más el perfil TAI. Se muestra en la portada, con enlace a las bases de cada una.
 - **Mapa de cobertura publicado** en `#/cobertura`: los 40 temas con su estado y su práctica.
@@ -38,13 +38,13 @@ local; para publicarla con backend hace falta una cuenta de Render/Hugging Face
 |---|---|---|---|---|
 | I · Administración y normativa | 12 | 12 | 0 | 12 |
 | II · Informática básica y ofimática | 5 | 5 | 0 | 5 |
-| III · Sistemas, redes y comunicaciones | 9 | 6 | 3 | 6 |
+| III · Sistemas, redes y comunicaciones | 9 | 8 | 1 | 8 |
 | IV · Datos y desarrollo | 7 | 1 | 6 | 1 |
 | V · Seguridad y administración electrónica | 7 | 2 | 5 | 2 |
-| **Total** | **40** | **26** | **14** | **26** |
+| **Total** | **40** | **28** | **12** | **28** |
 
 Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12,
-II.13, II.14, II.15, II.16, **II.17**, **III.18**, III.19, III.20, III.21, **III.22**, III.24, IV.27,
+II.13, II.14, II.15, II.16, **II.17**, **III.18**, III.19, III.20, III.21, **III.22**, **III.23**, III.24, **III.25**, IV.27,
 V.34 y V.35.
 Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 
@@ -91,7 +91,7 @@ Revisión final móvil en [`REVISION-FINAL-2026-11-10.md`](REVISION-FINAL-2026-1
 
 - Sin backend: no hay cuentas, ni progreso entre dispositivos, ni banco completo, ni biblioteca.
 - El progreso vive en el navegador; borrar datos del sitio lo elimina.
-- 14 temas aún no están redactados: la demo lo dice, no los rellena.
+- 12 temas aún no están redactados: la demo lo dice, no los rellena.
 - El temario TAI recuperado (33/33 temas, 330 preguntas) está **en local y es privado**: procede de
   material de terceros y no se publica aquí. Inventario y derechos en
   [`TEMARIO-RECUPERADO.md`](TEMARIO-RECUPERADO.md).

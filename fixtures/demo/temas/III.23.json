@@ -1,0 +1,140 @@
+{
+  "node_path": "III.23",
+  "title": "Servicios de red",
+  "source": {
+    "label": "IETF RFC 1034 — Domain Names: Concepts and Facilities (DNS)",
+    "url": "https://datatracker.ietf.org/doc/html/rfc1034"
+  },
+  "sections": [
+    {
+      "heading": "DNS: nombres en lugar de direcciones",
+      "body": "El **DNS** traduce nombres legibles (`www.ayuntamiento.es`) en direcciones IP y permite localizar servicios. Es una base de datos jerárquica y distribuida: servidores raíz, servidores de dominio de primer nivel (`.es`) y servidores autoritativos de cada zona.\n\nLos registros principales son **A** (IPv4), **AAAA** (IPv6), **CNAME** (alias), **MX** (correo), **TXT** (verificación y políticas) y **NS** (servidores de la zona). El **TTL** indica cuánto puede cachear un resolutor la respuesta.\n\nLa caché acelera las consultas, pero un TTL alto retrasa los cambios. **DNSSEC** añade firmas para verificar la autenticidad de las respuestas."
+    },
+    {
+      "heading": "DHCP: configuración automática",
+      "body": "**DHCP** asigna direcciones IP y parámetros de red (máscara, puerta de enlace, DNS, dominio) a los clientes. El intercambio básico es **DORA**: Discover, Offer, Request, Acknowledge.\n\nLa dirección se concede mediante un **lease** o concesión temporal; el cliente la renueva antes de que caduque. El servidor define **ámbitos** (rangos), exclusiones y reservas por MAC.\n\nEn redes con varias subredes se usan **relays** DHCP para que el servidor reciba las peticiones. Una mala configuración de DHCP puede dejar sin red a toda la oficina."
+    },
+    {
+      "heading": "NTP, LDAP y proxy",
+      "body": "**NTP** sincroniza la hora de los equipos. Es crítico para los registros, la autenticación Kerberos, los certificados y la correlación de incidentes. Los servidores se organizan por **estratos**; conviene usar fuentes fiables y limitar quién puede consultarlas.\n\n**LDAP** es un protocolo de directorio para consultar usuarios, grupos y recursos; **Active Directory** lo usa como base. El **proxy** actúa como intermediario: puede cachear, filtrar, autenticar y registrar el tráfico web.\n\nEn redes de administración pública se separan los servicios internos de los publicados a internet y se aplican listas de control."
+    },
+    {
+      "heading": "Alta disponibilidad de servicios",
+      "body": "Un servicio de red es crítico si su caída impide trabajar. La alta disponibilidad combina **redundancia** (varios servidores o enlaces), **balanceo**, **comprobaciones de salud** y **conmutación por error**.\n\nDNS y DHCP deben tener al menos dos instancias; el correo y la web, balanceadores y copias. La monitorización detecta la caída y dispara la alerta; la documentación permite recuperar el servicio sin depender de una persona.\n\nLa alta disponibilidad no sustituye las copias: protege de fallos, no de borrados o ransomware."
+    },
+    {
+      "heading": "Tabla de servicios",
+      "table": {
+        "columns": ["Servicio", "Función", "Puerto habitual"],
+        "rows": [
+          ["DNS", "Resolución de nombres", "53 (UDP/TCP)"],
+          ["DHCP", "Asignación de configuración IP", "67/68 (UDP)"],
+          ["NTP", "Sincronización de hora", "123 (UDP)"],
+          ["LDAP", "Consulta de directorio", "389 / 636 (LDAPS)"],
+          ["HTTP/HTTPS", "Servicio web y proxy", "80 / 443"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento monta la red de un edificio nuevo con 120 puestos, servidores internos y una web publicada.\n\n**Resolución.**\n\n- **DNS** con dos servidores (uno principal y otro secundario), zonas internas y externas separadas.\n- **DHCP** con ámbitos por planta, reservas para impresoras y servidores, y relay en las VLAN.\n- **NTP** apuntando a fuentes fiables; todos los equipos sincronizados para que los registros sean comparables.\n- **Proxy** para el tráfico web de los puestos, con registro y filtrado; la web pública se publica con un **reverse proxy**.\n- **Monitorización** de DNS, DHCP y web con alertas y pruebas de conmutación.\n\n**Conclusión.** Los servicios de red son invisibles cuando funcionan y bloquean todo cuando fallan; se diseñan con redundancia y se documentan."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué hace el DNS?",
+      "options": [
+        "Traducir nombres de dominio en direcciones IP",
+        "Asignar direcciones IP a los clientes",
+        "Sincronizar la hora del sistema",
+        "Cifrar el correo"
+      ],
+      "correct": "a",
+      "explanation": "DNS resuelve nombres legibles a direcciones IP y localiza servicios; DHCP asigna direcciones y NTP sincroniza la hora."
+    },
+    {
+      "stem": "¿Qué registro DNS se usa para una dirección IPv4?",
+      "options": ["A", "AAAA", "MX", "CNAME"],
+      "correct": "a",
+      "explanation": "El registro A apunta a una IPv4; AAAA a una IPv6, MX al servidor de correo y CNAME crea un alias."
+    },
+    {
+      "stem": "¿Qué registro indica los servidores de correo de un dominio?",
+      "options": ["MX", "A", "NS", "TXT"],
+      "correct": "a",
+      "explanation": "Los registros MX identifican los servidores que reciben correo para el dominio."
+    },
+    {
+      "stem": "¿Qué orden sigue el intercambio básico de DHCP?",
+      "options": [
+        "Discover, Offer, Request, Acknowledge",
+        "Request, Offer, Discover, Acknowledge",
+        "Offer, Discover, Acknowledge, Request",
+        "Acknowledge, Request, Offer, Discover"
+      ],
+      "correct": "a",
+      "explanation": "El cliente descubre, el servidor ofrece, el cliente solicita y el servidor confirma: DORA."
+    },
+    {
+      "stem": "¿Qué es un lease de DHCP?",
+      "options": [
+        "La concesión temporal de una dirección IP",
+        "Un registro DNS",
+        "Un tipo de cable",
+        "Un protocolo de correo"
+      ],
+      "correct": "a",
+      "explanation": "El lease es el tiempo durante el cual el cliente puede usar la dirección; antes de caducar debe renovarla."
+    },
+    {
+      "stem": "¿Para qué sirve NTP?",
+      "options": [
+        "Sincronizar la hora de los equipos",
+        "Resolver nombres",
+        "Asignar IP",
+        "Filtrar el correo"
+      ],
+      "correct": "a",
+      "explanation": "NTP sincroniza relojes; una hora coherente es esencial para logs, certificados y Kerberos."
+    },
+    {
+      "stem": "¿Qué protocolo se usa para consultar un directorio de usuarios?",
+      "options": ["LDAP", "DHCP", "NTP", "SMTP"],
+      "correct": "a",
+      "explanation": "LDAP permite consultar y modificar un directorio; Active Directory lo utiliza como base."
+    },
+    {
+      "stem": "¿Qué hace un proxy inverso?",
+      "options": [
+        "Recibe peticiones de internet y las reenvía a servidores internos",
+        "Asigna direcciones IP",
+        "Sincroniza la hora",
+        "Resuelve nombres DNS"
+      ],
+      "correct": "a",
+      "explanation": "El reverse proxy publica servicios internos, puede terminar TLS, balancear y filtrar peticiones."
+    },
+    {
+      "stem": "¿Qué es una comprobación de salud (health check) en alta disponibilidad?",
+      "options": [
+        "Una prueba periódica para saber si un servidor responde y puede recibir tráfico",
+        "Un análisis de vulnerabilidades",
+        "Una copia de seguridad",
+        "Un registro DNS"
+      ],
+      "correct": "a",
+      "explanation": "El balanceador comprueba la salud y deja de enviar tráfico a un nodo caído, permitiendo la conmutación."
+    },
+    {
+      "stem": "¿Por qué DNS y DHCP deben tener redundancia?",
+      "options": [
+        "Porque su caída deja sin resolución o sin configuración de red a muchos equipos",
+        "Porque ocupan mucho disco",
+        "Porque solo funcionan en Windows",
+        "Porque no admiten IPv6"
+      ],
+      "correct": "a",
+      "explanation": "Son servicios básicos: si fallan, los clientes no encuentran servicios o no obtienen configuración de red."
+    }
+  ]
+}

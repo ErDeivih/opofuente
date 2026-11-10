@@ -36,14 +36,14 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 
 ## Estado final
 
-- **26/40** apuntes completos; **14 pendientes**; **0 solo resumen**; **26 prácticas**; **260 preguntas**.
-- Cobertura por bloque: **I 12/12 · II 5/5 · III 6/9 · IV 1/7 · V 2/7**.
+- **28/40** apuntes completos; **12 pendientes**; **0 solo resumen**; **26 prácticas**; **260 preguntas**.
+- Cobertura por bloque: **I 12/12 · II 5/5 · III 8/9 · IV 1/7 · V 2/7**.
 - **12/12** enlaces de convocatoria abren (HTTP 200).
 - Pruebas: 517 unitarias de backend, 225 de web, typecheck, eslint, ruff, mypy y build.
 
 ## Lo que queda para mañana
 
-- **III.23** Servicios de red, **III.25** Cloud y centros de datos, **III.26** Soporte al puesto.
+- **III.26** Soporte al puesto.
 - **IV.28** SQL, **IV.29** Gestores de BD, **IV.30** Programación, **IV.31** Desarrollo web,
   **IV.32** Interoperabilidad, **IV.33** Informes.
 - **V.36** Criptografía y firma, **V.37** Protección de datos aplicada, **V.38** Ciberseguridad,

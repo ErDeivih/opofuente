@@ -11,14 +11,13 @@ interna y no suma cobertura (decisión D-034).
 |---|---|---|---|---|---|
 | I · Administración y normativa | 12 | 12 | 0 | 0 | 12 |
 | II · Informática básica y ofimática | 5 | 5 | 0 | 0 | 5 |
-| III · Sistemas, redes y comunicaciones | 9 | 6 | 0 | 3 | 6 |
+| III · Sistemas, redes y comunicaciones | 9 | 8 | 0 | 1 | 8 |
 | IV · Datos y desarrollo | 7 | 1 | 0 | 6 | 1 |
 | V · Seguridad y administración electrónica | 7 | 2 | 0 | 5 | 2 |
-| **Total** | **40** | **26** | **0** | **14** | **26** |
+| **Total** | **40** | **28** | **0** | **12** | **28** |
 
-Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.24, IV.27, V.34, V.35. En esta tanda se han añadido **II.17 Licencias y software
-libre**, **III.18 Sistemas operativos de servidor** y **III.22 Comunicaciones**. II.16 ya estaba
-completo; con estos tres se llega a 26/40.
+Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, IV.27, V.34, V.35. En esta tanda se han añadido **III.23 Servicios de red** y
+**III.25 Cloud y centros de datos**.
 
 ## Los 40 temas
 
@@ -46,9 +45,9 @@ completo; con estos tres se llega a 26/40.
 | III.20 | Almacenamiento y copias de seguridad | Completos | Con práctica |
 | III.21 | Redes | Completos | Con práctica |
 | III.22 | Comunicaciones | Completos | Con práctica |
-| III.23 | Servicios de red | Pendiente | Pendiente |
+| III.23 | Servicios de red | Completos | Con práctica |
 | III.24 | Monitorización y gestión de incidencias | Completos | Con práctica |
-| III.25 | Cloud y centros de datos | Pendiente | Pendiente |
+| III.25 | Cloud y centros de datos | Completos | Con práctica |
 | III.26 | Soporte al puesto de trabajo | Pendiente | Pendiente |
 | IV.27 | Bases de datos relacionales | Completos | Con práctica |
 | IV.28 | SQL | Pendiente | Pendiente |
@@ -84,9 +83,9 @@ distinto (no hay otro tema del índice que trate procesadores) ni se publican.
 ## Coherencia del mapa y los sellos
 
 Comprobado con el build y con Playwright sobre la URL pública (44/44): los 40 temas de la tabla
-coinciden con los sellos de apuntes y práctica; los 26 completos tienen 3+ apartados, tabla, fuente y
-10 preguntas; los 14 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
-total (26 + 14 = 40) y no hay temas «solo resumen» hoy. Los **12 enlaces de convocatoria** abren
+coinciden con los sellos de apuntes y práctica; los 28 completos tienen 3+ apartados, tabla, fuente y
+10 preguntas; los 12 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
+total (28 + 12 = 40) y no hay temas «solo resumen» hoy. Los **12 enlaces de convocatoria** abren
 (HTTP 200) y su texto empieza por «Bases de»; verificado con `verificar-convocatorias.mjs`.
 
 ## Regla de derechos

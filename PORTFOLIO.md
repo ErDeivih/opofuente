@@ -31,13 +31,13 @@ servidor.
 
 ### Contenido
 
-- **26 de 40 temas** con apuntes completos de redacción propia: apartados, definiciones, tablas,
+- **28 de 40 temas** con apuntes completos de redacción propia: apartados, definiciones, tablas,
   ejemplos resueltos y fuente oficial (BOE, TUE/TFUE, RFC, ISO, NIST).
-- **26 prácticas de 10 preguntas** (260 preguntas) con respuesta razonada y enlace al texto oficial
+- **28 prácticas de 10 preguntas** (280 preguntas) con respuesta razonada y enlace al texto oficial
   cuando se cita un artículo.
-- **14 temas pendientes** señalados como tales; **0 solo resumen** en la cobertura publicada.
+- **12 temas pendientes** señalados como tales; **0 solo resumen** en la cobertura publicada.
 - Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14,
-  II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.24, IV.27, V.34 y V.35.
+  II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, IV.27, V.34 y V.35.
 
 ### Producto
 
@@ -109,7 +109,7 @@ servidor.
 
 - **Problema y alcance definidos:** un temario común, no una app genérica; decisiones de alcance
   documentadas (D-005, D-021).
-- **Métricas de cobertura:** 26/40 completos, 0 solo resumen, 14 pendientes; el estado se calcula,
+- **Métricas de cobertura:** 28/40 completos, 0 solo resumen, 12 pendientes; el estado se calcula,
   no se inventa.
 - **Requisitos y trazabilidad:** cada tema tiene fuente, cada pregunta tiene respuesta y el mapa
   distingue lo publicado de lo pendiente.
@@ -122,7 +122,7 @@ servidor.
 
 - Es una **demo estática**: no hay backend, ni cuentas, ni sincronización; el progreso vive en el
   navegador.
-- **14 temas** siguen pendientes; la demo lo dice y no muestra relleno.
+- **12 temas** siguen pendientes; la demo lo dice y no muestra relleno.
 - El temario TAI recuperado (33/33) y los PDF de apoyo son **referencia interna privada**: no se
   publican por derechos de terceros (D-034).
 - La app completa con backend (SQLite, biblioteca, banco propio) es local y todavía no tiene URL
@@ -140,9 +140,9 @@ servidor.
 - **44/44** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
-- **26/40** temas completos: I 12/12 · II 5/5 · III 6/9 · IV 1/7 · V 2/7.
-- Quedan **14 temas**: III.23, III.25, III.26, IV.28-IV.33 y V.36-V.40. Cada uno debe salir con
+- **28/40** temas completos: I 12/12 · II 5/5 · III 8/9 · IV 1/7 · V 2/7.
+- Quedan **12 temas**: III.26, IV.28-IV.33 y V.36-V.40. Cada uno debe salir con
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-26/40 temas con apuntes y práctica, 260 preguntas, 12 convocatorias, 44/44 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+28/40 temas con apuntes y práctica, 280 preguntas, 12 convocatorias, 44/44 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
