@@ -345,6 +345,9 @@ function Header() {
         <button className="button" type="button" onClick={() => { go('practicas'); }}>
           Prácticas
         </button>
+        <button className="button" type="button" onClick={() => { go('guia'); }}>
+          Guía
+        </button>
       </nav>
     </header>
   );
@@ -467,6 +470,106 @@ function Home() {
         </button>
       </section>
       <ConvocatoriasCard />
+    </>
+  );
+}
+
+function Guia() {
+  const progress = loadProgress();
+  const hechas = data.practices
+    .map((practice) => {
+      const resultado = progress[practice.slug];
+      if (resultado === undefined) {
+        return null;
+      }
+      const porcentaje = resultado.lastTotal === 0
+        ? 0
+        : Math.round((resultado.lastScore / resultado.lastTotal) * 100);
+      return { practice, resultado, porcentaje };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+    .sort((a, b) => a.porcentaje - b.porcentaje);
+  const flojas = hechas.filter((item) => item.porcentaje < 70);
+
+  return (
+    <>
+      <section className="page__header">
+        <h1>Guía de estudio</h1>
+        <p className="page__lead">
+          Orden recomendado de bloques y detección de los temas flojos a partir de tus prácticas.
+        </p>
+      </section>
+      <section className="card">
+        <h2>Orden recomendado</h2>
+        <p>
+          Primero la base normativa y técnica, después sistemas y redes, y al final datos y seguridad.
+          Así reutilizas conceptos en lugar de memorizarlos aislados.
+        </p>
+        <ol className="demo-guide">
+          {data.curriculum.blocks.map((block) => (
+            <li key={block.path}>
+              <strong>{block.path} · {block.title}</strong>{' '}
+              <span className="hint">
+                {block.coverage.conApuntes}/{block.coverage.total} con apuntes (
+                {porcentaje(block.coverage.conApuntes, block.coverage.total)}%)
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
+      <section className="card">
+        <h2>Tus temas flojos</h2>
+        {hechas.length === 0 ? (
+          <p>
+            Todavía no has hecho ninguna práctica. Empieza por una y aquí aparecerán los temas que
+            conviene reforzar.
+          </p>
+        ) : flojas.length === 0 ? (
+          <p>
+            No hay temas por debajo del 70 % en tus últimas prácticas. Sigue así y repasa los temas
+            pendientes del temario.
+          </p>
+        ) : (
+          <>
+            <p className="hint">
+              Por debajo del 70 % en la última práctica. Refuerza el tema y repite la práctica.
+            </p>
+            <ul className="demo-guide">
+              {flojas.map(({ practice, porcentaje: pct }) => (
+                <li key={practice.slug}>
+                  <strong>{practice.tema_path}</strong> · {pct} % ·{' '}
+                  <button
+                    className="button button--link"
+                    type="button"
+                    onClick={() => {
+                      go(`tema/${practice.tema_path}`);
+                    }}
+                  >
+                    Repasar tema
+                  </button>{' '}
+                  <button
+                    className="button button--link"
+                    type="button"
+                    onClick={() => {
+                      go(`practica/${practice.slug}`);
+                    }}
+                  >
+                    Repetir práctica
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        <div className="demo-actions">
+          <button className="button" type="button" onClick={() => { go('temario'); }}>
+            Ir al temario
+          </button>
+          <button className="button button--link" type="button" onClick={() => { go('practicas'); }}>
+            Ver todas las prácticas
+          </button>
+        </div>
+      </section>
     </>
   );
 }
@@ -1112,6 +1215,8 @@ function App() {
     content = <Temario />;
   } else if (parts[0] === 'como-funciona') {
     content = <ComoFunciona />;
+  } else if (parts[0] === 'guia') {
+    content = <Guia />;
   } else if (parts[0] === 'cobertura') {
     content = <Cobertura />;
   } else if (parts[0] === 'tema' && parts[1] !== undefined) {

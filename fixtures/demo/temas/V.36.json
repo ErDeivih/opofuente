@@ -1,0 +1,154 @@
+{
+  "node_path": "V.36",
+  "title": "Criptografía y firma electrónica",
+  "source": {
+    "label": "Ley 6/2020, de 11 de noviembre, reguladora de determinados aspectos de los servicios electrónicos de confianza",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2020-14046"
+  },
+  "sections": [
+    {
+      "heading": "Criptografía simétrica y asimétrica",
+      "body": "La **criptografía simétrica** usa la misma clave para cifrar y descifrar (AES). Es rápida y adecuada para grandes volúmenes, pero exige distribuir la clave de forma segura.\n\nLa **criptografía asimétrica** usa un par de claves: una **pública** (se comparte) y otra **privada** (se protege). Lo cifrado con una se descifra con la otra. Es más lenta, así que se usa para intercambiar claves e identificar, no para cifrar todo el tráfico.\n\nEn la práctica se combinan: TLS negocia una clave simétrica usando criptografía asimétrica y luego cifra la sesión con la clave simétrica."
+    },
+    {
+      "heading": "Funciones hash e integridad",
+      "body": "Una **función hash** transforma cualquier entrada en una huella de longitud fija. Debe ser determinista, rápida y resistente a colisiones. SHA-256 es un estándar habitual; MD5 y SHA-1 están obsoletos para seguridad.\n\nEl hash detecta cambios: si el contenido cambia, la huella cambia. No cifra ni permite recuperar el original. Para contraseñas se usan funciones específicas con sal y coste (bcrypt, Argon2), nunca un hash simple.\n\nEl hash de un mensaje es la base de la firma electrónica: se firma la huella, no el documento completo."
+    },
+    {
+      "heading": "Firma electrónica",
+      "body": "La **firma electrónica** asocia una identidad a un documento y garantiza integridad. El firmante calcula el hash del documento y lo firma con su **clave privada**; cualquiera verifica con la **clave pública** del certificado.\n\nUna firma válida implica: el documento no ha cambiado, la firma corresponde a la clave y el certificado era válido en el momento. La **fecha y hora** (sellado de tiempo) fija el momento de la firma.\n\nLa Ley 6/2020 regula los servicios electrónicos de confianza y distingue firma **simple**, **avanzada** y **cualificada**; solo esta última tiene el equivalente legal de la firma manuscrita en los términos previstos."
+    },
+    {
+      "heading": "Certificados, PKI y TLS",
+      "body": "Un **certificado digital** vincula una clave pública con una identidad y lo emite una **autoridad de certificación (CA)**. La **PKI** (infraestructura de clave pública) gestiona certificados, revocación y confianza.\n\nEl navegador confía en CAs incluidas en su almacén. Si un certificado caduca, se revoca o no coincide con el dominio, la conexión segura falla.\n\n**TLS** usa certificados para autenticar el servidor y cifrar la comunicación. No garantiza que el sitio sea honesto, solo que la conexión es confidencial e íntegra con ese dominio."
+    },
+    {
+      "heading": "Buenas prácticas y errores",
+      "body": "Buenas prácticas:\n\n- Proteger la clave privada; nunca compartirla ni incluirla en el código.\n- Usar algoritmos y longitudes actuales; retirar MD5, SHA-1, DES y RSA corto.\n- Verificar certificados y cadenas de confianza; no desactivar TLS por comodidad.\n- Cifrar datos en tránsito y en reposo.\n- Gestionar el ciclo de vida: alta, renovación, revocación y custodia.\n\nUn error típico es confundir **cifrar** (ocultar) con **firmar** (autenticar e integrar). Cifrar no da autenticidad; firmar no oculta el contenido."
+    },
+    {
+      "heading": "Tabla de conceptos",
+      "table": {
+        "columns": ["Concepto", "Qué aporta", "Clave"],
+        "rows": [
+          ["Simétrico", "Confidencialidad rápida", "Misma clave"],
+          ["Asimétrico", "Intercambio y autenticación", "Pública/privada"],
+          ["Hash", "Integridad", "Huella fija"],
+          ["Firma", "Autenticidad e integridad", "Privada del firmante"],
+          ["Certificado", "Vincula identidad y clave", "Emitido por una CA"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Una técnica debe firmar electrónicamente una resolución y enviarla por sede electrónica.\n\n**Resolución.**\n\n- El sistema calcula el **hash** del documento y lo firma con la clave privada de su certificado cualificado.\n- Se añade un **sellado de tiempo** para fijar el momento.\n- El receptor comprueba la firma con la clave pública, valida el certificado y comprueba que no está revocado.\n- El documento viaja por **TLS**; la firma y el cifrado son capas distintas.\n- Se conserva el documento firmado y la evidencia de validación según la política de archivo.\n\n**Conclusión.** La firma no es un escaneo de la rúbrica: es criptografía, certificado y verificación; si falta una pieza, la firma no es fiable."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué usa la criptografía simétrica?",
+      "options": [
+        "La misma clave para cifrar y descifrar",
+        "Una clave pública y otra privada",
+        "Solo funciones hash",
+        "Un certificado digital"
+      ],
+      "correct": "a",
+      "explanation": "La criptografía simétrica comparte una única clave; es rápida y se usa para cifrar volúmenes y sesiones."
+    },
+    {
+      "stem": "¿Qué clave se usa para firmar electrónicamente?",
+      "options": [
+        "La clave privada del firmante",
+        "La clave pública del firmante",
+        "La clave pública del receptor",
+        "Una clave simétrica compartida"
+      ],
+      "correct": "a",
+      "explanation": "El firmante firma con su clave privada; el receptor verifica con la clave pública del certificado."
+    },
+    {
+      "stem": "¿Qué aporta una función hash?",
+      "options": [
+        "Una huella que permite detectar cambios en el contenido",
+        "Confidencialidad del documento",
+        "Una copia de seguridad",
+        "Un certificado de identidad"
+      ],
+      "correct": "a",
+      "explanation": "El hash detecta alteraciones; no cifra ni sustituye la firma."
+    },
+    {
+      "stem": "¿Qué algoritmo hash está obsoleto para seguridad?",
+      "options": ["MD5", "SHA-256", "SHA-3", "Argon2"],
+      "correct": "a",
+      "explanation": "MD5 y SHA-1 tienen colisiones conocidas y no deben usarse para seguridad; SHA-256/SHA-3 son actuales."
+    },
+    {
+      "stem": "¿Qué es un certificado digital?",
+      "options": [
+        "Un documento que vincula una clave pública con una identidad y lo emite una CA",
+        "Una contraseña cifrada",
+        "Un algoritmo de compresión",
+        "Una copia de la clave privada"
+      ],
+      "correct": "a",
+      "explanation": "El certificado lo emite una autoridad de certificación y permite verificar la identidad asociada a la clave pública."
+    },
+    {
+      "stem": "¿Qué garantiza TLS?",
+      "options": [
+        "Confidencialidad e integridad de la conexión y autenticación del servidor",
+        "Que el sitio sea legalmente fiable",
+        "Que no haya malware en el servidor",
+        "Que el usuario esté autenticado siempre"
+      ],
+      "correct": "a",
+      "explanation": "TLS cifra e integra la comunicación y autentica el servidor con su certificado; no garantiza la honestidad del sitio."
+    },
+    {
+      "stem": "¿Qué tipo de firma tiene el equivalente legal de la firma manuscrita en los términos de la ley?",
+      "options": [
+        "La firma electrónica cualificada",
+        "La firma simple",
+        "La firma avanzada",
+        "Cualquier firma escaneada"
+      ],
+      "correct": "a",
+      "explanation": "La Ley 6/2020 distingue simple, avanzada y cualificada; la cualificada tiene el equivalente legal de la manuscrita en los términos previstos."
+    },
+    {
+      "stem": "¿Para qué sirve un sellado de tiempo?",
+      "options": [
+        "Para fijar el momento en que se firmó o existió un documento",
+        "Para cifrar el documento",
+        "Para comprimir el archivo",
+        "Para renovar el certificado"
+      ],
+      "correct": "a",
+      "explanation": "El sello de tiempo aporta evidencia temporal y complementa la firma."
+    },
+    {
+      "stem": "¿Qué diferencia hay entre cifrar y firmar?",
+      "options": [
+        "Cifrar oculta el contenido; firmar autentica e integra",
+        "Son lo mismo",
+        "Firmar oculta el contenido",
+        "Cifrar autentica al firmante"
+      ],
+      "correct": "a",
+      "explanation": "El cifrado protege la confidencialidad; la firma acredita autoría e integridad. Son objetivos distintos."
+    },
+    {
+      "stem": "¿Qué debe hacerse con la clave privada?",
+      "options": [
+        "Protegerla y no compartirla ni incluirla en el código",
+        "Publicarla para que todos la usen",
+        "Guardarla en el repositorio",
+        "Enviarla por correo sin cifrar"
+      ],
+      "correct": "a",
+      "explanation": "La clave privada es el secreto del firmante; su filtración rompe la autenticidad y la confianza."
+    }
+  ]
+}

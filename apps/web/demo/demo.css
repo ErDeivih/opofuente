@@ -69,6 +69,17 @@
   overflow-wrap: anywhere;
 }
 
+.demo-guide {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.4rem 0;
+  padding-left: 1.2rem;
+}
+
+.demo-guide li {
+  line-height: 1.5;
+}
+
 .demo-continue {
   border-left: 4px solid var(--color-acento);
 }

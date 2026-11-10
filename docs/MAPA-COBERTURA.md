@@ -1,7 +1,7 @@
 # Mapa de cobertura del temario
 
 **Publicado en la demo:** <https://erdeivih.github.io/opofuente-demo/#/cobertura> · **Verificado:**
-46/46 comprobaciones (10/11/2026), con **12/12 enlaces de convocatoria** abriendo (HTTP 200). La tabla
+48/48 comprobaciones (10/11/2026), con **12/12 enlaces de convocatoria** abriendo (HTTP 200). La tabla
 cuenta **solo el contenido propio publicado**; el material de academia o de terceros es referencia
 interna y no suma cobertura (decisión D-034).
 
@@ -12,12 +12,12 @@ interna y no suma cobertura (decisión D-034).
 | I · Administración y normativa | 12 | 12 | 100% | 0 | 0 | 12 |
 | II · Informática básica y ofimática | 5 | 5 | 100% | 0 | 0 | 5 |
 | III · Sistemas, redes y comunicaciones | 9 | 9 | 100% | 0 | 0 | 9 |
-| IV · Datos y desarrollo | 7 | 6 | 86% | 0 | 1 | 6 |
-| V · Seguridad y administración electrónica | 7 | 2 | 29% | 0 | 5 | 2 |
-| **Total** | **40** | **34** | **85%** | **0** | **6** | **34** |
+| IV · Datos y desarrollo | 7 | 7 | 100% | 0 | 0 | 7 |
+| V · Seguridad y administración electrónica | 7 | 4 | 57% | 0 | 3 | 4 |
+| **Total** | **40** | **37** | **92%** | **0** | **3** | **37** |
 
-Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26, IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, V.34, V.35. En esta tanda se han añadido **IV.30 Programación**,
-**IV.31 Desarrollo web** y **IV.32 Interoperabilidad e integración**.
+Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26, IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, IV.33, V.34, V.35, V.36, V.37. En esta tanda se han añadido **IV.33 Informes y explotación
+de datos**, **V.36 Criptografía y firma electrónica** y **V.37 Protección de datos aplicada**.
 
 ## Los 40 temas
 
@@ -55,11 +55,11 @@ Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, 
 | IV.30 | Programación | Completos | Con práctica |
 | IV.31 | Desarrollo web | Completos | Con práctica |
 | IV.32 | Interoperabilidad e integración | Completos | Con práctica |
-| IV.33 | Informes y explotación de datos | Pendiente | Pendiente |
+| IV.33 | Informes y explotación de datos | Completos | Con práctica |
 | V.34 | Seguridad de la información | Completos | Con práctica |
 | V.35 | El Esquema Nacional de Seguridad (ENS, RD 311/2022) | Completos | Con práctica |
-| V.36 | Criptografía y firma electrónica | Pendiente | Pendiente |
-| V.37 | Protección de datos aplicada | Pendiente | Pendiente |
+| V.36 | Criptografía y firma electrónica | Completos | Con práctica |
+| V.37 | Protección de datos aplicada | Completos | Con práctica |
 | V.38 | Ciberseguridad | Pendiente | Pendiente |
 | V.39 | Administración electrónica práctica | Pendiente | Pendiente |
 | V.40 | Accesibilidad y usabilidad | Pendiente | Pendiente |
@@ -82,10 +82,10 @@ distinto (no hay otro tema del índice que trate procesadores) ni se publican.
 
 ## Coherencia del mapa y los sellos
 
-Comprobado con el build y con Playwright sobre la URL pública (46/46): los 40 temas de la tabla
-coinciden con los sellos de apuntes y práctica; los 34 completos tienen 3+ apartados, tabla, fuente y
-10 preguntas; los 6 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
-total (34 + 6 = 40) y no hay temas «solo resumen» hoy. Los **12 enlaces de convocatoria** abren
+Comprobado con el build y con Playwright sobre la URL pública (48/48): los 40 temas de la tabla
+coinciden con los sellos de apuntes y práctica; los 37 completos tienen 3+ apartados, tabla, fuente y
+10 preguntas; los 3 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
+total (37 + 3 = 40) y no hay temas «solo resumen» hoy. Los **12 enlaces de convocatoria** abren
 (HTTP 200) y su texto empieza por «Bases de»; verificado con `verificar-convocatorias.mjs`.
 
 ## Regla de derechos

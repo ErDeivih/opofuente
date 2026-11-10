@@ -99,8 +99,8 @@ check('los sellos de apuntes y práctica están visibles', /Apuntes completos/.t
 check('hay al menos 5 temas con apuntes', data.progress.apuntesCompletos >= 5, `${data.progress.apuntesCompletos}`);
 await captura('temario', 'temario', 390);
 check(
-  'las tres pestañas se ven a 390 px y miden 44 px',
-  (await page.locator('.demo-nav .button').count()) === 3 &&
+  'las pestañas se ven a 390 px y miden 44 px',
+  (await page.locator('.demo-nav .button').count()) === 4 &&
     (await page.locator('.demo-nav .button').evaluateAll((botones) =>
       botones.every((boton) => boton.getBoundingClientRect().height >= 44),
     )),
@@ -256,6 +256,27 @@ if (practice !== undefined) {
   check('el progreso queda en localStorage', progreso !== null && progreso.includes(practice.slug));
   await page.screenshot({ path: path.join(OUT_DIR, 'resultado-1280.png'), fullPage: true });
 }
+
+// Guía de estudio: detecta un tema flojo a partir del progreso guardado.
+await page.evaluate(({ slug }) => {
+  const key = 'opofuente-demo-progress-v1';
+  const previous = JSON.parse(window.localStorage.getItem(key) ?? '{}');
+  previous[slug] = {
+    best: 40,
+    attempts: 1,
+    lastScore: 4,
+    lastTotal: 10,
+    updatedAt: new Date().toISOString(),
+  };
+  window.localStorage.setItem(key, JSON.stringify(previous));
+}, { slug: practice?.slug ?? '' });
+await captura('guia', 'guia', 390);
+const guia = await page.locator('main').innerText();
+check('la guía recomienda el orden de bloques', /Orden recomendado/.test(guia));
+check(
+  'la guía detecta el tema flojo de la práctica',
+  /Tus temas flojos/.test(guia) && /Repasar tema/.test(guia) && guia.includes(practice?.tema_path ?? ''),
+);
 
 check('sin errores de página', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
 

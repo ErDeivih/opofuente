@@ -1,0 +1,149 @@
+{
+  "node_path": "IV.33",
+  "title": "Informes y explotación de datos",
+  "source": {
+    "label": "Microsoft Learn — Documentación de Power BI",
+    "url": "https://learn.microsoft.com/es-es/power-bi/"
+  },
+  "sections": [
+    {
+      "heading": "Del dato operativo al informe",
+      "body": "Los sistemas operativos guardan datos para trabajar, no para analizar. Un **informe** responde preguntas concretas a partir de esos datos, y para construirlo suele haber un recorrido:\n\n- **Extraer** datos de una o varias fuentes.\n- **Transformar** y limpiar (tipos, duplicados, fechas, nombres).\n- **Cargar** en un almacén o modelo analítico.\n- **Consultar** y presentar los resultados.\n\nEse recorrido es **ETL** (o ELT si la transformación se hace después de cargar). Un informe sin datos fiables es una opinión con gráficos."
+    },
+    {
+      "heading": "Indicadores y preguntas",
+      "body": "Un **KPI** (indicador clave) mide un objetivo con una fórmula, una unidad, un periodo y una meta. Debe ser **accionable**: si cambia, alguien puede hacer algo.\n\nAntes de elegir el gráfico hay que definir la pregunta: «¿cuántos expedientes se resolvieron este mes?», «¿cuál es el tiempo medio de resolución?», «¿qué tipo de trámite genera más retraso?». Sin pregunta, el panel se llena de cifras que nadie usa.\n\nLos **datos de contexto** (periodo, unidad, fuente) evitan interpretaciones erróneas. Un KPI sin fecha o sin denominador puede engañar."
+    },
+    {
+      "heading": "Consultas y modelo de datos",
+      "body": "La explotación se apoya en **SQL**: filtros, agregaciones (`COUNT`, `SUM`, `AVG`), `GROUP BY` y uniones. Las **vistas** simplifican consultas complejas y las **vistas materializadas** guardan el resultado para acelerar lecturas, a cambio de actualizarlo.\n\nEn analítica se suele separar **hechos** (medidas, eventos) y **dimensiones** (quién, qué, cuándo, dónde). Ese modelo en estrella facilita filtrar y agregar sin duplicar datos.\n\nLa **calidad** se comprueba: nulos, duplicados, rangos, fechas imposibles y coherencia entre tablas."
+    },
+    {
+      "heading": "Visualización y paneles",
+      "body": "Cada gráfico tiene un uso:\n\n- **Barras**: comparar categorías.\n- **Líneas**: evolución temporal.\n- **Tartas**: proporciones simples, con pocas categorías.\n- **Tablas**: detalle y cifras exactas.\n- **Mapas**: distribución geográfica, solo si aporta.\n\nUn panel debe tener jerarquía visual, pocos colores y etiquetas claras. La accesibilidad exige contraste, texto alternativo y no depender solo del color. El **drill-down** permite pasar del resumen al detalle."
+    },
+    {
+      "heading": "Explotación, gobierno y privacidad",
+      "body": "La explotación incluye **actualización** programada, control de acceso por filas, catálogo de datos y definiciones compartidas. Si cada área calcula el mismo KPI de forma distinta, el panel pierde credibilidad.\n\nLos datos personales deben minimizarse, agregarse cuando sea posible y protegerse. Un informe con datos identificativos exige base jurídica y control de acceso; no se publica en abierto sin anonimizar.\n\nLa trazabilidad de la fuente permite auditar una cifra y corregirla."
+    },
+    {
+      "heading": "Tabla de recursos",
+      "table": {
+        "columns": ["Recurso", "Uso", "Cuidado"],
+        "rows": [
+          ["KPI", "Medir un objetivo", "Definir fórmula y periodo"],
+          ["Tabla dinámica", "Resumir y cruzar datos", "Revisar agregaciones"],
+          ["Vista materializada", "Acelerar consultas", "Actualización y espacio"],
+          ["Panel", "Comunicar resultados", "No saturar de gráficos"],
+          ["Modelo en estrella", "Facilitar análisis", "Dimensiones coherentes"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** El ayuntamiento quiere un panel mensual de expedientes: cuántos entran, cuántos se resuelven, tiempo medio y tipo más frecuente.\n\n**Resolución.**\n\n- Se definen KPIs: **entradas**, **resueltos**, **tiempo medio de resolución** y **% fuera de plazo**, con fórmula y periodo.\n- Se construye un modelo con **hechos** (expedientes) y **dimensiones** (tipo, oficina, fecha).\n- Se crean consultas agregadas y una vista para el detalle; se validan nulos y duplicados.\n- Se diseña un panel con barras por tipo, línea temporal y tabla de detalle; se añade filtro por oficina.\n- Se revisa la privacidad: el panel muestra agregados, no datos personales.\n\n**Conclusión.** Un informe útil empieza por la pregunta y termina en una decisión; el gráfico es solo la última capa."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué es un KPI?",
+      "options": [
+        "Un indicador clave con fórmula, periodo y meta para medir un objetivo",
+        "Un tipo de tabla de base de datos",
+        "Un lenguaje de programación",
+        "Un protocolo de red"
+      ],
+      "correct": "a",
+      "explanation": "El KPI mide un objetivo de forma accionable; debe tener fórmula, unidad, periodo y meta."
+    },
+    {
+      "stem": "¿Qué significa ETL?",
+      "options": [
+        "Extraer, transformar y cargar datos",
+        "Enviar, transmitir y listar",
+        "Evaluar, testear y lanzar",
+        "Editar, tabular y leer"
+      ],
+      "correct": "a",
+      "explanation": "ETL mueve datos desde fuentes, los limpia y transforma, y los carga en un destino analítico."
+    },
+    {
+      "stem": "¿Qué gráfico es más adecuado para comparar categorías?",
+      "options": ["Barras", "Líneas", "Tarta", "Dispersión"],
+      "correct": "a",
+      "explanation": "Las barras comparan magnitudes entre categorías; las líneas muestran evolución temporal."
+    },
+    {
+      "stem": "¿Qué gráfico muestra mejor una evolución temporal?",
+      "options": ["Líneas", "Tarta", "Barras horizontales", "Mapa"],
+      "correct": "a",
+      "explanation": "La línea representa la evolución de un valor a lo largo del tiempo."
+    },
+    {
+      "stem": "¿Qué es una vista materializada?",
+      "options": [
+        "Una consulta cuyo resultado se guarda para acelerar lecturas",
+        "Una tabla temporal que se borra al cerrar",
+        "Un índice de texto",
+        "Un tipo de gráfico"
+      ],
+      "correct": "a",
+      "explanation": "La vista materializada almacena el resultado y debe actualizarse; acelera consultas costosas."
+    },
+    {
+      "stem": "¿Qué permite un modelo en estrella?",
+      "options": [
+        "Separar hechos y dimensiones para facilitar el análisis",
+        "Eliminar la necesidad de SQL",
+        "Cifrar los datos",
+        "Sustituir el ETL"
+      ],
+      "correct": "a",
+      "explanation": "El modelo en estrella organiza hechos y dimensiones y simplifica filtros y agregaciones."
+    },
+    {
+      "stem": "¿Qué debe incluir un panel para no engañar?",
+      "options": [
+        "Periodo, unidad, fuente y definición de cada KPI",
+        "Solo colores llamativos",
+        "La mayor cantidad de gráficos posible",
+        "Datos personales sin protección"
+      ],
+      "correct": "a",
+      "explanation": "El contexto y las definiciones evitan interpretaciones erróneas y permiten auditar las cifras."
+    },
+    {
+      "stem": "¿Qué es drill-down?",
+      "options": [
+        "Pasar de un resumen a un nivel de detalle mayor",
+        "Eliminar filtros",
+        "Cambiar el color del gráfico",
+        "Exportar a PDF"
+      ],
+      "correct": "a",
+      "explanation": "El drill-down permite navegar del agregado al detalle para investigar una cifra."
+    },
+    {
+      "stem": "¿Qué riesgo tiene un panel con datos personales?",
+      "options": [
+        "Exponer información si no se controla el acceso y se minimiza",
+        "Que los gráficos sean más lentos",
+        "Que no se pueda exportar",
+        "Ninguno, si está en la intranet"
+      ],
+      "correct": "a",
+      "explanation": "Los datos personales requieren base jurídica, minimización, control de acceso y, a menudo, agregación."
+    },
+    {
+      "stem": "¿Por qué hay que validar la calidad del dato antes de publicar un informe?",
+      "options": [
+        "Porque nulos, duplicados o rangos erróneos producen conclusiones falsas",
+        "Porque el informe ocupa más",
+        "Porque lo exige el lenguaje SQL",
+        "Porque mejora el color"
+      ],
+      "correct": "a",
+      "explanation": "Un informe con datos sucios transmite errores con apariencia de rigor; la validación es parte del proceso."
+    }
+  ]
+}
