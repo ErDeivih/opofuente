@@ -75,6 +75,16 @@ check(
   'la tabla de cobertura tiene 40 filas',
   (await page.locator('.demo-cobertura tbody tr').count()) === 40,
 );
+check(
+  'los sellos de apuntes coinciden con el progreso',
+  (await page.locator('.demo-status--apuntes-completos').count()) === data.progress.apuntesCompletos &&
+    (await page.locator('.demo-status--apuntes-pendiente').count()) === data.progress.pendientes,
+);
+check(
+  'los sellos de práctica coinciden con el progreso',
+  (await page.locator('.demo-status--practica-con_practica').count()) === data.progress.conPractica &&
+    (await page.locator('.demo-status--practica-pendiente').count()) === data.progress.sinPractica,
+);
 await captura('cobertura', 'cobertura', 390);
 
 // Búsqueda y filtro.

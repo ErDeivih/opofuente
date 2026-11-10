@@ -1,0 +1,150 @@
+{
+  "node_path": "III.19",
+  "title": "Virtualización y contenedores",
+  "source": {
+    "label": "Docker Docs — Get started (documentación oficial)",
+    "url": "https://docs.docker.com/get-started/"
+  },
+  "sections": [
+    {
+      "heading": "Virtualización: hipervisor, máquina virtual e invitado",
+      "body": "La **virtualización** permite ejecutar varios sistemas operativos sobre un mismo servidor físico. El **hipervisor** crea y gestiona **máquinas virtuales (VM)**; cada VM tiene su propio sistema operativo invitado y recursos virtuales (CPU, memoria, disco, red).\n\nSe distingue entre:\n\n- **Hipervisor de tipo 1** (bare metal): se ejecuta directamente sobre el hardware (por ejemplo, VMware ESXi o Microsoft Hyper-V).\n- **Hipervisor de tipo 2** (hosted): se ejecuta sobre un sistema operativo anfitrión (por ejemplo, VirtualBox).\n\nVentajas: consolidación de servidores, aislamiento, snapshots y despliegue rápido. El coste es la capa de virtualización y la gestión de licencias."
+    },
+    {
+      "heading": "Contenedores: aislamiento sin sistema operativo propio",
+      "body": "Un **contenedor** empaqueta una aplicación y sus dependencias, pero **comparte el kernel** del sistema operativo anfitrión. El aislamiento se consigue con **namespaces** (visibilidad de procesos, red, sistema de ficheros) y **cgroups** (límites de CPU, memoria y E/S).\n\nUna **imagen** es una plantilla inmutable; un **contenedor** es una instancia en ejecución. Las imágenes se construyen con un **Dockerfile**, se guardan en un **registro** y se despliegan de forma reproducible."
+    },
+    {
+      "heading": "Máquina virtual frente a contenedor",
+      "table": {
+        "columns": ["Criterio", "Máquina virtual", "Contenedor"],
+        "rows": [
+          ["Kernel", "Propio, invitado", "Comparte el del anfitrión"],
+          ["Arranque", "Lento (minutos)", "Rápido (segundos)"],
+          ["Densidad", "Menor", "Mayor"],
+          ["Aislamiento", "Fuerte, a nivel de hardware virtual", "A nivel de proceso, más ligero"],
+          ["Uso típico", "Sistemas operativos completos y legados", "Microservicios y aplicaciones empaquetadas"]
+        ]
+      }
+    },
+    {
+      "heading": "Almacenamiento y red",
+      "body": "En virtualización, el disco de una VM suele ser un **disco virtual** (un fichero o volumen) y los snapshots permiten volver a un estado anterior. En contenedores, los datos persistentes van en **volúmenes**; el sistema de ficheros de la imagen es efímero.\n\nEn red, las VM se conectan con **conmutadores virtuales** y VLAN; los contenedores usan redes puente, superpuestas (overlay) o de host. La elección afecta al aislamiento y a la exposición de servicios."
+    },
+    {
+      "heading": "Seguridad, límites y copias",
+      "body": "Virtualizar no elimina los riesgos:\n\n- El **hipervisor** debe parchearse; una vulnerabilidad suya afecta a todas las VM.\n- Las **imágenes** deben venir de un registro fiable y escanearse; una imagen con malware se replica en cada despliegue.\n- Los **secretos** no se meten en la imagen; se inyectan en tiempo de ejecución.\n- El **snapshot** no es una copia de seguridad: comparte el mismo almacenamiento y se pierde con él.\n\nLa copia debe ser externa, probada y con retención, igual que en un servidor físico."
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento quiere reducir servidores: mantiene una aplicación antigua que solo funciona en Windows Server y una web municipal que se despliega varias veces al día.\n\n**Resolución.**\n\n- La aplicación antigua se virtualiza en una **VM** con su propio Windows Server, porque necesita un kernel concreto y un ciclo de actualización lento.\n- La web se empaqueta en una **imagen** de contenedor y se despliega con un orquestador; así las actualizaciones son rápidas y reproducibles.\n- Las dos comparten el hardware del servidor virtualizado, pero con aislamiento distinto: la VM aísla el sistema; el contenedor aísla el proceso.\n- Se definen copias externas de la VM y de los volúmenes, se escanean las imágenes y se limita quién puede desplegar.\n\n**Conclusión.** No hay una tecnología mejor en abstracto: la VM encaja con sistemas completos y legados; el contenedor, con aplicaciones empaquetadas y despliegue frecuente."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué es un hipervisor de tipo 1?",
+      "options": [
+        "Un programa que se instala dentro de otro sistema operativo",
+        "Un hipervisor que se ejecuta directamente sobre el hardware",
+        "Un contenedor de aplicaciones",
+        "Un tipo de disco virtual"
+      ],
+      "correct": "b",
+      "explanation": "El hipervisor de tipo 1 (bare metal) se ejecuta directamente sobre el hardware; el de tipo 2 lo hace sobre un sistema anfitrión."
+    },
+    {
+      "stem": "¿Qué comparte un contenedor con el sistema anfitrión?",
+      "options": [
+        "El kernel",
+        "Una copia completa del sistema operativo",
+        "El hipervisor",
+        "El hardware de virtualización"
+      ],
+      "correct": "a",
+      "explanation": "Los contenedores comparten el kernel del anfitrión y aíslan procesos con namespaces y cgroups."
+    },
+    {
+      "stem": "¿Qué diferencia hay entre una imagen y un contenedor?",
+      "options": [
+        "La imagen es una plantilla inmutable; el contenedor es una instancia en ejecución",
+        "El contenedor es la plantilla y la imagen la instancia",
+        "Son exactamente lo mismo",
+        "La imagen solo existe en la nube"
+      ],
+      "correct": "a",
+      "explanation": "La imagen es el artefacto inmutable que se construye; el contenedor es un proceso creado a partir de ella."
+    },
+    {
+      "stem": "¿Para qué sirven los namespaces en los contenedores?",
+      "options": [
+        "Para limitar el uso de CPU y memoria",
+        "Para aislar la visibilidad de procesos, red y sistema de ficheros",
+        "Para crear máquinas virtuales",
+        "Para comprimir imágenes"
+      ],
+      "correct": "b",
+      "explanation": "Los namespaces aíslan qué ve cada contenedor; los cgroups limitan los recursos que consume."
+    },
+    {
+      "stem": "¿Qué tecnología permite limitar la CPU y la memoria de un contenedor?",
+      "options": ["Namespaces", "Cgroups", "Hipervisor tipo 2", "Dockerfile"],
+      "correct": "b",
+      "explanation": "Los cgroups (control groups) aplican límites y cuotas de recursos a los procesos del contenedor."
+    },
+    {
+      "stem": "¿Qué ventaja tiene una máquina virtual frente a un contenedor?",
+      "options": [
+        "Arranca más rápido",
+        "Tiene un aislamiento más fuerte al incluir su propio sistema operativo",
+        "Ocupa menos espacio siempre",
+        "No necesita actualizaciones"
+      ],
+      "correct": "b",
+      "explanation": "La VM ejecuta su propio kernel y sistema operativo, lo que da un aislamiento mayor a costa de más recursos."
+    },
+    {
+      "stem": "¿Qué es un Dockerfile?",
+      "options": [
+        "Un fichero de texto con las instrucciones para construir una imagen",
+        "Una máquina virtual",
+        "Un registro de imágenes",
+        "Un tipo de hipervisor"
+      ],
+      "correct": "a",
+      "explanation": "El Dockerfile describe los pasos para construir la imagen de forma reproducible."
+    },
+    {
+      "stem": "¿Por qué un snapshot de una VM no es una copia de seguridad?",
+      "options": [
+        "Porque ocupa poco espacio",
+        "Porque suele estar en el mismo almacenamiento y se pierde con él",
+        "Porque solo funciona en Linux",
+        "Porque no se puede programar"
+      ],
+      "correct": "b",
+      "explanation": "El snapshot comparte el almacenamiento de la VM; si este se pierde o se cifra, también se pierde el snapshot."
+    },
+    {
+      "stem": "¿Qué riesgo específico tienen las imágenes de contenedor?",
+      "options": [
+        "Que no se pueden actualizar",
+        "Que una imagen con malware o dependencias vulnerables se replica en cada despliegue",
+        "Que no admiten volúmenes",
+        "Que siempre necesitan un hipervisor"
+      ],
+      "correct": "b",
+      "explanation": "La imagen es la base de todos los contenedores; hay que usar registros fiables, escanear y actualizar sus dependencias."
+    },
+    {
+      "stem": "¿Qué caso encaja mejor con un contenedor que con una VM?",
+      "options": [
+        "Una aplicación web empaquetada que se despliega varias veces al día",
+        "Un sistema operativo legado que exige un kernel concreto",
+        "Un servidor de base de datos con requisitos de hardware especiales",
+        "Un escritorio remoto completo"
+      ],
+      "correct": "a",
+      "explanation": "Los contenedores son adecuados para aplicaciones empaquetadas y despliegues frecuentes; los sistemas completos y legados encajan mejor en VM."
+    }
+  ]
+}

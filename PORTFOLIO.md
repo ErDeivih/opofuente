@@ -31,13 +31,13 @@ servidor.
 
 ### Contenido
 
-- **17 de 40 temas** con apuntes completos de redacción propia: apartados, definiciones, tablas,
+- **19 de 40 temas** con apuntes completos de redacción propia: apartados, definiciones, tablas,
   ejemplos resueltos y fuente oficial (BOE, TUE/TFUE, RFC, ISO, NIST).
-- **17 prácticas de 10 preguntas** (170 preguntas) con respuesta razonada y enlace al texto oficial
+- **19 prácticas de 10 preguntas** (190 preguntas) con respuesta razonada y enlace al texto oficial
   cuando se cita un artículo.
-- **23 temas pendientes** señalados como tales; **0 solo resumen** en la cobertura publicada.
-- Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.12, II.13, III.20, III.21,
-  III.24, V.34 y V.35.
+- **21 temas pendientes** señalados como tales; **0 solo resumen** en la cobertura publicada.
+- Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.12, II.13, III.19, III.20,
+  III.21, III.24, IV.27, V.34 y V.35.
 
 ### Producto
 
@@ -78,7 +78,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **20/20** comprobaciones con Playwright contra la URL pública: portada,
+- **Verificación:** **22/22** comprobaciones con Playwright contra la URL pública: portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
   persistencia en `localStorage`.
@@ -129,5 +129,5 @@ servidor.
 4. Abre **Portada** y revisa las 12 convocatorias y el aviso único.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-17/40 temas con apuntes y práctica, 170 preguntas, 12 convocatorias, 20/20 comprobaciones; límites y
+19/40 temas con apuntes y práctica, 190 preguntas, 12 convocatorias, 22/22 comprobaciones; límites y
 derechos documentados.

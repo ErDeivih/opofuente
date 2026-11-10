@@ -1,7 +1,7 @@
 # Mapa de cobertura del temario
 
 **Publicado en la demo:** <https://erdeivih.github.io/opofuente-demo/#/cobertura> · **Verificado:**
-20/20 comprobaciones (10/11/2026). La tabla cuenta **solo el contenido propio publicado**; el
+22/22 comprobaciones (10/11/2026). La tabla cuenta **solo el contenido propio publicado**; el
 material de academia o de terceros es referencia interna y no suma cobertura (decisión D-034).
 
 ## Resumen
@@ -10,14 +10,13 @@ material de academia o de terceros es referencia interna y no suma cobertura (de
 |---|---|---|---|---|---|
 | I · Administración y normativa | 12 | 11 | 0 | 1 | 11 |
 | II · Informática básica y ofimática | 5 | 1 | 0 | 4 | 1 |
-| III · Sistemas, redes y comunicaciones | 9 | 3 | 0 | 6 | 3 |
-| IV · Datos y desarrollo | 7 | 0 | 0 | 7 | 0 |
+| III · Sistemas, redes y comunicaciones | 9 | 4 | 0 | 5 | 4 |
+| IV · Datos y desarrollo | 7 | 1 | 0 | 6 | 1 |
 | V · Seguridad y administración electrónica | 7 | 2 | 0 | 5 | 2 |
-| **Total** | **40** | **17** | **0** | **23** | **17** |
+| **Total** | **40** | **19** | **0** | **21** | **19** |
 
-Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.12, II.13, III.20, III.21, III.24, V.34, V.35. Los dos últimos se han escrito desde cero en esta
-tanda: **I.8 La función pública local** (TREBEP y Ley 7/1985) y **III.20 Almacenamiento y copias de
-seguridad** (NIST SP 800-34).
+Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.12, II.13, III.19, III.20, III.21, III.24, IV.27, V.34, V.35. Los últimos incorporados son **III.19 Virtualización
+y contenedores** (Docker) y **IV.27 Bases de datos relacionales** (PostgreSQL).
 
 ## Los 40 temas
 
@@ -41,7 +40,7 @@ seguridad** (NIST SP 800-34).
 | II.16 | Correo electrónico y colaboración | Pendiente | Pendiente |
 | II.17 | Licencias y software libre | Pendiente | Pendiente |
 | III.18 | Sistemas operativos de servidor | Pendiente | Pendiente |
-| III.19 | Virtualización y contenedores | Pendiente | Pendiente |
+| III.19 | Virtualización y contenedores | Completos | Con práctica |
 | III.20 | Almacenamiento y copias de seguridad | Completos | Con práctica |
 | III.21 | Redes | Completos | Con práctica |
 | III.22 | Comunicaciones | Pendiente | Pendiente |
@@ -49,7 +48,7 @@ seguridad** (NIST SP 800-34).
 | III.24 | Monitorización y gestión de incidencias | Completos | Con práctica |
 | III.25 | Cloud y centros de datos | Pendiente | Pendiente |
 | III.26 | Soporte al puesto de trabajo | Pendiente | Pendiente |
-| IV.27 | Bases de datos relacionales | Pendiente | Pendiente |
+| IV.27 | Bases de datos relacionales | Completos | Con práctica |
 | IV.28 | SQL | Pendiente | Pendiente |
 | IV.29 | Gestores de bases de datos | Pendiente | Pendiente |
 | IV.30 | Programación | Pendiente | Pendiente |
@@ -79,6 +78,13 @@ distinto (no hay otro tema del índice que trate procesadores) ni se publican.
 | `Tema2v2025.pdf` | 49 | TEMA 2 — Procesadores segmentados: planificación y especulación | Planificación de instrucciones | **II.13** (referencia interna) |
 | `Tema3_1v2025.pdf` | 48 | TEMA 1 — Procesadores con múltiples emisiones | Emisión múltiple; superscalar | **II.13** (referencia interna) |
 | `Tema3_2v2025.pdf` | 30 | TEMA 3 — Multithreading | Multithreading; paralelismo de hilos | **II.13** (referencia interna) |
+
+## Coherencia del mapa y los sellos
+
+Comprobado con el build y con Playwright sobre la URL pública (22/22): los 40 temas de la tabla
+coinciden con los sellos de apuntes y práctica; los 19 completos tienen 3+ apartados, tabla, fuente y
+10 preguntas; los 21 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
+total (19 + 21 = 40) y no hay temas «solo resumen» hoy.
 
 ## Regla de derechos
 

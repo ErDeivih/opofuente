@@ -1,0 +1,149 @@
+{
+  "node_path": "IV.27",
+  "title": "Bases de datos relacionales",
+  "source": {
+    "label": "PostgreSQL Documentation — Constraints y modelo relacional (documentación oficial)",
+    "url": "https://www.postgresql.org/docs/current/ddl-constraints.html"
+  },
+  "sections": [
+    {
+      "heading": "El modelo relacional",
+      "body": "Una base de datos relacional organiza la información en **relaciones** (tablas). Cada relación tiene un **esquema** que define sus columnas (atributos), sus tipos y sus restricciones; las filas (tuplas) son los datos concretos.\n\nEl modelo se apoya en la teoría de conjuntos: una tabla no es una lista ordenada, sino un conjunto de filas. Por eso el orden no debe usarse como identificador; para identificar una fila se usan **claves**."
+    },
+    {
+      "heading": "Claves e integridad",
+      "body": "Las claves son la base del diseño:\n\n- **Superclave**: cualquier conjunto de columnas que identifica de forma única una fila.\n- **Clave candidata**: superclave mínima, sin columnas sobrantes.\n- **Clave primaria**: clave candidata elegida para identificar la tabla; no admite nulos.\n- **Clave foránea**: columna que referencia la clave primaria de otra tabla y garantiza la integridad referencial.\n\nLa **integridad de entidad** exige que la clave primaria no sea nula; la **integridad referencial** exige que la clave foránea apunte a una fila existente o sea nula si el diseño lo permite."
+    },
+    {
+      "heading": "Normalización",
+      "body": "Normalizar es organizar las tablas para evitar redundancia y anomalías de actualización:\n\n- **Primera forma normal (1FN)**: valores atómicos, sin listas repetidas en una celda.\n- **Segunda forma normal (2FN)**: 1FN y sin dependencias parciales de parte de la clave.\n- **Tercera forma normal (3FN)**: 2FN y sin dependencias transitivas entre columnas no clave.\n\nLa normalización no es un fin: en un sistema de consulta puede convenir **desnormalizar** para ganar rendimiento, asumiendo el coste de mantener datos duplicados coherentes."
+    },
+    {
+      "heading": "Restricciones y SQL",
+      "body": "El lenguaje SQL permite declarar las reglas en el propio esquema: `PRIMARY KEY`, `FOREIGN KEY`, `UNIQUE`, `NOT NULL`, `CHECK` y `DEFAULT`. La base de datos rechaza las operaciones que incumplen esas reglas, aunque la aplicación tenga un error.\n\nLos **índices** aceleran búsquedas y uniones, pero ocupan espacio y ralentizan las escrituras. No se indexa todo: se indexan las columnas que se consultan con frecuencia y las claves foráneas."
+    },
+    {
+      "heading": "Transacciones y ACID",
+      "body": "Una **transacción** agrupa operaciones que deben ejecutarse como una unidad. Sus propiedades ACID son:\n\n- **Atomicidad**: todo o nada.\n- **Consistencia**: se respetan las restricciones.\n- **Aislamiento**: las transacciones concurrentes no ven estados intermedios indebidos.\n- **Durabilidad**: lo confirmado sobrevive a un fallo.\n\nEl nivel de aislamiento se elige según el equilibrio entre consistencia y concurrencia."
+    },
+    {
+      "heading": "Tabla de restricciones",
+      "table": {
+        "columns": ["Restricción", "Qué garantiza"],
+        "rows": [
+          ["PRIMARY KEY", "Identifica cada fila; única y no nula"],
+          ["FOREIGN KEY", "Integridad referencial entre tablas"],
+          ["UNIQUE", "Valores no repetidos en una columna o conjunto"],
+          ["NOT NULL", "Obliga a informar un valor"],
+          ["CHECK", "Cumple una condición lógica"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento quiere guardar ciudadanos, expedientes y trámites. Cada expediente pertenece a un ciudadano y tiene un número único; un trámite puede repetirse en varios expedientes.\n\n**Resolución.**\n\n- Tabla **ciudadanos**: `id` como clave primaria, `dni` único y no nulo.\n- Tabla **expedientes**: `numero` como clave primaria y `ciudadano_id` como clave foránea a ciudadanos.\n- Tabla **tramites**: `id` primaria, `expediente_id` foránea y `tipo` con una restricción `CHECK` sobre los valores permitidos.\n- Se evita guardar el nombre del ciudadano en cada expediente: se referencia. Así no hay redundancia ni anomalías al cambiar un dato.\n\n**Conclusión.** Un esquema relacional bien diseñado hace que los errores se detecten en la base de datos, no solo en el formulario."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué es una clave primaria?",
+      "options": [
+        "Una columna que puede repetirse y admite nulos",
+        "Una clave candidata elegida que identifica de forma única cada fila y no admite nulos",
+        "Cualquier columna de texto",
+        "Un índice opcional"
+      ],
+      "correct": "b",
+      "explanation": "La clave primaria identifica cada fila de forma única y exige integridad de entidad: no puede ser nula."
+    },
+    {
+      "stem": "¿Qué garantiza una clave foránea?",
+      "options": [
+        "Que los valores de una columna no se repiten",
+        "La integridad referencial entre dos tablas",
+        "Que la tabla tenga al menos un índice",
+        "Que las transacciones sean atómicas"
+      ],
+      "correct": "b",
+      "explanation": "La clave foránea referencia la clave primaria de otra tabla y evita referencias a filas inexistentes."
+    },
+    {
+      "stem": "¿Qué exige la primera forma normal (1FN)?",
+      "options": [
+        "Valores atómicos y sin listas repetidas en una celda",
+        "Que no haya claves foráneas",
+        "Que todas las columnas sean numéricas",
+        "Que exista una clave foránea en cada tabla"
+      ],
+      "correct": "a",
+      "explanation": "La 1FN exige que cada celda contenga un valor atómico, sin grupos repetidos ni listas."
+    },
+    {
+      "stem": "¿Qué problema elimina la segunda forma normal (2FN)?",
+      "options": [
+        "Las dependencias parciales de parte de la clave",
+        "Los índices duplicados",
+        "Las transacciones concurrentes",
+        "Los valores nulos"
+      ],
+      "correct": "a",
+      "explanation": "La 2FN exige 1FN y que ningún atributo no clave dependa solo de una parte de la clave compuesta."
+    },
+    {
+      "stem": "¿Qué elimina la tercera forma normal (3FN)?",
+      "options": [
+        "Las dependencias transitivas entre columnas no clave",
+        "Las claves primarias",
+        "Las claves foráneas",
+        "Los índices"
+      ],
+      "correct": "a",
+      "explanation": "La 3FN exige 2FN y que los atributos no clave no dependan de otros atributos no clave."
+    },
+    {
+      "stem": "¿Qué significa la integridad de entidad?",
+      "options": [
+        "Que la clave primaria no puede ser nula",
+        "Que toda tabla debe tener una clave foránea",
+        "Que los datos deben estar normalizados",
+        "Que las transacciones deben ser duraderas"
+      ],
+      "correct": "a",
+      "explanation": "La integridad de entidad exige que la clave primaria identifique la fila y no sea nula."
+    },
+    {
+      "stem": "¿Para qué sirve un índice?",
+      "options": [
+        "Para acelerar búsquedas y uniones",
+        "Para garantizar la atomicidad",
+        "Para sustituir la clave primaria",
+        "Para eliminar la necesidad de normalizar"
+      ],
+      "correct": "a",
+      "explanation": "Los índices aceleran lecturas, aunque ocupan espacio y penalizan las escrituras; no sustituyen claves ni restricciones."
+    },
+    {
+      "stem": "¿Qué propiedad ACID garantiza que una transacción se aplique completa o no se aplique?",
+      "options": ["Atomicidad", "Consistencia", "Aislamiento", "Durabilidad"],
+      "correct": "a",
+      "explanation": "La atomicidad trata la transacción como una unidad indivisible: todo o nada."
+    },
+    {
+      "stem": "¿Cuándo puede tener sentido desnormalizar?",
+      "options": [
+        "Cuando se prioriza el rendimiento de lectura y se asume el coste de duplicar datos",
+        "Siempre que haya claves foráneas",
+        "Cuando no hay clave primaria",
+        "Para evitar las restricciones CHECK"
+      ],
+      "correct": "a",
+      "explanation": "La desnormalización puede mejorar lecturas, pero introduce redundancia y riesgo de incoherencia; es una decisión con coste."
+    },
+    {
+      "stem": "¿Qué restricción obliga a que un valor no se repita?",
+      "options": ["PRIMARY KEY únicamente", "UNIQUE", "CHECK", "DEFAULT"],
+      "correct": "b",
+      "explanation": "UNIQUE impide valores repetidos; PRIMARY KEY también es única, pero además identifica la fila y no admite nulos."
+    }
+  ]
+}

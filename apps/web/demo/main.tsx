@@ -143,6 +143,10 @@ const PRACTICA_LABEL: Readonly<Record<PracticaStatus, string>> = {
   pendiente: 'Práctica pendiente',
 };
 
+function pendientesTexto(n: number): string {
+  return `${String(n)} ${n === 1 ? 'pendiente' : 'pendientes'}`;
+}
+
 function go(path: string): void {
   window.location.hash = `#/${path}`;
 }
@@ -408,7 +412,7 @@ function Cobertura() {
           <p className="demo-block-progress">
             {block.path}: {block.coverage.conApuntes}/{block.coverage.total} con apuntes ·{' '}
             {block.coverage.conPractica}/{block.coverage.total} con práctica
-            {block.coverage.pendientes > 0 ? ` · ${block.coverage.pendientes} pendientes` : ''}
+            {block.coverage.pendientes > 0 ? ` · ${pendientesTexto(block.coverage.pendientes)}` : ''}
           </p>
           <div className="table-wrap">
             <table className="table demo-cobertura">
@@ -529,7 +533,7 @@ function Temario() {
           <p className="demo-block-progress">
             {block.path}: {block.coverage.conApuntes}/{block.coverage.total} con apuntes ·{' '}
             {block.coverage.conPractica}/{block.coverage.total} con práctica
-            {block.coverage.pendientes > 0 ? ` · ${block.coverage.pendientes} pendientes` : ''}
+            {block.coverage.pendientes > 0 ? ` · ${pendientesTexto(block.coverage.pendientes)}` : ''}
           </p>
           <ul className="demo-topics">
             {block.topics.map((topic) => (

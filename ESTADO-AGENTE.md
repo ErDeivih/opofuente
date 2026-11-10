@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 10/11 (tarde): PORTFOLIO.md creado (criterio funcional y demostrable). Demo publica con 17/40 temas completos y practica (170 preguntas), 23 pendientes, 0 solo resumen; anadidos I.8 funcion publica local y III.20 almacenamiento y copias, de redaccion propia con fuente. Mapa de cobertura en #/cobertura y docs/MAPA-COBERTURA.md; verificacion 20/20 contra la URL publica.
+resumen: Sesion 10/11 (tarde): demo publica con 19/40 temas completos y practica (190 preguntas), 21 pendientes, 0 solo resumen; anadidos III.19 Virtualizacion y contenedores y IV.27 Bases de datos relacionales, de redaccion propia con fuente. Indice con avance por bloque (I: 11/12), busqueda y filtros; mapa y sellos verificados 22/22 contra la URL publica. PORTFOLIO.md actualizado a 19/40.
 estado: en-curso
-tarea: portfolio entregado; demo publica con 17/40 y mapa de cobertura
+tarea: portfolio y demo actualizados; quedan 21 temas comunes pendientes
 nivel: 2
-siguiente: seguir con los 23 temas pendientes (prioridad IV y V tecnicos, I.11) con redaccion propia; mantener PORTFOLIO.md al dia cuando cambie la cobertura
+siguiente: seguir con los 21 pendientes (prioridad IV y V tecnicos, I.11) y mantener PORTFOLIO.md y el mapa al dia
 bloqueado: publicar el temario TAI recuperado depende de confirmar derechos (material de academia y terceros); no se publica en GitHub Pages
 fecha: 2026-11-10
