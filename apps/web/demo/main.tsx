@@ -812,6 +812,13 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
         </section>
         <section className="card">
           <h2>Nota: {nota} %</h2>
+          <ul className="demo-result-stats">
+            <li><span>Nota</span><strong>{nota} %</strong></li>
+            <li><span>Tiempo</span><strong>{formatoTiempo(rule.minutes * 60 - timeLeft)}</strong></li>
+            <li><span>Aciertos</span><strong>{aciertos}</strong></li>
+            <li><span>Fallos</span><strong>{fallos}</strong></li>
+            <li><span>En blanco</span><strong>{blancos}</strong></li>
+          </ul>
           <p>
             Puntuación directa: <strong>{neto.toFixed(2)}</strong> sobre {questions.length}. Penalización
             aplicada: {fallos} × {penalizacionTexto(rule.penalty)}.
@@ -821,7 +828,14 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
             corte de la demo es 50 %; la calificación oficial depende de los baremos de la convocatoria.
           </p>
           <div className="demo-actions">
-            <button className="button" type="button" onClick={empezar}>
+            <button
+              className="button"
+              type="button"
+              onClick={() => { document.getElementById('revision-fallos')?.scrollIntoView({ behavior: 'smooth' }); }}
+            >
+              Revisar mis errores
+            </button>
+            <button className="button button--link" type="button" onClick={empezar}>
               Repetir examen
             </button>
             <button className="button button--link" type="button" onClick={() => { setPhase('setup'); }}>
@@ -829,7 +843,7 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
             </button>
           </div>
         </section>
-        <section className="card">
+        <section className="card" id="revision-fallos">
           <h2>Revisión de fallos</h2>
           {fallosDetalle.length === 0 ? (
             <p>Sin fallos. Puedes subir el número de preguntas o cambiar de bloque.</p>
@@ -967,7 +981,17 @@ function Estadisticas() {
       <section className="card">
         <h2>Estadísticas de prácticas</h2>
         {hechas.length === 0 ? (
-          <p>Todavía no hay prácticas hechas. Haz una y aquí verás tus estadísticas.</p>
+          <>
+            <p>Todavía no hay prácticas hechas. Empieza por una práctica corta o por un simulacro completo.</p>
+            <div className="demo-actions">
+              <button className="button" type="button" onClick={() => { go('practicas'); }}>
+                Hacer práctica
+              </button>
+              <button className="button button--link" type="button" onClick={() => { go('examen'); }}>
+                Empezar simulacro
+              </button>
+            </div>
+          </>
         ) : (
           <>
             {porBloque.map(({ block, items, porcentaje }) => (
@@ -1014,7 +1038,17 @@ function Estadisticas() {
         <h2>Historial de intentos</h2>
         <p className="hint">Prácticas y exámenes guardados en este navegador.</p>
         {attempts.length === 0 ? (
-          <p>Todavía no hay intentos registrados.</p>
+          <>
+            <p>Todavía no hay intentos registrados.</p>
+            <div className="demo-actions">
+              <button className="button" type="button" onClick={() => { go('practicas'); }}>
+                Hacer práctica
+              </button>
+              <button className="button button--link" type="button" onClick={() => { go('examen'); }}>
+                Empezar simulacro
+              </button>
+            </div>
+          </>
         ) : (
           <div className="table-wrap">
             <table className="table">

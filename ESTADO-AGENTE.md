@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 10/11 (noche): examen completo con mezcla de los cinco bloques, 100 preguntas por defecto, 120 min, penalizacion -1/3 y nota final; historial de intentos con fecha, tipo, bloque, aciertos, tiempo y nota; CASO-OPOFUENTE.md para portfolio con 40/40, 400 preguntas, metricas y capturas. 63/63 comprobaciones y 12/12 enlaces.
+resumen: Sesion 10/11 (noche): practica que corrige al elegir y muestra Siguiente sin Comprobar; estados vacios de Estadisticas con Hacer practica y Empezar simulacro; resultado de examen con nota, tiempo, aciertos/fallos/blancos y Revisar mis errores como primera accion. 40/40 temas, 400 preguntas; 67/67 comprobaciones y 12/12 enlaces.
 estado: completado
-tarea: demo completa con examen completo, historial y caso de portfolio
+tarea: demo completa con UX de practica y examen pulida
 nivel: 2
-siguiente: mantener la demo y actualizar reglas de C1 locales cuando se publiquen; TAI recuperado privado (derechos)
+siguiente: mantener la demo; reglas de C1 locales pendientes de bases oficiales; TAI recuperado privado
 bloqueado: ninguno
 fecha: 2026-11-10

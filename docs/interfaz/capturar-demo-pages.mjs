@@ -252,6 +252,10 @@ if (practice !== undefined) {
   await page.locator('input[type=radio]').first().check();
   const correccion = await page.locator('main').innerText();
   check('elegir opción corrige al momento', /Correcto|Incorrecto/.test(correccion));
+  check(
+    'tras elegir aparece Siguiente',
+    (await page.getByRole('button', { name: 'Siguiente pregunta' }).count()) > 0,
+  );
   check('la corrección enlaza el texto oficial', /Texto oficial/.test(correccion));
   check(
     'el enlace de la corrección apunta al BOE',
@@ -349,6 +353,14 @@ const examen = await page.locator('main').innerText();
 check('el examen da nota al terminar', /Resultado del examen/.test(examen) && /Nota:/.test(examen));
 check('el examen aplica penalización', /Penalización aplicada/.test(examen));
 check('el examen revisa los fallos', /Revisión de fallos/.test(examen));
+check(
+  'el resultado muestra nota, tiempo, aciertos, fallos y blancos',
+  /Nota:/.test(examen) && /Tiempo/.test(examen) && /Aciertos/.test(examen) && /Fallos/.test(examen) && /En blanco/.test(examen),
+);
+check(
+  'Revisar mis errores es la primera acción',
+  (await page.locator('main .demo-actions .button').first().innerText()).includes('Revisar mis errores'),
+);
 await page.screenshot({ path: path.join(OUT_DIR, 'examen-resultado-390.png'), fullPage: true });
 
 // Historial unificado: práctica + examen.
@@ -359,6 +371,13 @@ check('las estadísticas separan prácticas e historial', /Estadísticas de prá
 check('el historial incluye práctica y examen', /Práctica/.test(historial) && /Examen/.test(historial));
 check('el historial muestra el tiempo', /Historial de intentos/.test(historial) && /\d{2}:\d{2}/.test(historial));
 await page.screenshot({ path: path.join(OUT_DIR, 'estadisticas-390.png'), fullPage: true });
+
+// Estados vacíos con acción: sin progreso ni intentos.
+await page.evaluate(() => { window.localStorage.clear(); });
+await page.reload({ waitUntil: 'networkidle' });
+const vacia = await page.locator('main').innerText();
+check('los estados vacíos ofrecen práctica y simulacro', /Hacer práctica/.test(vacia) && /Empezar simulacro/.test(vacia));
+await page.screenshot({ path: path.join(OUT_DIR, 'estadisticas-vacia-390.png'), fullPage: true });
 
 check('sin errores de página', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
 

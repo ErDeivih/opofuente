@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **63/63**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **67/67**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -21,7 +21,8 @@ guarda en `localStorage`. **No hay cuenta, no hay servidor y no se envía nada.*
   fuente de revisión, y formulario de **reporte de erratas** que descarga un JSON.
 - **Seguridad**: CSP por `<meta>`, `referrer: no-referrer` y `connect-src 'none'`; el examen se
   etiqueta como **«Simulación»**.
-- **Historial unificado** de prácticas y exámenes: tipo, bloque, fecha, aciertos y nota en Estadísticas.
+- **Historial unificado** de prácticas y exámenes: tipo, bloque, fecha, aciertos, tiempo y nota en Estadísticas; estados vacíos con acciones.
+- **Resultado de examen** con resumen de nota/tiempo/aciertos/fallos/blancos y «Revisar mis errores» primero.
 - **Examen con formato real**: tiempo límite y penalización por fallo según convocatoria (TAI oficial;
   C1 local marcado como estimación).
 - **Examen por bloque** y **examen completo** (`#/examen`): N preguntas aleatorias, sin corrección
@@ -68,7 +69,7 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **63/63** y capturas.
+   → **67/67** y capturas.
 
 ## Verificación y capturas
 
@@ -103,6 +104,7 @@ Revisión final móvil en [`REVISION-FINAL-2026-11-10.md`](REVISION-FINAL-2026-1
 | Examen completo | — | `examen-completo-390.png` |
 | Resultado del examen | — | `examen-resultado-390.png` |
 | Estadísticas | — | `estadisticas-390.png` |
+| Estadísticas vacías | — | `estadisticas-vacia-390.png` |
 | Corrección con BOE | `correccion-1280.png` | — |
 | Resultado | `resultado-1280.png` | — |
 
