@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **38/38**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **44/44**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -57,7 +57,7 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **38/38** y capturas.
+   → **44/44** y capturas.
 
 ## Verificación y capturas
 
@@ -68,7 +68,8 @@ corrección al elegir sin «Comprobar», enlace al BOE, reanudación por la preg
 `localStorage`, ausencia de errores de página y **12/12 enlaces de convocatoria con su nombre**
 (HTTP 200 comprobado con `docs/interfaz/verificar-convocatorias.mjs`).
 
-Capturas a **390 y 1280** en [`docs/capturas/demo-pages/`](capturas/demo-pages/):
+Revisión final móvil en [`REVISION-FINAL-2026-11-10.md`](REVISION-FINAL-2026-11-10.md). Capturas a
+**390 y 1280** en [`docs/capturas/demo-pages/`](capturas/demo-pages/):
 
 | Pantalla | 1280 | 390 |
 |---|---|---|
@@ -79,6 +80,10 @@ Capturas a **390 y 1280** en [`docs/capturas/demo-pages/`](capturas/demo-pages/)
 | Tema pendiente | `tema-pendiente-1280.png` | `tema-pendiente-390.png` |
 | Práctica | `practica-1280.png` | `practica-390.png` |
 | Ficha de pregunta | `pregunta-1280.png` | `pregunta-390.png` |
+| Lista de prácticas | — | `practicas-390.png` |
+| Buscador (`III.20`) | — | `buscador-390.png` |
+| Tema III.19 | — | `tema-iii-19-390.png` |
+| Tema III.20 | — | `tema-iii-20-390.png` |
 | Corrección con BOE | `correccion-1280.png` | — |
 | Resultado | `resultado-1280.png` | — |
 

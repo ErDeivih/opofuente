@@ -73,6 +73,10 @@ servidor.
 | Tema pendiente | [tema-pendiente-1280](docs/capturas/demo-pages/tema-pendiente-1280.png) | [tema-pendiente-390](docs/capturas/demo-pages/tema-pendiente-390.png) |
 | Práctica | [practica-1280](docs/capturas/demo-pages/practica-1280.png) | [practica-390](docs/capturas/demo-pages/practica-390.png) |
 | Ficha de pregunta | [pregunta-1280](docs/capturas/demo-pages/pregunta-1280.png) | [pregunta-390](docs/capturas/demo-pages/pregunta-390.png) |
+| Lista de prácticas | — | [practicas-390](docs/capturas/demo-pages/practicas-390.png) |
+| Buscador (`III.20`) | — | [buscador-390](docs/capturas/demo-pages/buscador-390.png) |
+| Tema III.19 | — | [tema-iii-19-390](docs/capturas/demo-pages/tema-iii-19-390.png) |
+| Tema III.20 | — | [tema-iii-20-390](docs/capturas/demo-pages/tema-iii-20-390.png) |
 | Corrección con BOE | [correccion-1280](docs/capturas/demo-pages/correccion-1280.png) | — |
 
 ![Portada de la demo](docs/capturas/demo-pages/portada-1280.png)
@@ -80,7 +84,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **38/38** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **44/44** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -118,7 +122,7 @@ servidor.
 
 - Es una **demo estática**: no hay backend, ni cuentas, ni sincronización; el progreso vive en el
   navegador.
-- **23 temas** siguen pendientes; la demo lo dice y no muestra relleno.
+- **14 temas** siguen pendientes; la demo lo dice y no muestra relleno.
 - El temario TAI recuperado (33/33) y los PDF de apoyo son **referencia interna privada**: no se
   publican por derechos de terceros (D-034).
 - La app completa con backend (SQLite, biblioteca, banco propio) es local y todavía no tiene URL
@@ -131,5 +135,14 @@ servidor.
 3. Abre **Temas** → I.1 → práctica; responde y mira la corrección con el enlace al BOE.
 4. Abre **Portada** y revisa las 12 convocatorias y el aviso único.
 
+## 9. Revisión final y qué queda
+
+- **44/44** comprobaciones, también a **390 px**; capturas nuevas en
+  [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
+  [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
+- **26/40** temas completos: I 12/12 · II 5/5 · III 6/9 · IV 1/7 · V 2/7.
+- Quedan **14 temas**: III.23, III.25, III.26, IV.28-IV.33 y V.36-V.40. Cada uno debe salir con
+  apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
+
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-26/40 temas con apuntes y práctica, 260 preguntas, 12 convocatorias, 38/38 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+26/40 temas con apuntes y práctica, 260 preguntas, 12 convocatorias, 44/44 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

@@ -94,6 +94,18 @@ check('hay avance por bloque', /I: \d+\/12 con apuntes/.test(temario));
 check('los sellos de apuntes y práctica están visibles', /Apuntes completos/.test(temario) && /Con práctica/.test(temario));
 check('hay al menos 5 temas con apuntes', data.progress.apuntesCompletos >= 5, `${data.progress.apuntesCompletos}`);
 await captura('temario', 'temario', 390);
+check(
+  'las tres pestañas se ven a 390 px y miden 44 px',
+  (await page.locator('.demo-nav .button').count()) === 3 &&
+    (await page.locator('.demo-nav .button').evaluateAll((botones) =>
+      botones.every((boton) => boton.getBoundingClientRect().height >= 44),
+    )),
+);
+const practicas390 = await captura('practicas', 'practicas', 390);
+check(
+  'la pestaña Prácticas lista todas las prácticas en móvil',
+  new RegExp(`${String(data.practices.length)} prácticas`).test(practicas390),
+);
 
 // Mapa de cobertura publicado: 40 filas con apuntes y práctica.
 const cobertura = await captura('cobertura', 'cobertura', 1280);
@@ -113,6 +125,23 @@ check(
     (await page.locator('.demo-status--practica-pendiente').count()) === data.progress.sinPractica,
 );
 await captura('cobertura', 'cobertura', 390);
+check(
+  'el mapa conserva las 40 filas a 390 px',
+  (await page.locator('.demo-cobertura tbody tr').count()) === 40,
+);
+
+// Revisión de los dos temas de la tanda: contenido, tabla y 10 preguntas.
+for (const temaId of ['III.19', 'III.20']) {
+  const nombre = temaId.toLowerCase().replace('.', '-');
+  const texto = await captura(`tema/${temaId}`, `tema-${nombre}`, 390);
+  check(
+    `${temaId} está completo y con 10 preguntas`,
+    /Apuntes completos/.test(texto) &&
+      /Fuente:/.test(texto) &&
+      (await page.locator('main table').count()) >= 1 &&
+      (await page.locator('ol.demo-questions li').count()) === 10,
+  );
+}
 
 // Búsqueda y filtro.
 await page.setViewportSize({ width: 1280, height: 900 });
@@ -128,6 +157,15 @@ check(
   (await page.locator('.demo-topic').count()) === data.progress.conPractica,
 );
 await page.getByRole('button', { name: 'Todos', exact: true }).click();
+
+// Buscador en móvil: una búsqueda por código deja un tema.
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`${BASE}/#/temario`, { waitUntil: 'networkidle' });
+await page.locator('input[type=search]').fill('III.20');
+await page.waitForTimeout(200);
+check('el buscador funciona a 390 px', (await page.locator('.demo-topic').count()) === 1);
+await page.screenshot({ path: path.join(OUT_DIR, 'buscador-390.png'), fullPage: true });
+await page.locator('input[type=search]').fill('');
 
 if (completo !== undefined) {
   const texto = await captura(`tema/${completo.path}`, 'tema-completo', 1280);

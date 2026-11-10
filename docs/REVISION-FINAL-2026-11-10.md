@@ -1,0 +1,53 @@
+# Revisión final de la demo — 10/11/2026
+
+**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **44/44** comprobaciones con
+Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
+
+## Qué se ha revisado
+
+| Comprobación | Resultado |
+|---|---|
+| Tres pestañas visibles y pulsables | **Temario, Cobertura y Prácticas**, con 44 px de alto |
+| Portada | Cobertura, resumen por bloque, «Continuar donde lo dejé», 3 prácticas y un solo aviso |
+| Buscador | `III.20` deja exactamente 1 tema a 390 px |
+| Filtros | «Con apuntes» y «Con práctica» devuelven los temas esperados |
+| Mapa de cobertura | 40 filas y sellos de apuntes/práctica coincidentes, también a 390 px |
+| Temas de la tanda | III.19 y III.20 con apuntes completos, tabla, fuente y 10 preguntas |
+| Ficha de tema | Migas «Temario › III.19», sellos y enlace a convocatorias |
+| Práctica | Corrección al elegir, sin «Comprobar», reanudable y con enlace al BOE |
+| Enlaces | 12/12 convocatorias abren (HTTP 200) y su texto es «Bases de {título}» |
+| Sin errores | Ningún error de página en la consola del navegador |
+
+## Capturas a 390 px
+
+| Pantalla | Captura |
+|---|---|
+| Portada | [portada-390](capturas/demo-pages/portada-390.png) |
+| Temario | [temario-390](capturas/demo-pages/temario-390.png) |
+| Cobertura / mapa | [cobertura-390](capturas/demo-pages/cobertura-390.png) |
+| Prácticas (lista completa) | [practicas-390](capturas/demo-pages/practicas-390.png) |
+| Buscador con `III.20` | [buscador-390](capturas/demo-pages/buscador-390.png) |
+| Tema III.19 | [tema-iii-19-390](capturas/demo-pages/tema-iii-19-390.png) |
+| Tema III.20 | [tema-iii-20-390](capturas/demo-pages/tema-iii-20-390.png) |
+| Tema completo (I.1) | [tema-completo-390](capturas/demo-pages/tema-completo-390.png) |
+| Tema pendiente (III.23) | [tema-pendiente-390](capturas/demo-pages/tema-pendiente-390.png) |
+| Práctica | [practica-390](capturas/demo-pages/practica-390.png) |
+| Ficha de pregunta | [pregunta-390](capturas/demo-pages/pregunta-390.png) |
+
+## Estado final
+
+- **26/40** apuntes completos; **14 pendientes**; **0 solo resumen**; **26 prácticas**; **260 preguntas**.
+- Cobertura por bloque: **I 12/12 · II 5/5 · III 6/9 · IV 1/7 · V 2/7**.
+- **12/12** enlaces de convocatoria abren (HTTP 200).
+- Pruebas: 517 unitarias de backend, 225 de web, typecheck, eslint, ruff, mypy y build.
+
+## Lo que queda para mañana
+
+- **III.23** Servicios de red, **III.25** Cloud y centros de datos, **III.26** Soporte al puesto.
+- **IV.28** SQL, **IV.29** Gestores de BD, **IV.30** Programación, **IV.31** Desarrollo web,
+  **IV.32** Interoperabilidad, **IV.33** Informes.
+- **V.36** Criptografía y firma, **V.37** Protección de datos aplicada, **V.38** Ciberseguridad,
+  **V.39** Administración electrónica, **V.40** Accesibilidad y usabilidad.
+
+Cada tema pendiente debe salir con apuntes propios, tabla, ejemplo, fuente oficial, 10 preguntas y su
+fila/sello en el mapa.
