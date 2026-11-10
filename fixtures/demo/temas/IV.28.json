@@ -187,5 +187,6 @@
     "Olvidar el `WHERE` en un `UPDATE` o un `DELETE`: sin filtro se modifican o borran todas las filas.",
     "Creer que `SELECT` es DDL: es DML; DDL son `CREATE`, `ALTER` y `DROP`.",
     "Pensar que un `JOIN` conserva las filas sin coincidencia: eso solo ocurre en `LEFT`, `RIGHT` o `FULL`, no en `INNER`."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

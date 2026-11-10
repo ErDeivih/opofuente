@@ -183,5 +183,6 @@
     "Confundir esquema con base de datos o con copia de seguridad: el esquema solo agrupa objetos.",
     "Creer que tener una réplica evita las copias: la réplica reproduce también un borrado accidental.",
     "Dar por buena una copia porque el proceso terminó sin error: sin restauración probada es una hipótesis."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

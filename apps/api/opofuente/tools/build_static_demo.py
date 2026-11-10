@@ -74,6 +74,9 @@ def _cargar_temas(base: Path) -> dict[str, dict[str, Any]]:
             raise RuntimeError(f"{fichero.name}: `errores` debe tener entre 2 y 4 puntos")
         if not all(isinstance(punto, str) and punto.strip() for punto in errores):
             raise RuntimeError(f"{fichero.name}: `errores` tiene un punto vacío")
+        reviewed_at = data.get("reviewedAt")
+        if not isinstance(reviewed_at, str) or not reviewed_at.strip():
+            raise RuntimeError(f"{fichero.name}: falta `reviewedAt`")
         data["source"] = data.get("source") or {"label": "Apuntes propios de la demo", "url": ""}
         temas[path] = data
     return temas
@@ -202,6 +205,7 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
             "sections": tema["sections"],
             "memorizar": tema["memorizar"],
             "errores": tema["errores"],
+            "reviewedAt": tema["reviewedAt"],
         }
         if practica_estado == "con_practica":
             slug = _slug(path)
@@ -236,6 +240,27 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
             "No hay servidor ni cuenta."
         ),
         "convocatorias": convocatorias,
+        "examRules": {
+            "tai": {
+                "code": "tai-age-2025",
+                "name": "TAI AGE 2025 (formato oficial)",
+                "questions": 100,
+                "minutes": 120,
+                "penalty": 0.3333333333,
+                "note": "ANEXO V: 80 preguntas + 20 de supuesto; error -1/3; blanco 0.",
+            },
+            "local": {
+                "code": "c1-local",
+                "name": "C1 local (estimación de la demo)",
+                "questions": 50,
+                "minutes": 90,
+                "penalty": 0.3333333333,
+                "note": (
+                    "Las bases draft no publican reglas verificadas; 90 min y -1/3 es una "
+                    "estimación, no un dato oficial."
+                ),
+            },
+        },
         "curriculum": {
             "code": curriculum["code"],
             "name": curriculum["name"],

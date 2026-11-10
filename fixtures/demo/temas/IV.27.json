@@ -186,5 +186,6 @@
     "Confundir superclave con clave candidata: la candidata es la superclave mínima, sin columnas sobrantes.",
     "Confundir integridad de entidad (clave primaria no nula) con integridad referencial (clave foránea que apunta a una fila existente).",
     "Creer que normalizar es siempre mejor: desnormalizar puede mejorar las lecturas a cambio de redundancia y riesgo de incoherencia."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

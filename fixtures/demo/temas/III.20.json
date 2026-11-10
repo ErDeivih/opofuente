@@ -194,5 +194,6 @@
     "Confundir RTO (tiempo de recuperación) con RPO (pérdida de datos admisible).",
     "Creer que RAID sustituye a la copia de seguridad: replica también borrados y cifrado.",
     "Pensar que un snapshot es una copia externa: comparte el almacenamiento y se pierde con él."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

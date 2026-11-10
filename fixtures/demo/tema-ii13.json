@@ -192,5 +192,6 @@
     "Confundir memoria RAM (volátil) con ROM (no volátil).",
     "Creer que la caché sustituye a la RAM.",
     "Confundir arquitectura von Neumann con Harvard."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

@@ -53,8 +53,14 @@ servidor.
   hechas; enlaces a repasar el tema y repetir la práctica.
 - **Modo examen por bloque** (`#/examen`): N preguntas aleatorias, sin corrección hasta el final,
   nota y revisión de fallos con explicación y fuente.
-- **Estadísticas** (`#/estadisticas`): acierto por tema y bloque, 5 temas más flojos y enlace directo
-  a practicar o repasar.
+- **Formato de examen real**: selector de convocatoria, tiempo límite y penalización por fallo. El
+  perfil TAI usa 120 min y −1/3 (ANEXO V); las C1 locales se marcan como estimación porque sus bases
+  draft no publican reglas verificadas.
+- **Historial unificado de intentos**: prácticas y exámenes con tipo, bloque, detalle, fecha,
+  aciertos y nota, en `#/estadisticas`.
+- **Fecha de última revisión** en cada ficha de tema.
+- **Estadísticas** (`#/estadisticas`): bloque «Estadísticas de prácticas» con acierto por tema y
+  bloque, 5 temas más flojos, y «Historial de intentos» separado con prácticas y exámenes.
 - Portada corta con **«Continuar donde lo dejé»** y 3 prácticas siguientes.
 - Índice con **avance por bloque** («I: 11/12 con apuntes»), **búsqueda por código o título** y
   filtros «Con apuntes» / «Con práctica».
@@ -101,7 +107,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **53/53** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **59/59** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -156,7 +162,7 @@ servidor.
 
 ## 9. Revisión final y qué queda
 
-- **53/53** comprobaciones, también a **390 px**; capturas nuevas en
+- **59/59** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
 - **40/40** temas completos: I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7.
@@ -164,4 +170,4 @@ servidor.
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 53/53 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 59/59 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

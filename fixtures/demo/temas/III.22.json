@@ -214,5 +214,6 @@
     "Confundir ancho de banda con latencia o jitter.",
     "Creer que una VPN sustituye la segmentación o los permisos.",
     "Usar WEP o redes abiertas para el personal."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

@@ -192,5 +192,6 @@
     "Creer que se firma con la clave pública: se firma con la privada del firmante y se verifica con la pública.",
     "Pensar que el hash cifra el documento o permite recuperar el original.",
     "Atribuir el equivalente legal de la firma manuscrita a la firma simple o a la avanzada en lugar de a la cualificada."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

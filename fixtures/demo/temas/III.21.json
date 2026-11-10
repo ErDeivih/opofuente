@@ -296,5 +296,6 @@
     "Creer que una subred /26 tiene 64 hosts útiles: son 62, porque se descuentan red y broadcast.",
     "Confundir RIP (vector de distancia, máximo 15 saltos) con OSPF (estado de enlace) y BGP (exterior, entre sistemas autónomos).",
     "Pensar que IPv6 usa broadcast o ARP: usa multicast y NDP."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

@@ -188,5 +188,6 @@
     "Pensar que se puede derivar de nivel sin información: una derivación completa evita repetir el diagnóstico.",
     "Confundir la imagen de equipo (plantilla del sistema) con una copia de seguridad de los datos del usuario.",
     "Dar de baja un equipo sin borrar el disco ni recuperar las licencias."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

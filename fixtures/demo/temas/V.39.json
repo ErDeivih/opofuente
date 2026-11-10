@@ -192,5 +192,6 @@
     "Confundir identificación con firma electrónica.",
     "Confundir el ENI (interoperabilidad) con el ENS (seguridad).",
     "Olvidar que la notificación no accedida en plazo se entiende rechazada y el procedimiento sigue."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

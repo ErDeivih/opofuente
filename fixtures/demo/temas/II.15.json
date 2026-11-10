@@ -214,5 +214,6 @@
     "Confundir referencia relativa (A1) con absoluta ($A$1).",
     "Creer que un CSV conserva fórmulas, tipos o formato.",
     "Publicar un documento con metadatos o macros sin revisar."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

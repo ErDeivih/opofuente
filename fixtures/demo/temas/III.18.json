@@ -224,5 +224,6 @@
     "Instalar todos los roles en un único servidor sin separar funciones.",
     "Confundir alta disponibilidad con copia de seguridad.",
     "Usar cuentas de administrador para tareas diarias."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

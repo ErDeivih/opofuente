@@ -192,5 +192,6 @@
     "Confundir XSS (inyectar script en la página) con CSRF (forzar acciones autenticadas).",
     "Creer que la validación en el cliente basta: la validación obligatoria se hace en el servidor.",
     "Creer que `HttpOnly` cifra la cookie: impide que JavaScript la lea, pero no la cifra; para eso está HTTPS con `Secure`."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

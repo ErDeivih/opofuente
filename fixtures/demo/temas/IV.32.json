@@ -192,5 +192,6 @@
     "Confundir JSON con XML: ambos sirven para intercambiar, pero XML permite XSD y namespaces y es más verboso.",
     "Creer que `POST` es idempotente: repetirlo puede duplicar el efecto; `GET`, `PUT` y `DELETE` sí son idempotentes.",
     "Creer que basta con reintentar: sin idempotencia, un reintento en una operación sensible produce duplicados."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

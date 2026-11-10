@@ -180,6 +180,10 @@ if (completo !== undefined) {
     /Lo que hay que memorizar/.test(texto) && /Errores típicos/.test(texto),
   );
   check(
+    `el tema ${completo.path} muestra la fecha de revisión`,
+    /Última revisión: 10\/11\/2026/.test(texto),
+  );
+  check(
     `el tema ${completo.path} enlaza a las convocatorias`,
     /Forma parte del temario común/.test(texto) && /Ver convocatorias/.test(texto),
   );
@@ -285,7 +289,7 @@ check(
 // Estadísticas por tema y bloque.
 await captura('estadisticas', 'estadisticas', 390);
 const estadisticas = await page.locator('main').innerText();
-check('las estadísticas muestran el acierto por bloque', /Acierto por bloque/.test(estadisticas));
+check('las estadísticas muestran el acierto por bloque', /Estadísticas de prácticas/.test(estadisticas) && /%/.test(estadisticas));
 check(
   'las estadísticas listan los temas más flojos',
   /Temas más flojos/.test(estadisticas) && estadisticas.includes(practice?.tema_path ?? ''),
@@ -295,10 +299,13 @@ check(
 await page.setViewportSize({ width: 390, height: 844 });
 await page.goto(`${BASE}/#/examen/III`, { waitUntil: 'networkidle' });
 await page.waitForSelector('h1');
-check('el examen permite elegir bloque y preguntas', /Examen por bloque/.test(await page.locator('main').innerText()));
+const examenSetup = await page.locator('main').innerText();
+check('el examen permite elegir bloque y preguntas', /Examen por bloque/.test(examenSetup));
+check('el examen muestra convocatoria, tiempo y penalización', /Convocatoria y formato/.test(examenSetup) && /120 minutos/.test(examenSetup) && /1\/3/.test(examenSetup));
 await page.screenshot({ path: path.join(OUT_DIR, 'examen-390.png'), fullPage: true });
 await page.getByRole('button', { name: 'Empezar examen' }).click();
 await page.waitForSelector('input[type=radio]');
+check('el examen muestra el tiempo restante', /Tiempo restante/.test(await page.locator('main').innerText()));
 for (let i = 0; i < 10; i += 1) {
   await page.locator('input[type=radio]').first().check();
   if (i === 0) {
@@ -312,9 +319,18 @@ for (let i = 0; i < 10; i += 1) {
   await page.getByRole('button', { name: esUltima ? 'Ver resultado' : 'Siguiente pregunta' }).click();
 }
 const examen = await page.locator('main').innerText();
-check('el examen da nota al terminar', /Resultado del examen/.test(examen) && /nota/.test(examen));
+check('el examen da nota al terminar', /Resultado del examen/.test(examen) && /Nota:/.test(examen));
+check('el examen aplica penalización', /Penalización aplicada/.test(examen));
 check('el examen revisa los fallos', /Revisión de fallos/.test(examen));
 await page.screenshot({ path: path.join(OUT_DIR, 'examen-resultado-390.png'), fullPage: true });
+
+// Historial unificado: práctica + examen.
+await page.goto(`${BASE}/#/estadisticas`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+const historial = await page.locator('main').innerText();
+check('las estadísticas separan prácticas e historial', /Estadísticas de prácticas/.test(historial) && /Historial de intentos/.test(historial));
+check('el historial incluye práctica y examen', /Práctica/.test(historial) && /Examen/.test(historial));
+await page.screenshot({ path: path.join(OUT_DIR, 'estadisticas-390.png'), fullPage: true });
 
 check('sin errores de página', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
 

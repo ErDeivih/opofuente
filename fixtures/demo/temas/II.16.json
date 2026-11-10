@@ -204,5 +204,6 @@
     "Confundir POP3 (descarga) con IMAP (sincronización).",
     "Pensar que usar TLS en el cliente ya autentica el dominio.",
     "Abrir adjuntos inesperados o enlaces de remitentes desconocidos."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

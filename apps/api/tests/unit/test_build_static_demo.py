@@ -40,6 +40,8 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
         "convocatorias": 12,
     }
     assert data["convocatorias"]["total"] == 12
+    assert data["examRules"]["tai"]["minutes"] == 120
+    assert data["examRules"]["local"]["minutes"] == 90
     assert data["convocatorias"]["draft"] + data["convocatorias"]["archived"] == 12
 
     topics = {
@@ -72,6 +74,7 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
         )
         assert 3 <= len(contenido["memorizar"]) <= 5, f"{path}: memorizar incompleto"
         assert 2 <= len(contenido["errores"]) <= 4, f"{path}: errores incompletos"
+        assert contenido["reviewedAt"].strip() != ""
         assert contenido["practicaStatus"] == "con_practica"
         practica = next(item for item in data["practices"] if item["tema_path"] == path)
         assert len(practica["questions"]) == 10

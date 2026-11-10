@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **53/53**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **59/59**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -17,7 +17,11 @@ guarda en `localStorage`. **No hay cuenta, no hay servidor y no se envía nada.*
   más el perfil TAI. Se muestra en la portada, con enlace a las bases de cada una.
 - **Mapa de cobertura publicado** en `#/cobertura`: los 40 temas con su estado y su práctica.
 - **Guía de estudio** en `#/guia`: orden de bloques y temas flojos detectados desde las prácticas.
-- **Ficha de tema** con «Lo que hay que memorizar» (3-5 puntos) y «Errores típicos» (2-4).
+- **Ficha de tema** con «Lo que hay que memorizar» (3-5 puntos), «Errores típicos» (2-4) y fecha de
+  última revisión.
+- **Historial unificado** de prácticas y exámenes: tipo, bloque, fecha, aciertos y nota en Estadísticas.
+- **Examen con formato real**: tiempo límite y penalización por fallo según convocatoria (TAI oficial;
+  C1 local marcado como estimación).
 - **Modo examen** en `#/examen`: N preguntas aleatorias por bloque, sin corrección hasta el final, nota y revisión de fallos.
 - **Estadísticas** en `#/estadisticas`: acierto por tema y bloque, y los 5 temas más flojos con enlace directo.
 - **Portada corta**: cobertura, «Continuar donde lo dejé» y 3 prácticas siguientes; el resto está
@@ -61,7 +65,7 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **53/53** y capturas.
+   → **59/59** y capturas.
 
 ## Verificación y capturas
 

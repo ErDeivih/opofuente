@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 10/11: revision de calidad de los 40 temas y ficha ampliada. Refuerzo de II.15, II.16, II.17, III.18 y III.22 con seccion y tabla nuevas; 40/40 temas con memorizar (3-5) y errores tipicos (2-4), 200 puntos y ~150 errores. Letra correcta equilibrada (100 a/b/c/d). 53/53 comprobaciones y 12/12 enlaces; PORTFOLIO y CALIDAD-TEMARIO al dia.
+resumen: Sesion 10/11 (tarde): historial unificado de practicas y examenes en Estadisticas (tipo, bloque, fecha, aciertos, nota), etiquetas separadas "Estadisticas de practicas" e "Historial de intentos", fecha de ultima revision en cada tema y examen con tiempo y penalizacion por convocatoria (TAI 120 min y -1/3; C1 local estimacion marcada). 40/40 temas, 400 preguntas; 59/59 comprobaciones y 12/12 enlaces.
 estado: completado
-tarea: temario completo y calidad revisada
+tarea: demo completa con historial y formato de examen
 nivel: 2
-siguiente: mantener la demo, revisar contenido y decidir publicacion del TAI recuperado (derechos); no quedan temas
+siguiente: mantener la demo y revisar reglas oficiales de las C1 locales cuando se publiquen; TAI recuperado privado (derechos)
 bloqueado: ninguno
 fecha: 2026-11-10

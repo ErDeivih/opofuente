@@ -187,5 +187,6 @@
     "Confundir chmod (permisos) con chown (propietario y grupo).",
     "Creer que UAC solo actúa cuando la sesión no es de administrador: también avisa al administrador.",
     "Confundir los gestores de paquetes: apt es de Debian/Ubuntu, dnf de Fedora y pacman de Arch."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

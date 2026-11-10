@@ -241,5 +241,6 @@
     "Confundir SLA (cliente) con OLA (interno) y con UC (proveedor externo).",
     "Creer que la prioridad la fija la antigüedad del ticket: se calcula con impacto y urgencia.",
     "Confundir MTTR (reparación) con MTBF (tiempo entre fallos)."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

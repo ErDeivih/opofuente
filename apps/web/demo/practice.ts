@@ -18,6 +18,56 @@ export type DemoProgress = Readonly<Record<string, PracticeResult>>;
 
 const STORAGE_KEY = 'opofuente-demo-progress-v1';
 const RESUME_KEY = 'opofuente-demo-resume-v1';
+const ATTEMPTS_KEY = 'opofuente-demo-attempts-v1';
+
+export interface Attempt {
+  readonly id: string;
+  readonly type: 'practice' | 'exam';
+  readonly block: string;
+  readonly topic: string;
+  readonly label: string;
+  readonly date: string;
+  readonly correct: number;
+  readonly total: number;
+  readonly percent: number;
+  readonly convocatoria?: string;
+}
+
+export function loadAttempts(): Attempt[] {
+  const store = storage();
+  if (store === null) {
+    return [];
+  }
+  try {
+    const raw = store.getItem(ATTEMPTS_KEY);
+    if (raw === null) {
+      return [];
+    }
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as Attempt[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveAttempt(
+  attempt: Omit<Attempt, 'id' | 'date'>,
+): Attempt {
+  const registro: Attempt = {
+    ...attempt,
+    id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : String(Date.now()),
+    date: new Date().toISOString(),
+  };
+  const store = storage();
+  if (store !== null) {
+    try {
+      store.setItem(ATTEMPTS_KEY, JSON.stringify([registro, ...loadAttempts()].slice(0, 100)));
+    } catch {
+      // Sin almacenamiento, el historial no persiste.
+    }
+  }
+  return registro;
+}
 
 export interface ResumeState {
   readonly slug: string;
@@ -149,6 +199,7 @@ export function resetProgress(): void {
     try {
       store.removeItem(STORAGE_KEY);
       store.removeItem(RESUME_KEY);
+      store.removeItem(ATTEMPTS_KEY);
     } catch {
       // Nada que hacer: la demo sigue funcionando sin persistencia.
     }

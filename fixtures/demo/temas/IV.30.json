@@ -192,5 +192,6 @@
     "Confundir clase con objeto: la clase es la plantilla; el objeto es una instancia concreta.",
     "Creer que un lenguaje de tipado dinámico no tiene tipos: los tiene, pero se comprueban en ejecución.",
     "Confundir encapsulación con herencia: son pilares distintos de la POO; encapsular es ocultar detalles internos."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

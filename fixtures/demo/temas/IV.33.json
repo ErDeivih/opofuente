@@ -192,5 +192,6 @@
     "Confundir vista normal con vista materializada: la materializada almacena el resultado y hay que actualizarla.",
     "Elegir el gráfico antes de definir la pregunta: el gráfico depende de lo que se quiera mostrar.",
     "Presentar un KPI sin periodo, unidad o denominador: una cifra correcta se interpreta mal."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

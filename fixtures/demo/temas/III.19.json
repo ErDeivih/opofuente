@@ -188,5 +188,6 @@
     "Confundir namespaces (qué ve el contenedor) con cgroups (recursos que consume).",
     "Creer que un contenedor lleva su propio sistema operativo y kernel: comparte el del anfitrión.",
     "Pensar que un snapshot de máquina virtual sustituye a una copia de seguridad."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

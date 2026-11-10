@@ -7,13 +7,15 @@
  * temas sin escribir dicen «Pendiente» en lugar de mostrar un párrafo vacío.
  */
 
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import demoData from './data.json';
 import {
   clearResume,
+  loadAttempts,
   loadProgress,
+  saveAttempt,
   loadResume,
   resetProgress,
   saveResult,
@@ -85,6 +87,7 @@ interface TopicContent {
   readonly practicaStatus: PracticaStatus;
   readonly source: DemoSource;
   readonly sections: readonly DemoSection[];
+  readonly reviewedAt: string;
   readonly memorizar: readonly string[];
   readonly errores: readonly string[];
   readonly practiceSlug?: string;
@@ -114,9 +117,22 @@ interface Convocatoria {
   readonly url: string;
 }
 
+interface ExamRule {
+  readonly code: string;
+  readonly name: string;
+  readonly questions: number;
+  readonly minutes: number;
+  readonly penalty: number;
+  readonly note: string;
+}
+
 interface DemoData {
   readonly title: string;
   readonly warning: string;
+  readonly examRules: {
+    readonly tai: ExamRule;
+    readonly local: ExamRule;
+  };
   readonly convocatorias: {
     readonly total: number;
     readonly draft: number;
@@ -605,6 +621,23 @@ function Guia() {
 
 type ExamPhase = 'setup' | 'running' | 'result';
 
+function formatoTiempo(segundos: number): string {
+  const minutos = Math.floor(segundos / 60);
+  const resto = segundos % 60;
+  return `${String(minutos).padStart(2, '0')}:${String(resto).padStart(2, '0')}`;
+}
+
+function penalizacionTexto(penalizacion: number): string {
+  return Math.abs(penalizacion - 1 / 3) < 0.001 ? '1/3' : String(penalizacion);
+}
+
+function fechaCorta(iso: string): string {
+  if (iso === '') {
+    return '—';
+  }
+  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 function preguntasDelBloque(path: string): ExamQuestion[] {
   return data.practices
     .filter((practice) => blockForTopic(practice.tema_path)?.path === path)
@@ -615,14 +648,61 @@ function preguntasDelBloque(path: string): ExamQuestion[] {
 
 function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }) {
   const [block, setBlock] = useState(initialBlock ?? data.curriculum.blocks[0]?.path ?? 'I');
+  const [convocatoria, setConvocatoria] = useState('tai');
   const [count, setCount] = useState(10);
   const [phase, setPhase] = useState<ExamPhase>('setup');
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [selected, setSelected] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const saved = useRef(false);
+  const rule = convocatoria === 'tai' ? data.examRules.tai : data.examRules.local;
+  const convocatoriaName =
+    convocatoria === 'tai'
+      ? data.examRules.tai.name
+      : data.convocatorias.items.find((item) => item.code === convocatoria)?.title ?? 'C1 local';
   const pool = preguntasDelBloque(block);
   const disponibles = Math.min(count, pool.length);
+
+  useEffect(() => {
+    if (phase !== 'running') {
+      return;
+    }
+    if (timeLeft <= 0) {
+      const fin = window.setTimeout(() => { setPhase('result'); }, 0);
+      return () => { window.clearTimeout(fin); };
+    }
+    const temporizador = window.setTimeout(() => {
+      setTimeLeft((segundos) => segundos - 1);
+    }, 1000);
+    return () => { window.clearTimeout(temporizador); };
+  }, [phase, timeLeft]);
+
+  useEffect(() => {
+    if (phase !== 'result' || saved.current) {
+      return;
+    }
+    saved.current = true;
+    const aciertos = questions.filter(
+      (question, posicion) => answers[posicion] === question.correct,
+    ).length;
+    const fallos = questions.filter(
+      (question, posicion) => answers[posicion] !== undefined && answers[posicion] !== question.correct,
+    ).length;
+    const neto = aciertos - fallos * rule.penalty;
+    const porcentaje = questions.length === 0 ? 0 : Math.max(0, Math.round((neto / questions.length) * 100));
+    saveAttempt({
+      type: 'exam',
+      block,
+      topic: block,
+      label: `Examen ${block}`,
+      correct: aciertos,
+      total: questions.length,
+      percent: porcentaje,
+      convocatoria: convocatoriaName,
+    });
+  }, [answers, block, convocatoriaName, phase, questions, rule.penalty]);
 
   function empezar(): void {
     const elegidas = shuffle(pool).slice(0, disponibles);
@@ -630,6 +710,8 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
     setAnswers({});
     setIndex(0);
     setSelected(null);
+    setTimeLeft(rule.minutes * 60);
+    saved.current = false;
     setPhase('running');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -645,7 +727,10 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
         <section className="page__header">
           <h1>Examen · Bloque {block}</h1>
           <p className="page__lead">
-            Pregunta {index + 1} de {questions.length} · sin corrección hasta el final
+            {convocatoriaName} · pregunta {index + 1} de {questions.length} · sin corrección hasta el final
+          </p>
+          <p className="demo-exam-clock" aria-live="polite">
+            Tiempo restante: <strong>{formatoTiempo(timeLeft)}</strong> · error −{penalizacionTexto(rule.penalty)}
           </p>
         </section>
         <section className="card">
@@ -687,13 +772,7 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
             >
               {esUltima ? 'Ver resultado' : 'Siguiente pregunta'}
             </button>
-            <button
-              className="button button--link"
-              type="button"
-              onClick={() => {
-                setPhase('setup');
-              }}
-            >
+            <button className="button button--link" type="button" onClick={() => { setPhase('setup'); }}>
               Abandonar
             </button>
           </div>
@@ -706,37 +785,49 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
     const aciertos = questions.filter(
       (question, posicion) => answers[posicion] === question.correct,
     ).length;
-    const nota = questions.length === 0 ? 0 : Math.round((aciertos / questions.length) * 100);
-    const fallos = questions
+    const fallos = questions.filter(
+      (question, posicion) => answers[posicion] !== undefined && answers[posicion] !== question.correct,
+    ).length;
+    const blancos = questions.length - aciertos - fallos;
+    const neto = aciertos - fallos * rule.penalty;
+    const nota = questions.length === 0 ? 0 : Math.max(0, Math.round((neto / questions.length) * 100));
+    const fallosDetalle = questions
       .map((question, posicion) => ({ question, elegida: answers[posicion] }))
-      .filter((item) => item.elegida !== item.question.correct);
+      .filter((item) => item.elegida !== undefined && item.elegida !== item.question.correct);
     return (
       <>
         <section className="page__header">
           <h1>Resultado del examen</h1>
           <p className="page__lead">
-            Bloque {block} · {aciertos} de {questions.length} correctas · nota {nota} %
+            Bloque {block} · {convocatoriaName} · {aciertos} aciertos · {fallos} fallos · {blancos} en blanco
           </p>
         </section>
         <section className="card">
-          <h2>{nota >= 50 ? 'Aprobado' : 'Suspendido'}</h2>
-          <p className="hint">La nota de corte de la demo es 50 %. Revisa los fallos antes de repetir.</p>
+          <h2>Nota: {nota} %</h2>
+          <p>
+            Puntuación directa: <strong>{neto.toFixed(2)}</strong> sobre {questions.length}. Penalización
+            aplicada: {fallos} × {penalizacionTexto(rule.penalty)}.
+          </p>
+          <p className="hint">
+            Tiempo: {formatoTiempo(rule.minutes * 60 - timeLeft)} de {rule.minutes} minutos. La nota de
+            corte de la demo es 50 %; la calificación oficial depende de los baremos de la convocatoria.
+          </p>
           <div className="demo-actions">
             <button className="button" type="button" onClick={empezar}>
               Repetir examen
             </button>
             <button className="button button--link" type="button" onClick={() => { setPhase('setup'); }}>
-              Cambiar de bloque
+              Cambiar de bloque o convocatoria
             </button>
           </div>
         </section>
         <section className="card">
           <h2>Revisión de fallos</h2>
-          {fallos.length === 0 ? (
+          {fallosDetalle.length === 0 ? (
             <p>Sin fallos. Puedes subir el número de preguntas o cambiar de bloque.</p>
           ) : (
             <ol className="demo-fallos">
-              {fallos.map(({ question, elegida }) => (
+              {fallosDetalle.map(({ question, elegida }) => (
                 <li key={question.stem}>
                   <p><strong>{question.stem}</strong></p>
                   <p className="hint">Tema {question.topic} · tu respuesta: {elegida ?? 'sin responder'} · correcta: {question.correct}</p>
@@ -759,12 +850,29 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
       <section className="page__header">
         <h1>Examen por bloque</h1>
         <p className="page__lead">
-          Preguntas aleatorias del bloque, sin corrección hasta el final. Al terminar ves la nota y
-          la revisión de fallos.
+          Formato de examen real: tiempo límite y penalización por fallo según la convocatoria. Sin
+          corrección hasta el final.
         </p>
       </section>
       <section className="card">
-        <h2>Elige bloque y número de preguntas</h2>
+        <h2>Convocatoria y formato</h2>
+        <label className="demo-search">
+          <span>Convocatoria</span>
+          <select value={convocatoria} onChange={(event) => { setConvocatoria(event.target.value); }}>
+            <option value="tai">TAI AGE 2025 · formato oficial</option>
+            {data.convocatorias.items.map((item) => (
+              <option key={item.code} value={item.code}>{item.title}</option>
+            ))}
+          </select>
+        </label>
+        <p className="hint">
+          {rule.name}: {rule.questions} preguntas · {rule.minutes} minutos · error −
+          {penalizacionTexto(rule.penalty)} · blanco 0.
+        </p>
+        <p className="hint">{rule.note}</p>
+      </section>
+      <section className="card">
+        <h2>Bloque y número de preguntas</h2>
         <div className="demo-filter-buttons">
           {data.curriculum.blocks.map((item) => (
             <button
@@ -808,6 +916,7 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
 
 function Estadisticas() {
   const progress = loadProgress();
+  const attempts = loadAttempts();
   const hechas = data.practices
     .map((practice) => {
       const resultado = progress[practice.slug];
@@ -833,27 +942,22 @@ function Estadisticas() {
     <>
       <section className="page__header">
         <h1>Estadísticas</h1>
-        <p className="page__lead">Aciertos por tema y por bloque según tus prácticas hechas.</p>
+        <p className="page__lead">
+          Acierto por tema y bloque en tus prácticas, y historial de intentos de práctica y examen.
+        </p>
       </section>
-      {hechas.length === 0 ? (
-        <section className="card">
+      <section className="card">
+        <h2>Estadísticas de prácticas</h2>
+        {hechas.length === 0 ? (
           <p>Todavía no hay prácticas hechas. Haz una y aquí verás tus estadísticas.</p>
-          <button className="button" type="button" onClick={() => { go('practicas'); }}>
-            Ir a prácticas
-          </button>
-        </section>
-      ) : (
-        <>
-          <section className="card">
-            <h2>Acierto por bloque</h2>
+        ) : (
+          <>
             {porBloque.map(({ block, items, porcentaje }) => (
               <p key={block.path} className="demo-block-line">
                 {block.path}: <strong>{porcentaje} %</strong> ({items.length} tema(s) practicado(s))
               </p>
             ))}
-          </section>
-          <section className="card">
-            <h2>Temas más flojos</h2>
+            <h3>Temas más flojos</h3>
             <ol className="demo-weak">
               {flojos.map(({ practice, porcentaje }) => (
                 <li key={practice.slug}>
@@ -867,9 +971,7 @@ function Estadisticas() {
                 </li>
               ))}
             </ol>
-          </section>
-          <section className="card">
-            <h2>Acierto por tema</h2>
+            <h3>Acierto por tema</h3>
             <div className="table-wrap">
               <table className="table">
                 <thead>
@@ -887,9 +989,43 @@ function Estadisticas() {
                 </tbody>
               </table>
             </div>
-          </section>
-        </>
-      )}
+          </>
+        )}
+      </section>
+      <section className="card">
+        <h2>Historial de intentos</h2>
+        <p className="hint">Prácticas y exámenes guardados en este navegador.</p>
+        {attempts.length === 0 ? (
+          <p>Todavía no hay intentos registrados.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Bloque</th>
+                  <th scope="col">Detalle</th>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Aciertos</th>
+                  <th scope="col">Nota</th>
+                </tr>
+              </thead>
+              <tbody>
+                {attempts.map((attempt) => (
+                  <tr key={attempt.id}>
+                    <td>{attempt.type === 'exam' ? 'Examen' : 'Práctica'}</td>
+                    <td>{attempt.block}</td>
+                    <td>{attempt.convocatoria ?? attempt.topic}</td>
+                    <td>{fechaCorta(attempt.date)}</td>
+                    <td>{attempt.correct} / {attempt.total}</td>
+                    <td>{attempt.percent} %</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </>
   );
 }
@@ -1132,6 +1268,7 @@ function Tema({ path }: { path: string }) {
     practicaStatus: 'pendiente',
     source: { label: '', url: '' },
     sections: [],
+    reviewedAt: '',
     memorizar: [],
     errores: [],
   };
@@ -1148,6 +1285,7 @@ function Tema({ path }: { path: string }) {
           Tema {topic.path} · <ApuntesBadge status={topic.apuntesStatus} />{' '}
           <PracticaBadge status={topic.practicaStatus} />
         </p>
+        <p className="hint">Última revisión: {topic.reviewedAt.split('-').reverse().join('/')}</p>
         <p className="hint">
           Forma parte del temario común de las {data.convocatorias.total} convocatorias C1.{' '}
           <button
@@ -1457,6 +1595,16 @@ function PracticeRunner({ practice }: { practice: Practice }) {
   function finish(): void {
     clearResume();
     const score = scoreAnswers(answers, practice.questions);
+    const porcentaje = score.total === 0 ? 0 : Math.round((score.correct / score.total) * 100);
+    saveAttempt({
+      type: 'practice',
+      block: blockForTopic(practice.tema_path)?.path ?? '—',
+      topic: practice.tema_path,
+      label: `Práctica ${practice.tema_path}`,
+      correct: score.correct,
+      total: score.total,
+      percent: porcentaje,
+    });
     setResult(saveResult(practice.slug, score.correct, score.total));
   }
 

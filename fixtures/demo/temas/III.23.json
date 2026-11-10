@@ -188,5 +188,6 @@
     "Confundir el registro A (IPv4) con AAAA (IPv6) y con MX (correo).",
     "Confundir el proxy (salida de los puestos) con el reverse proxy (entrada a servicios internos).",
     "Creer que NTP es prescindible: sin sincronía de hora fallan registros, certificados y Kerberos."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }

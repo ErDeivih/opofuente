@@ -217,5 +217,6 @@
     "Creer que el riesgo residual puede ser cero o que la evaluación de riesgos se hace una sola vez.",
     "Confundir ISO/IEC 27001 (requisitos certificables del SGSI) con ISO/IEC 27002 (guía de buenas prácticas de controles).",
     "Confundir transferir el riesgo (seguro o externalización) con aceptarlo."
-  ]
+  ],
+  "reviewedAt": "2026-11-10"
 }
