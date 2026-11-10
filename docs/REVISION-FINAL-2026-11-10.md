@@ -1,6 +1,6 @@
 # Revisión final de la demo — 10/11/2026
 
-**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **59/59** comprobaciones con
+**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **61/61** comprobaciones con
 Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 
 ## Qué se ha revisado
@@ -48,6 +48,7 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 - **12/12** enlaces de convocatoria abren (HTTP 200).
 - **Examen por bloque** con tiempo/penalización, **historial unificado** e **histórico de intentos**
   verificados; fecha de revisión visible en la ficha.
+- **CSP y referrer** presentes; **errata descargada como JSON**; etiqueta **Simulación** en el examen.
 - Pruebas: 517 unitarias de backend, 225 de web, typecheck, eslint, ruff, mypy y build.
 
 ## Temario completo

@@ -14,7 +14,9 @@ import demoData from './data.json';
 import {
   clearResume,
   loadAttempts,
+  loadErratas,
   loadProgress,
+  saveErrata,
   saveAttempt,
   loadResume,
   resetProgress,
@@ -848,10 +850,10 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
   return (
     <>
       <section className="page__header">
-        <h1>Examen por bloque</h1>
+        <h1>Examen por bloque <span className="demo-status demo-status--apuntes-pendiente">Simulación</span></h1>
         <p className="page__lead">
           Formato de examen real: tiempo límite y penalización por fallo según la convocatoria. Sin
-          corrección hasta el final.
+          corrección hasta el final. <strong>Simulación no oficial:</strong> no sustituye a la convocatoria.
         </p>
       </section>
       <section className="card">
@@ -1257,6 +1259,8 @@ function PendingTopic({ topic, summary }: { topic: TopicContent; summary: TopicS
 }
 
 function Tema({ path }: { path: string }) {
+  const [comentario, setComentario] = useState('');
+  const [aviso, setAviso] = useState('');
   const summary = TOPIC_BY_PATH.get(path);
   if (summary === undefined) {
     return <p className="hint">Ese tema no existe en la demo.</p>;
@@ -1285,7 +1289,6 @@ function Tema({ path }: { path: string }) {
           Tema {topic.path} · <ApuntesBadge status={topic.apuntesStatus} />{' '}
           <PracticaBadge status={topic.practicaStatus} />
         </p>
-        <p className="hint">Última revisión: {topic.reviewedAt.split('-').reverse().join('/')}</p>
         <p className="hint">
           Forma parte del temario común de las {data.convocatorias.total} convocatorias C1.{' '}
           <button
@@ -1328,10 +1331,59 @@ function Tema({ path }: { path: string }) {
         </section>
       ))}
       <section className="card">
-        <h2>Fuente</h2>
+        <h2>Revisión y fuente</h2>
+        <p className="hint">
+          Última actualización: <strong>{topic.reviewedAt.split('-').reverse().join('/')}</strong>
+        </p>
         <SourceLine source={topic.source} />
         <p className="hint">
-          Contenido propio de la demo a partir de la fuente citada; no reproduce texto de academias.
+          Contenido propio de la demo a partir de la norma citada; no reproduce texto de academias.
+        </p>
+      </section>
+      <section className="card demo-errata">
+        <h2>¿Has visto una errata?</h2>
+        <label className="demo-search">
+          <span>Describe la errata (tema, apartado, qué corregir)</span>
+          <textarea
+            rows={3}
+            value={comentario}
+            onChange={(event) => { setComentario(event.target.value); }}
+            placeholder="Ej.: en el apartado 2, el artículo citado no es el 21 sino el 22…"
+          />
+        </label>
+        <div className="demo-actions">
+          <button
+            className="button"
+            type="button"
+            disabled={comentario.trim() === ''}
+            onClick={() => {
+              saveErrata({
+                topic: topic.path,
+                title: topic.title,
+                source: topic.source.label,
+                reviewedAt: topic.reviewedAt,
+                comment: comentario.trim(),
+              });
+              const blob = new Blob([JSON.stringify(loadErratas(), null, 2)], {
+                type: 'application/json',
+              });
+              const url = URL.createObjectURL(blob);
+              const enlace = document.createElement('a');
+              enlace.href = url;
+              enlace.download = `errata-${topic.path.replace('.', '-')}.json`;
+              enlace.click();
+              URL.revokeObjectURL(url);
+              setComentario('');
+              setAviso('Constancia guardada en este navegador y descargada como fichero JSON.');
+            }}
+          >
+            Descargar constancia de errata
+          </button>
+        </div>
+        {aviso !== '' && <p className="hint" role="status">{aviso}</p>}
+        <p className="hint">
+          La demo no tiene servidor: la constancia se guarda en el navegador y se descarga en un fichero
+          para que puedas enviarla. No se publica nada automáticamente.
         </p>
       </section>
       <section className="card">

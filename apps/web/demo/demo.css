@@ -267,7 +267,8 @@
 }
 
 .demo-search input,
-.demo-search select {
+.demo-search select,
+.demo-search textarea {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;

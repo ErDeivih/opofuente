@@ -6,7 +6,7 @@
 //   node docs/interfaz/capturar-demo-pages.mjs http://localhost:8098
 //   BASE_URL=https://<usuario>.github.io/opofuente-demo/ node docs/interfaz/capturar-demo-pages.mjs
 
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { chromium } from '@playwright/test';
@@ -76,6 +76,13 @@ check(
     (await page.locator('.demo-convocatorias a').allInnerTexts()).every((texto) =>
       texto.startsWith('Bases de'),
     ),
+);
+const csp = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
+check(
+  'la página publica CSP y referrer',
+  (csp ?? '').includes("default-src 'none'") &&
+    (csp ?? '').includes("connect-src 'none'") &&
+    (await page.locator('meta[name="referrer"]').getAttribute('content')) === 'no-referrer',
 );
 check(
   'la portada muestra la cobertura',
@@ -173,7 +180,7 @@ await page.locator('input[type=search]').fill('');
 
 if (completo !== undefined) {
   const texto = await captura(`tema/${completo.path}`, 'tema-completo', 1280);
-  check(`el tema ${completo.path} tiene apuntes completos y fuente`, /Apuntes completos/.test(texto) && /Fuente:/.test(texto));
+  check(`el tema ${completo.path} tiene apuntes completos y fuente`, /Apuntes completos/.test(texto) && /Revisión y fuente/.test(texto) && /Fuente:/.test(texto));
   check(`el tema ${completo.path} tiene su práctica`, /Práctica de este tema/.test(texto));
   check(
     `el tema ${completo.path} muestra memorizar y errores típicos`,
@@ -181,7 +188,7 @@ if (completo !== undefined) {
   );
   check(
     `el tema ${completo.path} muestra la fecha de revisión`,
-    /Última revisión: 10\/11\/2026/.test(texto),
+    /Última actualización: 10\/11\/2026/.test(texto),
   );
   check(
     `el tema ${completo.path} enlaza a las convocatorias`,
@@ -193,6 +200,19 @@ if (completo !== undefined) {
       (await page.locator('.demo-breadcrumbs').innerText()).includes(completo.path),
   );
   await captura(`tema/${completo.path}`, 'tema-completo', 390);
+
+  // Reporte de errata: descarga un JSON con la constancia.
+  await page.locator('textarea').fill('Errata de prueba del verificador');
+  const [descarga] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Descargar constancia de errata' }).click(),
+  ]);
+  const ruta = await descarga.path();
+  const erratas = ruta === null ? [] : JSON.parse(await readFile(ruta, 'utf8'));
+  check(
+    'la errata se guarda en un fichero JSON',
+    Array.isArray(erratas) && erratas.some((item) => item.topic === completo.path && item.comment.includes('verificador')),
+  );
 }
 
 if (pendiente !== undefined) {
@@ -300,7 +320,7 @@ await page.setViewportSize({ width: 390, height: 844 });
 await page.goto(`${BASE}/#/examen/III`, { waitUntil: 'networkidle' });
 await page.waitForSelector('h1');
 const examenSetup = await page.locator('main').innerText();
-check('el examen permite elegir bloque y preguntas', /Examen por bloque/.test(examenSetup));
+check('el examen permite elegir bloque y preguntas', /Examen por bloque/.test(examenSetup) && /Simulación/.test(examenSetup));
 check('el examen muestra convocatoria, tiempo y penalización', /Convocatoria y formato/.test(examenSetup) && /120 minutos/.test(examenSetup) && /1\/3/.test(examenSetup));
 await page.screenshot({ path: path.join(OUT_DIR, 'examen-390.png'), fullPage: true });
 await page.getByRole('button', { name: 'Empezar examen' }).click();

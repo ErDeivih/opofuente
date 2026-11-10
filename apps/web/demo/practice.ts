@@ -19,6 +19,51 @@ export type DemoProgress = Readonly<Record<string, PracticeResult>>;
 const STORAGE_KEY = 'opofuente-demo-progress-v1';
 const RESUME_KEY = 'opofuente-demo-resume-v1';
 const ATTEMPTS_KEY = 'opofuente-demo-attempts-v1';
+const ERRATA_KEY = 'opofuente-demo-erratas-v1';
+
+export interface Errata {
+  readonly id: string;
+  readonly topic: string;
+  readonly title: string;
+  readonly source: string;
+  readonly reviewedAt: string;
+  readonly comment: string;
+  readonly createdAt: string;
+}
+
+export function loadErratas(): Errata[] {
+  const store = storage();
+  if (store === null) {
+    return [];
+  }
+  try {
+    const raw = store.getItem(ERRATA_KEY);
+    if (raw === null) {
+      return [];
+    }
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as Errata[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveErrata(errata: Omit<Errata, 'id' | 'createdAt'>): Errata {
+  const registro: Errata = {
+    ...errata,
+    id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : String(Date.now()),
+    createdAt: new Date().toISOString(),
+  };
+  const store = storage();
+  if (store !== null) {
+    try {
+      store.setItem(ERRATA_KEY, JSON.stringify([registro, ...loadErratas()].slice(0, 200)));
+    } catch {
+      // Sin almacenamiento, la constancia no persiste.
+    }
+  }
+  return registro;
+}
 
 export interface Attempt {
   readonly id: string;

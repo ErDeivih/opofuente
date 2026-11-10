@@ -58,7 +58,12 @@ servidor.
   draft no publican reglas verificadas.
 - **Historial unificado de intentos**: prácticas y exámenes con tipo, bloque, detalle, fecha,
   aciertos y nota, en `#/estadisticas`.
-- **Fecha de última revisión** en cada ficha de tema.
+- **Fecha y fuente de revisión** en cada ficha: última actualización y norma citada.
+- **Cabeceras de seguridad** en la demo pública: CSP por `<meta>`, `referrer: no-referrer` y
+  `connect-src 'none'`; el examen lleva la etiqueta **«Simulación»**. Límites en
+  [SEGURIDAD-DEMO.md](docs/SEGURIDAD-DEMO.md).
+- **Reporte de erratas** por tema: formulario que guarda la constancia en el navegador y descarga un
+  fichero JSON (no hay backend).
 - **Estadísticas** (`#/estadisticas`): bloque «Estadísticas de prácticas» con acierto por tema y
   bloque, 5 temas más flojos, y «Historial de intentos» separado con prácticas y exámenes.
 - Portada corta con **«Continuar donde lo dejé»** y 3 prácticas siguientes.
@@ -107,7 +112,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **59/59** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **61/61** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -142,6 +147,8 @@ servidor.
   más.
 - **Calidad de contenido:** auditoría de los 40 temas, refuerzo de los 5 más delgados y equilibrio de
   la letra correcta; evidencias en `CALIDAD-TEMARIO.md`.
+- **Seguridad y transparencia:** CSP/referrer, etiqueta de simulación y reporte de erratas con
+  descarga de fichero; límites en `SEGURIDAD-DEMO.md`.
 
 ## 7. Límites dichos
 
@@ -162,7 +169,7 @@ servidor.
 
 ## 9. Revisión final y qué queda
 
-- **59/59** comprobaciones, también a **390 px**; capturas nuevas en
+- **61/61** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
 - **40/40** temas completos: I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7.
@@ -170,4 +177,4 @@ servidor.
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 59/59 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 61/61 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **59/59**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **61/61**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -17,8 +17,10 @@ guarda en `localStorage`. **No hay cuenta, no hay servidor y no se envía nada.*
   más el perfil TAI. Se muestra en la portada, con enlace a las bases de cada una.
 - **Mapa de cobertura publicado** en `#/cobertura`: los 40 temas con su estado y su práctica.
 - **Guía de estudio** en `#/guia`: orden de bloques y temas flojos detectados desde las prácticas.
-- **Ficha de tema** con «Lo que hay que memorizar» (3-5 puntos), «Errores típicos» (2-4) y fecha de
-  última revisión.
+- **Ficha de tema** con «Lo que hay que memorizar» (3-5 puntos), «Errores típicos» (2-4), fecha y
+  fuente de revisión, y formulario de **reporte de erratas** que descarga un JSON.
+- **Seguridad**: CSP por `<meta>`, `referrer: no-referrer` y `connect-src 'none'`; el examen se
+  etiqueta como **«Simulación»**.
 - **Historial unificado** de prácticas y exámenes: tipo, bloque, fecha, aciertos y nota en Estadísticas.
 - **Examen con formato real**: tiempo límite y penalización por fallo según convocatoria (TAI oficial;
   C1 local marcado como estimación).
@@ -65,7 +67,7 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **59/59** y capturas.
+   → **61/61** y capturas.
 
 ## Verificación y capturas
 
