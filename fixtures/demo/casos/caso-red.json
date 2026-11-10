@@ -1,0 +1,123 @@
+{
+  "slug": "caso-red",
+  "tema_path": "III.22",
+  "block": "III",
+  "title": "Caso práctico: Wi-Fi para una biblioteca municipal",
+  "scenario": "La biblioteca quiere cubrir dos plantas, separar la red de invitados y evitar cortes al mover equipos entre aulas. Hay que elegir bandas, canales y seguridad.",
+  "source": {
+    "label": "Wi-Fi Alliance — Wi-Fi 6",
+    "url": "https://www.wi-fi.org/"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué banda ofrece normalmente más alcance?",
+      "options": [
+        "2,4 GHz",
+        "5 GHz",
+        "6 GHz",
+        "Infrarrojo"
+      ],
+      "correct": "a",
+      "explanation": "2,4 GHz penetra mejor en paredes, aunque suele estar más congestionada."
+    },
+    {
+      "stem": "¿Qué banda suele ofrecer más capacidad y canales?",
+      "options": [
+        "5 GHz",
+        "2,4 GHz",
+        "Bluetooth",
+        "NFC"
+      ],
+      "correct": "a",
+      "explanation": "5 GHz tiene más canales y menos interferencias, con menor alcance."
+    },
+    {
+      "stem": "¿Qué seguridad Wi-Fi es la más recomendable hoy?",
+      "options": [
+        "WPA3",
+        "WEP",
+        "WPS",
+        "Red abierta"
+      ],
+      "correct": "a",
+      "explanation": "WPA3 sustituye a WEP y evita las debilidades de WPS."
+    },
+    {
+      "stem": "¿Qué problema causa usar canales solapados?",
+      "options": [
+        "Interferencia entre puntos de acceso",
+        "Más batería",
+        "Mejor cobertura",
+        "Más seguridad"
+      ],
+      "correct": "a",
+      "explanation": "Los canales deben no solaparse para evitar interferencias y caídas."
+    },
+    {
+      "stem": "¿Para qué sirve una VLAN de invitados?",
+      "options": [
+        "Separar su tráfico de la red interna",
+        "Aumentar la velocidad del disco",
+        "Cifrar la copia",
+        "Asignar IP públicas"
+      ],
+      "correct": "a",
+      "explanation": "La VLAN aísla invitados y reduce el riesgo para la red corporativa."
+    },
+    {
+      "stem": "¿Qué crea una VPN?",
+      "options": [
+        "Un túnel cifrado sobre una red no confiable",
+        "Una red local más rápida",
+        "Un nuevo SSID",
+        "Una copia de seguridad"
+      ],
+      "correct": "a",
+      "explanation": "La VPN protege la comunicación, pero no sustituye permisos ni segmentación."
+    },
+    {
+      "stem": "¿Qué mide el jitter?",
+      "options": [
+        "La variación del retraso entre paquetes",
+        "El ancho de banda máximo",
+        "El número de usuarios",
+        "La potencia de la antena"
+      ],
+      "correct": "a",
+      "explanation": "El jitter afecta a voz y vídeo aunque el ancho de banda sea suficiente."
+    },
+    {
+      "stem": "¿Qué servicio asigna IP a los clientes Wi-Fi?",
+      "options": [
+        "DHCP",
+        "DNS",
+        "SMTP",
+        "NTP"
+      ],
+      "correct": "a",
+      "explanation": "DHCP entrega direcciones y configuración de red a los clientes."
+    },
+    {
+      "stem": "¿Qué estándar corresponde a Wi-Fi 6?",
+      "options": [
+        "802.11ax",
+        "802.11ac",
+        "802.11n",
+        "802.11g"
+      ],
+      "correct": "a",
+      "explanation": "802.11ax es Wi-Fi 6; 802.11ac es Wi-Fi 5."
+    },
+    {
+      "stem": "¿Cómo se planifica la colocación de puntos de acceso?",
+      "options": [
+        "Midiendo cobertura y capacidad, no por intuición",
+        "Poniendo uno por aula sin medir",
+        "Solo en el pasillo",
+        "Todos en la misma esquina"
+      ],
+      "correct": "a",
+      "explanation": "Un estudio de cobertura y densidad evita zonas muertas y saturación."
+    }
+  ]
+}

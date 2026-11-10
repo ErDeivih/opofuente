@@ -1,0 +1,123 @@
+{
+  "slug": "caso-licencias",
+  "tema_path": "II.17",
+  "block": "II",
+  "title": "Caso práctico: auditoría de licencias del ayuntamiento",
+  "scenario": "Antes de publicar una aplicación municipal, el equipo revisa las licencias de sus dependencias y las obligaciones de atribución.",
+  "source": {
+    "label": "Open Source Initiative — licencias",
+    "url": "https://opensource.org/licenses"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué caracteriza a una licencia copyleft como GPL?",
+      "options": [
+        "Obliga a distribuir los derivados bajo la misma licencia",
+        "No exige código fuente",
+        "Solo permite uso personal",
+        "Es siempre gratuita"
+      ],
+      "correct": "a",
+      "explanation": "GPL exige que las obras derivadas se distribuyan con GPL y código fuente."
+    },
+    {
+      "stem": "¿Qué licencia es permisiva y permite usar, modificar y redistribuir con aviso?",
+      "options": [
+        "MIT",
+        "GPL",
+        "AGPL",
+        "EUPL"
+      ],
+      "correct": "a",
+      "explanation": "MIT es permisiva; exige conservar el aviso de copyright y la licencia."
+    },
+    {
+      "stem": "¿Qué exige el software libre además del uso?",
+      "options": [
+        "Acceso al código fuente",
+        "Pagar una cuota",
+        "Registro en un catálogo",
+        "Una cuenta de correo"
+      ],
+      "correct": "a",
+      "explanation": "Las libertades de estudiar y modificar requieren acceso al código fuente."
+    },
+    {
+      "stem": "¿Qué licencia es adecuada para un texto o una imagen?",
+      "options": [
+        "Creative Commons",
+        "GPL",
+        "MIT",
+        "Apache 2.0"
+      ],
+      "correct": "a",
+      "explanation": "Creative Commons se usa para contenido; GPL/MIT/Apache son licencias de software."
+    },
+    {
+      "stem": "¿Qué licencia copyleft se creó para obras europeas?",
+      "options": [
+        "EUPL",
+        "BSD",
+        "MPL",
+        "CC0"
+      ],
+      "correct": "a",
+      "explanation": "EUPL es la licencia pública de la Unión Europea, pensada para obras europeas."
+    },
+    {
+      "stem": "¿Qué obligación suele imponer una licencia permisiva?",
+      "options": [
+        "Conservar el aviso de copyright",
+        "Publicar todo el código",
+        "Pagar regalías",
+        "Renunciar al soporte"
+      ],
+      "correct": "a",
+      "explanation": "MIT/BSD/Apache exigen mantener avisos de copyright y licencia."
+    },
+    {
+      "stem": "¿Qué debe comprobarse antes de mezclar dependencias?",
+      "options": [
+        "La compatibilidad de sus licencias",
+        "El color del logo",
+        "El idioma del código",
+        "La velocidad de la red"
+      ],
+      "correct": "a",
+      "explanation": "Mezclar licencias incompatibles puede impedir distribuir el conjunto."
+    },
+    {
+      "stem": "¿Qué es software propietario?",
+      "options": [
+        "Aquel cuyo código no es libre y se usa con condiciones",
+        "El que no tiene interfaz",
+        "El que no se actualiza",
+        "El que usa la nube"
+      ],
+      "correct": "a",
+      "explanation": "El propietario no concede las libertades del software libre."
+    },
+    {
+      "stem": "¿Qué licencia obliga a publicar el código si se ofrece el servicio por red?",
+      "options": [
+        "AGPL",
+        "MIT",
+        "BSD",
+        "CC0"
+      ],
+      "correct": "a",
+      "explanation": "AGPL extiende el copyleft al uso como servicio en red."
+    },
+    {
+      "stem": "¿Qué debe tener un inventario de software?",
+      "options": [
+        "Versión, procedencia y licencia de cada componente",
+        "Solo el nombre comercial",
+        "El color de la interfaz",
+        "La contraseña del administrador"
+      ],
+      "correct": "a",
+      "explanation": "El inventario permite conocer obligaciones y planificar actualizaciones."
+    }
+  ]
+}

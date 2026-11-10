@@ -117,6 +117,17 @@ check(
   'la pestaña Prácticas lista todas las prácticas en móvil',
   new RegExp(`${String(data.practices.length)} prácticas`).test(practicas390),
 );
+check(
+  'la pestaña Prácticas lista los casos prácticos',
+  /Casos prácticos/.test(practicas390) && (await page.locator('.demo-case').count()) === 5,
+);
+
+// Caso práctico: escenario y 10 preguntas.
+await page.goto(`${BASE}/#/caso/caso-correo`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+const casoTexto = await page.locator('main').innerText();
+check('el caso práctico muestra escenario y 10 preguntas', /spam/.test(casoTexto) && /Pregunta 1 de 10/.test(casoTexto));
+await page.screenshot({ path: path.join(OUT_DIR, 'caso-practico-390.png'), fullPage: true });
 
 // Mapa de cobertura publicado: 40 filas con apuntes y práctica.
 const cobertura = await captura('cobertura', 'cobertura', 1280);

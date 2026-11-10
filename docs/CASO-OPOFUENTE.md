@@ -5,17 +5,19 @@
 ## 1. Resumen ejecutivo
 
 OpoFuente es una aplicación local-first para preparar oposiciones de informática C1. Este caso
-documenta la parte que ya se puede enseñar: un **temario común de 40 temas, 400 preguntas y 40
-prácticas**, publicado como demo estática, sin cuentas ni backend, con progreso en el navegador.
+documenta la parte que ya se puede enseñar: un **temario común de 40 temas, 400 preguntas base, 50 de
+casos prácticos y 40 prácticas**, publicado como demo estática, sin cuentas ni backend, con progreso en el navegador.
 
 | Métrica | Valor |
 |---|---|
 | Temas con apuntes completos | **40/40 (100 %)** |
 | Preguntas razonadas | **400** (10 por tema) |
+| Casos prácticos | **5** casos · **50** preguntas |
+| Preguntas totales | **450** (400 de temario + 50 de casos) |
 | Prácticas | **40** (una por tema) |
 | Bloques | **5** (I-IV al 100 %; V 7/7) |
 | Convocatorias C1 | **12** (10 draft, 2 archivadas) |
-| Comprobaciones Playwright | **67/67** en la URL pública |
+| Comprobaciones Playwright | **69/69** en la URL pública |
 | Enlaces de convocatoria | **12/12** (HTTP 200) |
 | Pruebas | **517** unitarias backend · **225** web |
 | Capturas | 390 y 1280 px en `docs/capturas/demo-pages/` |
@@ -51,6 +53,8 @@ las opciones de test están equilibrados: 100 respuestas correctas por cada letr
   errores típicos, práctica y reporte de erratas.
 - **Mapa de cobertura** con los 40 temas y dos sellos: apuntes y práctica.
 - **Prácticas** de 10 preguntas con corrección al elegir, explicación, fuente y reanudación.
+- **Casos prácticos**: 5 escenarios de 10 preguntas sobre los temas más delgados (II.15, II.16,
+  II.17, III.18 y III.22), con su propio runner y registro en el historial.
 - **Guía de estudio** con orden de bloques y temas flojos (<70 % en la última práctica).
 - **Examen por bloque** y **examen completo** que mezcla los cinco bloques, con tiempo total,
   penalización por fallo, nota y revisión de fallos. El perfil TAI usa 120 min y −1/3; las C1 locales
@@ -66,7 +70,7 @@ las opciones de test están equilibrados: 100 respuestas correctas por cada letr
 - Datos generados desde `fixtures/` a `apps/web/demo/data.json`; sin peticiones de red en ejecución.
 - Progreso, intentos, erratas y reanudación en `localStorage`.
 - Build estático publicado en GitHub Pages; el repositorio de la demo solo contiene el build.
-- Verificación con Playwright: 63 comprobaciones a 390/1280 px, capturas y enlaces de convocatoria.
+- Verificación con Playwright: 69 comprobaciones a 390/1280 px, capturas y enlaces de convocatoria.
 
 ## 6. Evidencia visual
 
@@ -82,6 +86,7 @@ las opciones de test están equilibrados: 100 respuestas correctas por cada letr
 | Resultado y fallos | [examen-resultado-390](capturas/demo-pages/examen-resultado-390.png) |
 | Estadísticas e historial | [estadisticas-390](capturas/demo-pages/estadisticas-390.png) |
 | Guía de estudio | [guia-390](capturas/demo-pages/guia-390.png) |
+| Caso práctico | [caso-practico-390](capturas/demo-pages/caso-practico-390.png) |
 
 Capturas completas en [docs/capturas/demo-pages/](capturas/demo-pages/).
 

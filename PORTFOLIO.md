@@ -33,8 +33,8 @@ servidor.
 
 - **40 de 40 temas** con apuntes completos de redacción propia: apartados, definiciones, tablas,
   ejemplos resueltos y fuente oficial (BOE, TUE/TFUE, RFC, ISO, NIST).
-- **40 prácticas de 10 preguntas** (400 preguntas) con respuesta razonada y enlace al texto oficial
-  cuando se cita un artículo.
+- **40 prácticas de 10 preguntas** (400 preguntas base) y **5 casos prácticos** (50 preguntas) con
+  respuesta razonada y enlace al texto oficial cuando se cita un artículo.
 - **Temario completo**: 0 pendientes y 0 solo resumen; los 40 temas están publicados.
 - **Calidad revisada**: 40/40 fichas con «Lo que hay que memorizar» y «Errores típicos»; 5 temas
   reforzados (II.15, II.16, II.17, III.18, III.22) y letra correcta equilibrada (100 a/b/c/d).
@@ -68,6 +68,7 @@ servidor.
   fichero JSON (no hay backend).
 - **Estadísticas** (`#/estadisticas`): bloque «Estadísticas de prácticas» con acierto por tema y
   bloque, 5 temas más flojos, y «Historial de intentos» separado con prácticas y exámenes.
+- **Casos prácticos** de 10 preguntas para los temas más delgados, con escenario propio y runner.
 - **Estados vacíos con acción** en Estadísticas: «Hacer práctica» y «Empezar simulacro».
 - **Resultado de examen** con nota, tiempo, aciertos/fallos/blancos y «Revisar mis errores» como
   primera acción.
@@ -112,6 +113,7 @@ servidor.
 | Resultado del examen | — | [examen-resultado-390](docs/capturas/demo-pages/examen-resultado-390.png) |
 | Estadísticas | — | [estadisticas-390](docs/capturas/demo-pages/estadisticas-390.png) |
 | Estadísticas vacías | — | [estadisticas-vacia-390](docs/capturas/demo-pages/estadisticas-vacia-390.png) |
+| Caso práctico | — | [caso-practico-390](docs/capturas/demo-pages/caso-practico-390.png) |
 | Corrección con BOE | [correccion-1280](docs/capturas/demo-pages/correccion-1280.png) | — |
 
 ![Portada de la demo](docs/capturas/demo-pages/portada-1280.png)
@@ -119,7 +121,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **67/67** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **69/69** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -176,7 +178,7 @@ servidor.
 
 ## 9. Revisión final y qué queda
 
-- **67/67** comprobaciones, también a **390 px**; capturas nuevas en
+- **69/69** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
 - **40/40** temas completos: I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7.
@@ -184,4 +186,4 @@ servidor.
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 67/67 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 69/69 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

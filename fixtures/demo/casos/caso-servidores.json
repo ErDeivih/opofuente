@@ -1,0 +1,123 @@
+{
+  "slug": "caso-servidores",
+  "tema_path": "III.18",
+  "block": "III",
+  "title": "Caso práctico: el servidor de ficheros no responde",
+  "scenario": "Un lunes el servidor de ficheros del centro tarda en autenticar y algunos equipos no reciben dirección IP. El equipo revisa AD, DNS, DHCP y las copias.",
+  "source": {
+    "label": "Microsoft Learn — Windows Server",
+    "url": "https://learn.microsoft.com/windows-server/"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué servicio autentica usuarios y equipos en un dominio Windows?",
+      "options": [
+        "Active Directory",
+        "DHCP",
+        "DNS",
+        "IIS"
+      ],
+      "correct": "a",
+      "explanation": "AD DS centraliza identidades y Kerberos autentica en el dominio."
+    },
+    {
+      "stem": "¿Qué servicio traduce nombres a direcciones IP?",
+      "options": [
+        "DNS",
+        "DHCP",
+        "SMTP",
+        "NTP"
+      ],
+      "correct": "a",
+      "explanation": "DNS resuelve nombres; sin él los clientes no encuentran servicios."
+    },
+    {
+      "stem": "¿Qué servicio asigna direcciones IP automáticamente?",
+      "options": [
+        "DHCP",
+        "DNS",
+        "AD",
+        "GPO"
+      ],
+      "correct": "a",
+      "explanation": "DHCP entrega configuración de red, incluida la IP y la puerta de enlace."
+    },
+    {
+      "stem": "¿Qué permite aplicar configuración de forma centralizada a equipos y usuarios?",
+      "options": [
+        "GPO",
+        "RAID",
+        "SMTP",
+        "VPN"
+      ],
+      "correct": "a",
+      "explanation": "Las directivas de grupo aplican ajustes de seguridad y configuración."
+    },
+    {
+      "stem": "¿Qué RAID replica los datos en dos discos?",
+      "options": [
+        "RAID 1",
+        "RAID 0",
+        "RAID 5",
+        "RAID 6"
+      ],
+      "correct": "a",
+      "explanation": "RAID 1 es espejo: cada disco tiene una copia; no sustituye a la copia de seguridad."
+    },
+    {
+      "stem": "¿Qué regla de copias recomienda tres copias, dos medios y una fuera?",
+      "options": [
+        "3-2-1",
+        "1-2-3",
+        "2-1-3",
+        "3-1-2"
+      ],
+      "correct": "a",
+      "explanation": "3-2-1 reduce el riesgo de perder datos por fallo, borrado o ransomware."
+    },
+    {
+      "stem": "¿Qué mide el RTO?",
+      "options": [
+        "Tiempo máximo para recuperar el servicio",
+        "Pérdida máxima de datos",
+        "Número de discos",
+        "Usuarios concurrentes"
+      ],
+      "correct": "a",
+      "explanation": "RTO es el tiempo objetivo de recuperación; RPO es la pérdida máxima de datos."
+    },
+    {
+      "stem": "¿Qué mide el RPO?",
+      "options": [
+        "Pérdida máxima de datos aceptable",
+        "Tiempo de arranque",
+        "Ancho de banda",
+        "Número de copias"
+      ],
+      "correct": "a",
+      "explanation": "RPO define cuántos datos se pueden perder; condiciona la frecuencia de copia."
+    },
+    {
+      "stem": "¿Qué se monitoriza para detectar un servidor degradado?",
+      "options": [
+        "CPU, memoria, disco, red y servicios",
+        "Solo el color del escritorio",
+        "La impresora",
+        "El teclado"
+      ],
+      "correct": "a",
+      "explanation": "La observabilidad combina métricas y logs de los recursos y servicios."
+    },
+    {
+      "stem": "Antes de actualizar un servidor en producción, ¿qué se recomienda?",
+      "options": [
+        "Probar en preproducción y prever reversión",
+        "Aplicar sin copia",
+        "Apagar todos los equipos",
+        "Cambiar el dominio"
+      ],
+      "correct": "a",
+      "explanation": "La ventana de cambio debe incluir prueba, copia y plan de reversión."
+    }
+  ]
+}

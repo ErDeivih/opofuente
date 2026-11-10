@@ -54,12 +54,24 @@ interface ExamQuestion extends Question {
   readonly topic: string;
 }
 
+interface CaseEntry {
+  readonly slug: string;
+  readonly tema_path: string;
+  readonly block: string;
+  readonly title: string;
+  readonly scenario: string;
+  readonly source: DemoSource;
+  readonly questions: readonly Question[];
+}
+
 interface Practice {
   readonly slug: string;
   readonly tema_path: string;
   readonly title: string;
   readonly source: DemoSource;
   readonly questions: readonly Question[];
+  readonly kind?: 'practice' | 'case';
+  readonly scenario?: string;
 }
 
 interface DemoTable {
@@ -148,6 +160,7 @@ interface DemoData {
   };
   readonly topics: Readonly<Record<string, TopicContent>>;
   readonly practices: readonly Practice[];
+  readonly cases: readonly CaseEntry[];
   readonly progress: {
     readonly total: number;
     readonly apuntesCompletos: number;
@@ -156,6 +169,8 @@ interface DemoData {
     readonly conPractica: number;
     readonly sinPractica: number;
     readonly questions: number;
+    readonly cases: number;
+    readonly caseQuestions: number;
     readonly convocatorias: number;
   };
 }
@@ -164,6 +179,7 @@ const data = demoData as DemoData;
 const TOPIC_LIST = data.curriculum.blocks.flatMap((block) => block.topics);
 const TOPIC_BY_PATH = new Map(TOPIC_LIST.map((topic) => [topic.path, topic]));
 const PRACTICE_BY_SLUG = new Map(data.practices.map((practice) => [practice.slug, practice]));
+const CASE_BY_SLUG = new Map(data.cases.map((caso) => [caso.slug, caso]));
 
 function blockForTopic(path: string): Block | undefined {
   return data.curriculum.blocks.find((block) =>
@@ -1066,7 +1082,7 @@ function Estadisticas() {
               <tbody>
                 {attempts.map((attempt) => (
                   <tr key={attempt.id}>
-                    <td data-label="Tipo">{attempt.type === 'exam' ? 'Examen' : 'Práctica'}</td>
+                    <td data-label="Tipo">{attempt.type === 'exam' ? 'Examen' : attempt.type === 'case' ? 'Caso' : 'Práctica'}</td>
                     <td data-label="Bloque">{attempt.block === 'TODOS' ? 'Todos' : attempt.block}</td>
                     <td data-label="Detalle">{attempt.convocatoria ?? attempt.topic}</td>
                     <td data-label="Fecha">{fechaCorta(attempt.date)}</td>
@@ -1480,6 +1496,16 @@ function Tema({ path }: { path: string }) {
             >
               Ver la primera pregunta
             </button>
+            {data.cases.filter((caso) => caso.tema_path === topic.path).map((caso) => (
+              <button
+                key={caso.slug}
+                className="button button--link"
+                type="button"
+                onClick={() => { go(`caso/${caso.slug}`); }}
+              >
+                Caso práctico
+              </button>
+            ))}
           </div>
           <ol className="demo-questions">
             {practice.questions.map((question, index) => (
@@ -1519,6 +1545,23 @@ function Practicas() {
         </p>
       </section>
       <ProgressCard />
+      <section className="card">
+        <h2>Casos prácticos</h2>
+        <p className="hint">
+          {data.cases.length} casos con 10 preguntas cada uno, centrados en los temas con menos preguntas
+          de los bloques II y III.
+        </p>
+        {data.cases.map((caso) => (
+          <div key={caso.slug} className="demo-case">
+            <h3>{caso.title}</h3>
+            <p className="hint">Tema {caso.tema_path} · bloque {caso.block} · 10 preguntas</p>
+            <p>{caso.scenario}</p>
+            <button className="button" type="button" onClick={() => { go(`caso/${caso.slug}`); }}>
+              Empezar caso
+            </button>
+          </div>
+        ))}
+      </section>
       {data.practices.map((practice) => {
         const saved = progress[practice.slug];
         return (
@@ -1650,6 +1693,7 @@ function PracticeRunner({ practice }: { practice: Practice }) {
         <section className="page__header">
           <h1>Resultado</h1>
           <p className="page__lead">{practice.title}</p>
+          {practice.scenario !== undefined && <p className="hint">{practice.scenario}</p>}
         </section>
         <section className="card">
           <h2>
@@ -1705,10 +1749,10 @@ function PracticeRunner({ practice }: { practice: Practice }) {
     const score = scoreAnswers(answers, practice.questions);
     const porcentaje = score.total === 0 ? 0 : Math.round((score.correct / score.total) * 100);
     saveAttempt({
-      type: 'practice',
+      type: practice.kind === 'case' ? 'case' : 'practice',
       block: blockForTopic(practice.tema_path)?.path ?? '—',
       topic: practice.tema_path,
-      label: `Práctica ${practice.tema_path}`,
+      label: practice.kind === 'case' ? `Caso ${practice.title}` : `Práctica ${practice.tema_path}`,
       correct: score.correct,
       total: score.total,
       percent: porcentaje,
@@ -1751,6 +1795,7 @@ function PracticeRunner({ practice }: { practice: Practice }) {
             Volver a {practice.tema_path}
           </button>
         </div>
+        {practice.scenario !== undefined && <p className="hint">{practice.scenario}</p>}
       </section>
       <section className="card">
         <h2>{question.stem}</h2>
@@ -1822,6 +1867,25 @@ function App() {
     content = <Tema path={parts[1]} />;
   } else if (parts[0] === 'practicas') {
     content = <Practicas />;
+  } else if (parts[0] === 'caso' && parts[1] !== undefined) {
+    const caso = CASE_BY_SLUG.get(parts[1]);
+    content =
+      caso === undefined ? (
+        <p className="hint">Ese caso práctico no existe.</p>
+      ) : (
+        <PracticeRunner
+          practice={{
+            slug: caso.slug,
+            tema_path: caso.tema_path,
+            title: caso.title,
+            source: caso.source,
+            questions: caso.questions,
+            kind: 'case',
+            scenario: caso.scenario,
+          }}
+          key={caso.slug}
+        />
+      );
   } else if (parts[0] === 'practica' && parts[1] !== undefined) {
     const practice = PRACTICE_BY_SLUG.get(parts[1]);
     content =

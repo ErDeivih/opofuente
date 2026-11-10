@@ -233,6 +233,42 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
             )
 
     total_preguntas = sum(len(practica["questions"]) for practica in practicas)
+
+    casos = []
+    casos_dir = project_root() / "fixtures" / "demo" / "casos"
+    for fichero in sorted(casos_dir.glob("*.json")):
+        caso = json.loads(fichero.read_text(encoding="utf-8"))
+        preguntas_caso = caso.get("questions")
+        if not isinstance(preguntas_caso, list) or len(preguntas_caso) != 10:
+            raise RuntimeError(f"{fichero.name}: un caso debe tener exactamente 10 preguntas")
+        for pregunta in preguntas_caso:
+            if len(pregunta.get("options", [])) != 4:
+                raise RuntimeError(f"{fichero.name}: cada pregunta del caso debe tener 4 opciones")
+            if pregunta.get("correct") not in {"a", "b", "c", "d"}:
+                raise RuntimeError(f"{fichero.name}: respuesta correcta inválida en un caso")
+        casos.append(
+            {
+                "slug": caso["slug"],
+                "tema_path": caso["tema_path"],
+                "block": caso["block"],
+                "title": caso["title"],
+                "scenario": caso["scenario"],
+                "source": caso["source"],
+                "questions": [
+                    {
+                        "stem": pregunta["stem"],
+                        "options": [
+                            {"key": chr(ord("a") + indice), "text": opcion}
+                            for indice, opcion in enumerate(pregunta["options"])
+                        ],
+                        "correct": pregunta["correct"],
+                        "explanation": pregunta["explanation"],
+                        "source": caso["source"],
+                    }
+                    for pregunta in preguntas_caso
+                ],
+            }
+        )
     data = {
         "title": "OpoFuente — demo estática",
         "warning": (
@@ -268,6 +304,7 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
         },
         "topics": contenido,
         "practices": practicas,
+        "cases": casos,
         "progress": {
             "total": total_temas,
             "apuntesCompletos": apuntes_completos,
@@ -276,6 +313,8 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
             "conPractica": sum(1 for practica in practicas if practica["questions"]),
             "sinPractica": total_temas - len(practicas),
             "questions": total_preguntas,
+            "cases": len(casos),
+            "caseQuestions": sum(len(caso["questions"]) for caso in casos),
             "convocatorias": convocatorias["total"],
         },
     }
@@ -289,6 +328,8 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
         "pending": pendientes,
         "practices": len(practicas),
         "questions": total_preguntas,
+        "cases": len(casos),
+        "caseQuestions": sum(len(caso["questions"]) for caso in casos),
         "convocatorias": convocatorias["total"],
     }
 

@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **67/67**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **69/69**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -27,6 +27,7 @@ guarda en `localStorage`. **No hay cuenta, no hay servidor y no se envía nada.*
   C1 local marcado como estimación).
 - **Examen por bloque** y **examen completo** (`#/examen`): N preguntas aleatorias, sin corrección
   hasta el final, tiempo/penalización, nota y revisión de fallos.
+- **Casos prácticos**: 5 escenarios de 10 preguntas sobre los temas más delgados.
 - **Estadísticas** en `#/estadisticas`: acierto por tema y bloque, y los 5 temas más flojos con enlace directo.
 - **Portada corta**: cobertura, «Continuar donde lo dejé» y 3 prácticas siguientes; el resto está
   en la pestaña Prácticas. Las pestañas miden 44 px y la ficha lleva migas «Temario › I.1».
@@ -69,7 +70,7 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **67/67** y capturas.
+   → **69/69** y capturas.
 
 ## Verificación y capturas
 

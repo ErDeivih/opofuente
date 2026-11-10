@@ -455,3 +455,9 @@
 .demo-result-stats strong {
   font-size: 1.15rem;
 }
+
+.demo-case + .demo-case {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-borde);
+}

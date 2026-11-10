@@ -37,9 +37,13 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
         "conPractica": counts["withQuestions"],
         "sinPractica": 40 - counts["withQuestions"],
         "questions": counts["questions"],
+        "cases": 5,
+        "caseQuestions": 50,
         "convocatorias": 12,
     }
     assert data["convocatorias"]["total"] == 12
+    assert len(data["cases"]) == 5
+    assert sum(len(caso["questions"]) for caso in data["cases"]) == 50
     assert data["examRules"]["tai"]["minutes"] == 120
     assert data["examRules"]["local"]["minutes"] == 90
     assert data["convocatorias"]["draft"] + data["convocatorias"]["archived"] == 12

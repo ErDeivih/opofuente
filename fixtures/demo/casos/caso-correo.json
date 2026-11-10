@@ -1,0 +1,123 @@
+{
+  "slug": "caso-correo",
+  "tema_path": "II.16",
+  "block": "II",
+  "title": "Caso práctico: avisos del ayuntamiento que no llegan",
+  "scenario": "Los avisos de una concejalía acaban en spam y algunos rebotan. El equipo revisa DNS, autenticación y colas antes de cambiar de proveedor.",
+  "source": {
+    "label": "RFC 5321 — Simple Mail Transfer Protocol",
+    "url": "https://www.rfc-editor.org/rfc/rfc5321"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué protocolo se usa para enviar el correo?",
+      "options": [
+        "SMTP",
+        "POP3",
+        "IMAP",
+        "HTTP"
+      ],
+      "correct": "a",
+      "explanation": "SMTP transporta el envío entre cliente y servidor."
+    },
+    {
+      "stem": "¿Qué protocolo sincroniza carpetas y estados entre dispositivos?",
+      "options": [
+        "IMAP",
+        "POP3",
+        "SMTP",
+        "DNS"
+      ],
+      "correct": "a",
+      "explanation": "IMAP mantiene la misma visión del buzón en varios dispositivos; POP3 descarga."
+    },
+    {
+      "stem": "¿Dónde se publica un registro SPF?",
+      "options": [
+        "En un registro TXT del DNS",
+        "En el servidor IMAP",
+        "En el cliente de correo",
+        "En la firma DKIM"
+      ],
+      "correct": "a",
+      "explanation": "SPF se publica como registro TXT del dominio y autoriza servidores de envío."
+    },
+    {
+      "stem": "¿Qué aporta DKIM?",
+      "options": [
+        "Una firma que verifica integridad y autenticidad",
+        "El cifrado del buzón",
+        "La cuota de disco",
+        "El antivirus del cliente"
+      ],
+      "correct": "a",
+      "explanation": "DKIM firma cabeceras con una clave publicada en DNS; el receptor comprueba que no se alteró."
+    },
+    {
+      "stem": "¿Qué indica una política DMARC?",
+      "options": [
+        "Qué hacer si SPF o DKIM fallan",
+        "El tamaño máximo del adjunto",
+        "El puerto SMTP",
+        "La contraseña del buzón"
+      ],
+      "correct": "a",
+      "explanation": "DMARC alinea SPF/DKIM y define política (none, quarantine o reject) e informes."
+    },
+    {
+      "stem": "¿Qué puerto se usa habitualmente para enviar con autenticación?",
+      "options": [
+        "587",
+        "25",
+        "110",
+        "143"
+      ],
+      "correct": "a",
+      "explanation": "587 es el puerto de submission con autenticación; 25 es relay entre servidores."
+    },
+    {
+      "stem": "Un rebote indica que el buzón no existe. ¿Qué se debe hacer?",
+      "options": [
+        "Revisar el código y el mensaje del servidor",
+        "Reenviar el mismo mensaje en bucle",
+        "Borrar el dominio",
+        "Cambiar la firma"
+      ],
+      "correct": "a",
+      "explanation": "El código y el texto del servidor indican la causa; no se debe reintentar a ciegas."
+    },
+    {
+      "stem": "¿Qué hace una cola de correo?",
+      "options": [
+        "Retener mensajes mientras el destino no responde",
+        "Cifrar los adjuntos",
+        "Firmar con DKIM",
+        "Crear listas de distribución"
+      ],
+      "correct": "a",
+      "explanation": "La cola reintenta la entrega y permite diagnosticar retrasos."
+    },
+    {
+      "stem": "¿Qué es phishing?",
+      "options": [
+        "Un engaño para obtener credenciales o datos",
+        "Un protocolo de correo",
+        "Un tipo de copia",
+        "Una firma digital"
+      ],
+      "correct": "a",
+      "explanation": "El phishing usa mensajes que suplantan a una entidad para que la víctima actúe."
+    },
+    {
+      "stem": "¿Qué permite MIME en un mensaje?",
+      "options": [
+        "Incluir texto, HTML y adjuntos",
+        "Comprimir la base de datos",
+        "Firmar el dominio",
+        "Sincronizar carpetas"
+      ],
+      "correct": "a",
+      "explanation": "MIME define el formato del contenido y los adjuntos del correo."
+    }
+  ]
+}

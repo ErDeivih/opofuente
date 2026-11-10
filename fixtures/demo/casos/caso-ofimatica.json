@@ -1,0 +1,123 @@
+{
+  "slug": "caso-ofimatica",
+  "tema_path": "II.15",
+  "block": "II",
+  "title": "Caso práctico: acta y hoja de cálculo en la oficina",
+  "scenario": "La oficina de atención al ciudadano prepara el acta de una sesión y una hoja de cálculo con los expedientes del mes. Hay que entregar una copia en PDF, evitar metadatos y no perder fórmulas.",
+  "source": {
+    "label": "LibreOffice — documentación oficial",
+    "url": "https://www.libreoffice.org/get-help/documentation/"
+  },
+  "questions": [
+    {
+      "stem": "¿En qué formato nativo guarda LibreOffice Writer un documento editable?",
+      "options": [
+        "ODT",
+        "DOCX",
+        "PDF",
+        "TXT"
+      ],
+      "correct": "a",
+      "explanation": "El formato nativo de Writer es ODT (OpenDocument Text); DOCX es de Microsoft y PDF no es editable."
+    },
+    {
+      "stem": "En Calc, ¿qué referencia queda fija al copiar la fórmula de B2 a C3?",
+      "options": [
+        "$B$2",
+        "B2",
+        "$B2",
+        "B$2"
+      ],
+      "correct": "a",
+      "explanation": "$B$2 fija columna y fila; B2 es relativa y cambia al copiar."
+    },
+    {
+      "stem": "¿Qué se pierde al exportar una hoja de cálculo a CSV?",
+      "options": [
+        "Fórmulas y formato",
+        "Solo los textos",
+        "Los valores numéricos",
+        "Las filas"
+      ],
+      "correct": "a",
+      "explanation": "CSV guarda valores separados por comas; no conserva fórmulas, tipos ni formato."
+    },
+    {
+      "stem": "¿Para qué sirve una tabla dinámica?",
+      "options": [
+        "Resumir datos por filas, columnas y valores",
+        "Cambiar el idioma",
+        "Comprimir imágenes",
+        "Firmar el documento"
+      ],
+      "correct": "a",
+      "explanation": "La tabla dinámica agrupa y resume datos para analizarlos."
+    },
+    {
+      "stem": "¿Qué medida reduce el riesgo de una macro desconocida?",
+      "options": [
+        "Desactivar macros por defecto",
+        "Abrir siempre en modo edición",
+        "Ampliar la ventana",
+        "Guardar en CSV"
+      ],
+      "correct": "a",
+      "explanation": "Las macros pueden ejecutar código; conviene desactivarlas por defecto y firmar solo las propias."
+    },
+    {
+      "stem": "Antes de publicar un documento, ¿qué conviene revisar?",
+      "options": [
+        "Metadatos y datos personales",
+        "El color del escritorio",
+        "El idioma del teclado",
+        "La impresora"
+      ],
+      "correct": "a",
+      "explanation": "Autor, comentarios o cambios pueden revelar información; hay que revisar y eliminar metadatos innecesarios."
+    },
+    {
+      "stem": "¿Qué formato es preferible para conservación a largo plazo?",
+      "options": [
+        "PDF/A",
+        "PDF normal",
+        "DOCX",
+        "HTML"
+      ],
+      "correct": "a",
+      "explanation": "PDF/A está pensado para conservación; el PDF normal puede depender de fuentes externas."
+    },
+    {
+      "stem": "¿Qué permite el control de cambios?",
+      "options": [
+        "Ver y aceptar modificaciones",
+        "Cifrar el disco",
+        "Crear macros",
+        "Cambiar la contraseña"
+      ],
+      "correct": "a",
+      "explanation": "El control de cambios registra quién modificó qué y permite aceptar o rechazar."
+    },
+    {
+      "stem": "Si se copia =A1 de la celda B2 a C3, ¿a qué celda apunta?",
+      "options": [
+        "B2",
+        "A1",
+        "C3",
+        "A3"
+      ],
+      "correct": "a",
+      "explanation": "Una referencia relativa se desplaza con la fórmula: de A1 a B2."
+    },
+    {
+      "stem": "¿Qué formato de Impress se usa para distribuir una presentación sin que se edite?",
+      "options": [
+        "PDF",
+        "ODP",
+        "PPTX",
+        "SVG"
+      ],
+      "correct": "a",
+      "explanation": "El PDF se distribuye y conserva la apariencia; ODP/PPTX son editables."
+    }
+  ]
+}
