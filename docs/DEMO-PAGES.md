@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **36/36**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **37/37**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -11,8 +11,8 @@ Demo de lectura y práctica, sin backend: el temario va empaquetado y el progres
 guarda en `localStorage`. **No hay cuenta, no hay servidor y no se envía nada.**
 
 - Temario común completo: **5 bloques / 40 temas**.
-- **19 temas con apuntes completos** y **19 prácticas de 10 preguntas** (190 preguntas con respuesta
-  razonada); **21 pendientes**, marcados como tales; **0 solo resumen** por ahora.
+- **23 temas con apuntes completos** y **23 prácticas de 10 preguntas** (230 preguntas con respuesta
+  razonada); **17 pendientes**, marcados como tales; **0 solo resumen** por ahora.
 - **12 convocatorias C1 de informática** a las que sirve el temario (10 por confirmar y 2 cerradas),
   más el perfil TAI. Se muestra en la portada, con enlace a las bases de cada una.
 - **Mapa de cobertura publicado** en `#/cobertura`: los 40 temas con su estado y su práctica.
@@ -36,15 +36,15 @@ local; para publicarla con backend hace falta una cuenta de Render/Hugging Face
 
 | Bloque | Temas | Con apuntes | Pendientes | Con práctica |
 |---|---|---|---|---|
-| I · Administración y normativa | 12 | 11 | 1 | 11 |
-| II · Informática básica y ofimática | 5 | 1 | 4 | 1 |
+| I · Administración y normativa | 12 | 12 | 0 | 12 |
+| II · Informática básica y ofimática | 5 | 4 | 1 | 4 |
 | III · Sistemas, redes y comunicaciones | 9 | 4 | 5 | 4 |
 | IV · Datos y desarrollo | 7 | 1 | 6 | 1 |
 | V · Seguridad y administración electrónica | 7 | 2 | 5 | 2 |
-| **Total** | **40** | **19** | **21** | **19** |
+| **Total** | **40** | **23** | **17** | **23** |
 
-Temas completos: I.1, I.2, I.3, **I.4**, I.5, I.6, I.7, **I.8**, I.9, I.10, I.12, II.13,
-**III.19**, **III.20**, III.21, III.24, **IV.27**, V.34 y **V.35**.
+Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, **I.11**, I.12,
+**II.13**, **II.14**, **II.15**, **II.16**, III.19, III.20, III.21, III.24, IV.27, V.34 y V.35.
 Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 
 ## Regenerar y publicar
@@ -56,7 +56,7 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **36/36** y capturas.
+   → **37/37** y capturas.
 
 ## Verificación y capturas
 
@@ -85,7 +85,7 @@ Capturas a **390 y 1280** en [`docs/capturas/demo-pages/`](capturas/demo-pages/)
 
 - Sin backend: no hay cuentas, ni progreso entre dispositivos, ni banco completo, ni biblioteca.
 - El progreso vive en el navegador; borrar datos del sitio lo elimina.
-- 21 temas aún no están redactados: la demo lo dice, no los rellena.
+- 17 temas aún no están redactados: la demo lo dice, no los rellena.
 - El temario TAI recuperado (33/33 temas, 330 preguntas) está **en local y es privado**: procede de
   material de terceros y no se publica aquí. Inventario y derechos en
   [`TEMARIO-RECUPERADO.md`](TEMARIO-RECUPERADO.md).

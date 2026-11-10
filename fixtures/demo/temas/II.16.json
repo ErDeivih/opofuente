@@ -1,0 +1,133 @@
+{
+  "node_path": "II.16",
+  "title": "Correo electrónico y colaboración",
+  "source": {
+    "label": "IETF RFC 5321 — Simple Mail Transfer Protocol (SMTP)",
+    "url": "https://datatracker.ietf.org/doc/html/rfc5321"
+  },
+  "sections": [
+    {
+      "heading": "Cómo viaja un correo",
+      "body": "El correo electrónico se compone de un **cliente** (la aplicación que escribe y lee) y uno o varios **servidores**. El envío se hace con **SMTP**; la recepción se hace con **POP3** o **IMAP**.\n\nUn mensaje tiene **cabeceras** (De, Para, Asunto, Fecha, Message-ID) y un **cuerpo**. El estándar **MIME** permite incluir texto con acentos, HTML y adjuntos, codificando cada parte.\n\nEl correo no es instantáneo ni garantiza entrega: puede rebotar, retrasarse o acabar en spam. Por eso existen registros y protocolos de autenticación del dominio."
+    },
+    {
+      "heading": "Protocolos y puertos",
+      "table": {
+        "columns": ["Protocolo", "Función", "Puertos habituales"],
+        "rows": [
+          ["SMTP", "Enviar correo entre clientes y servidores", "25, 465 (SMTPS), 587 (sumisión)"],
+          ["POP3", "Descargar el correo al cliente", "110, 995 (POP3S)"],
+          ["IMAP", "Sincronizar carpetas y estado en el servidor", "143, 993 (IMAPS)"]
+        ]
+      }
+    },
+    {
+      "heading": "POP3 frente a IMAP",
+      "body": "**POP3** descarga los mensajes y, según la configuración, puede borrarlos del servidor. Es útil si se usa un solo dispositivo y se quiere liberar el buzón, pero no sincroniza carpetas ni estados.\n\n**IMAP** mantiene el correo en el servidor y sincroniza carpetas, leídos/no leídos y marcas entre varios dispositivos. Es la opción habitual hoy, especialmente con buzones grandes.\n\nLa elección depende del uso: POP3 para un único equipo con conexión intermitente; IMAP para móvil, portátil y webmail a la vez."
+    },
+    {
+      "heading": "Seguridad y buenas prácticas",
+      "body": "El correo es uno de los principales vectores de **phishing** y malware. Hay que desconfiar de remitentes desconocidos, enlaces acortados, urgencias y adjuntos inesperados; verificar el dominio real y no reutilizar contraseñas.\n\nBuenas prácticas:\n\n- Usar **TLS** (SMTPS/IMAPS/POP3S) y autenticación moderna.\n- Activar **segundo factor** y revisar las reglas de reenvío.\n- No abrir adjuntos ejecutables sin analizarlos.\n- Cifrar los mensajes sensibles o usar un canal seguro alternativo.\n- Mantener copias y una política de retención clara."
+    },
+    {
+      "heading": "Colaboración más allá del correo",
+      "body": "Las suites de colaboración añaden **calendarios** (a menudo CalDAV), **contactos**, **tareas**, **chat**, **videollamadas** y **almacenamiento compartido**. La clave es la identidad única y los permisos por grupo.\n\nEn la administración pública, la colaboración debe respetar la **protección de datos**, la **accesibilidad** y la **trazabilidad**. No todos los documentos pueden subirse a cualquier nube: hay que clasificar la información y usar el servicio aprobado."
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento configura el correo de una nueva técnica: usará el portátil, el móvil y el webmail, y debe conservar las carpetas.\n\n**Resolución.**\n\n- Se configura **IMAP** con TLS en el cliente, no POP3, para sincronizar carpetas y estados.\n- El envío se configura por **SMTP con autenticación** (puerto 587 o 465).\n- Se activa **segundo factor** y se revisan las reglas de reenvío automático.\n- Se firma el correo con la política de la organización y se forma al usuario en phishing.\n- Los documentos sensibles se comparten por el repositorio corporativo, no como adjuntos masivos.\n\n**Conclusión.** La elección de protocolo depende de cuántos dispositivos y de si se necesita sincronización; la seguridad no está en el cliente, sino en la configuración y los hábitos."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué protocolo se usa para enviar correo electrónico?",
+      "options": ["SMTP", "POP3", "IMAP", "CalDAV"],
+      "correct": "a",
+      "explanation": "SMTP (Simple Mail Transfer Protocol) se usa para el envío entre cliente y servidor y entre servidores."
+    },
+    {
+      "stem": "¿Qué protocolo sincroniza carpetas y estados entre varios dispositivos?",
+      "options": ["IMAP", "POP3", "SMTP", "DNS"],
+      "correct": "a",
+      "explanation": "IMAP mantiene el correo en el servidor y sincroniza carpetas, leídos y marcas entre dispositivos."
+    },
+    {
+      "stem": "¿Qué hace POP3 al descargar el correo?",
+      "options": [
+        "Puede descargar los mensajes y, según la configuración, borrarlos del servidor",
+        "Sincroniza siempre todas las carpetas",
+        "Envía el correo a otro dominio",
+        "Cifra el disco del usuario"
+      ],
+      "correct": "a",
+      "explanation": "POP3 está orientado a descargar; según la configuración puede eliminar los mensajes del servidor, a diferencia de IMAP."
+    },
+    {
+      "stem": "¿Qué permite MIME en un mensaje?",
+      "options": [
+        "Incluir texto con acentos, HTML y adjuntos codificados",
+        "Comprimir el buzón",
+        "Firmar digitalmente el dominio",
+        "Cambiar la contraseña"
+      ],
+      "correct": "a",
+      "explanation": "MIME define cómo codificar las distintas partes del mensaje (texto, HTML y adjuntos) para que se transmitan correctamente."
+    },
+    {
+      "stem": "¿Qué puerto es habitual para la sumisión de correo con autenticación?",
+      "options": ["587", "110", "143", "53"],
+      "correct": "a",
+      "explanation": "El puerto 587 se usa para sumisión de correo autenticada; 465 es SMTPS y 25 el envío entre servidores."
+    },
+    {
+      "stem": "¿Qué protocolo usa el puerto 993?",
+      "options": ["IMAPS", "POP3S", "SMTP", "HTTP"],
+      "correct": "a",
+      "explanation": "993 es el puerto seguro de IMAP (IMAPS); 995 es POP3S y 465 SMTPS."
+    },
+    {
+      "stem": "¿Qué es el phishing?",
+      "options": [
+        "Un fraude que suplanta a una entidad para robar credenciales o datos",
+        "Un protocolo de correo",
+        "Un formato de adjunto",
+        "Un tipo de firma digital"
+      ],
+      "correct": "a",
+      "explanation": "El phishing suplanta a una entidad de confianza para que la víctima entregue datos o abra un adjunto malicioso."
+    },
+    {
+      "stem": "¿Cuál es una buena práctica de seguridad en el correo?",
+      "options": [
+        "Usar TLS, segundo factor y desconfiar de adjuntos inesperados",
+        "Compartir la contraseña con el equipo",
+        "Desactivar el filtro de spam",
+        "Abrir todos los enlaces para comprobar si funcionan"
+      ],
+      "correct": "a",
+      "explanation": "TLS, segundo factor y prudencia con enlaces y adjuntos reducen el riesgo de interceptación y phishing."
+    },
+    {
+      "stem": "¿Qué ventaja tiene IMAP para un usuario con móvil, portátil y webmail?",
+      "options": [
+        "Mantiene el mismo estado y carpetas en todos los dispositivos",
+        "Ocupa menos en el servidor",
+        "No necesita contraseña",
+        "Envía el correo más rápido"
+      ],
+      "correct": "a",
+      "explanation": "IMAP sincroniza el buzón en el servidor, por lo que el estado se ve igual desde todos los dispositivos."
+    },
+    {
+      "stem": "¿Qué documento no conviene enviar como adjunto masivo sin más?",
+      "options": [
+        "Un documento con datos personales sensibles",
+        "Una convocatoria pública",
+        "Un horario sin datos personales",
+        "Un cartel de un evento"
+      ],
+      "correct": "a",
+      "explanation": "Los datos personales sensibles deben compartirse por canales aprobados, con cifrado y control de acceso, no como adjunto abierto."
+    }
+  ]
+}

@@ -697,6 +697,18 @@ function Tema({ path }: { path: string }) {
           Tema {topic.path} · <ApuntesBadge status={topic.apuntesStatus} />{' '}
           <PracticaBadge status={topic.practicaStatus} />
         </p>
+        <p className="hint">
+          Forma parte del temario común de las {data.convocatorias.total} convocatorias C1.{' '}
+          <button
+            className="button button--link"
+            type="button"
+            onClick={() => {
+              go('');
+            }}
+          >
+            Ver convocatorias
+          </button>
+        </p>
       </section>
       {topic.sections.map((section) => (
         <section className="card" key={section.heading}>

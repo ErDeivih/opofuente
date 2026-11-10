@@ -1,0 +1,145 @@
+{
+  "node_path": "II.15",
+  "title": "Ofimática",
+  "source": {
+    "label": "Documentación oficial de LibreOffice en español",
+    "url": "https://documentation.libreoffice.org/es/documentacion/"
+  },
+  "sections": [
+    {
+      "heading": "Suites ofimáticas y formatos",
+      "body": "Una **suite ofimática** agrupa herramientas para crear documentos, hojas de cálculo, presentaciones y bases de datos. LibreOffice incluye **Writer** (texto), **Calc** (hojas), **Impress** (presentaciones), **Draw** (dibujo), **Base** (bases de datos) y **Math** (fórmulas).\n\nLos formatos abiertos **ODF** (`.odt`, `.ods`, `.odp`) y los de Microsoft (`.docx`, `.xlsx`, `.pptx`) permiten intercambio, pero no siempre conservan todo el formato. El **PDF** es el formato de distribución: conserva la apariencia y no se edita tan fácilmente.\n\nElegir formato depende del destino: edición compartida (ODF/DOCX), cálculo (ODS/XLSX) o publicación final (PDF/PDF-A)."
+    },
+    {
+      "heading": "Procesador de textos",
+      "body": "En **Writer** o Word, lo importante es trabajar con **estilos** (títulos, párrafos, listas) en lugar de aplicar formato manual a cada línea. Los estilos permiten generar índices, mantener la coherencia y facilitar la accesibilidad.\n\nUn documento bien estructurado tiene **título**, apartados con jerarquía, tablas legibles, imágenes con texto alternativo y numeración de páginas. Las **plantillas** y los **estilos** ahorran tiempo y evitan errores.\n\nPara revisar: ortografía, comentarios, control de cambios y comparación de versiones."
+    },
+    {
+      "heading": "Hoja de cálculo",
+      "body": "En **Calc** o Excel, una hoja se organiza en celdas identificadas por columna y fila (por ejemplo, `C5`). Las **fórmulas** empiezan por `=` y pueden usar operadores, referencias y funciones.\n\nLas **referencias** pueden ser relativas (`A1`) o absolutas (`$A$1`). Las absolutas no cambian al copiar la fórmula. Las **funciones** habituales son `SUMA`, `PROMEDIO`, `CONTAR`, `SI`, `BUSCARV`/`BUSCARX` y `SUMAR.SI`.\n\nLas **tablas dinámicas** resumen grandes volúmenes de datos por filas, columnas y valores; los **gráficos** ayudan a comunicar resultados. Conviene validar los datos de entrada y documentar las fórmulas complejas."
+    },
+    {
+      "heading": "Presentaciones y bases de datos de escritorio",
+      "body": "En **Impress** o PowerPoint, una presentación clara usa una **plantilla maestra**, pocas fuentes, contraste suficiente y una idea por diapositiva. Las animaciones deben apoyar el mensaje, no distraer.\n\n**Base** permite crear bases de datos de escritorio, formularios, consultas e informes. Es útil para pequeñas aplicaciones locales; para sistemas multiusuario se usan gestores como PostgreSQL o MySQL.\n\nEn ambos casos, la **accesibilidad** importa: texto alternativo, orden de lectura, contraste y tamaños legibles."
+    },
+    {
+      "heading": "Tabla de herramientas y formatos",
+      "table": {
+        "columns": ["Herramienta", "Uso", "Formato habitual"],
+        "rows": [
+          ["Writer", "Documentos de texto", "ODT / DOCX"],
+          ["Calc", "Hojas de cálculo", "ODS / XLSX"],
+          ["Impress", "Presentaciones", "ODP / PPTX"],
+          ["Base", "Bases de datos de escritorio", "ODB"],
+          ["PDF", "Distribución final", "PDF / PDF-A"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento debe publicar un presupuesto y una memoria en PDF, y quiere que otro departamento pueda editar las hojas de cálculo.\n\n**Resolución.**\n\n- Las hojas se entregan en **ODS** (o XLSX si el otro equipo usa Excel), con fórmulas documentadas y celdas de entrada protegidas.\n- La memoria se redacta con **estilos** de Writer y se exporta a **PDF/A** para conservación a largo plazo.\n- Las tablas se revisan para que no dependan del color y las imágenes llevan **texto alternativo**.\n- Se comprueba que el PDF conserva paginación, enlaces y fuentes.\n\n**Conclusión.** El formato se elige por el uso posterior: edición, cálculo o distribución; y la estructura con estilos es lo que hace el documento mantenible y accesible."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué formato es el nativo de LibreOffice Calc?",
+      "options": ["ODS", "DOCX", "PPTX", "PDF"],
+      "correct": "a",
+      "explanation": "Calc usa ODS (OpenDocument Spreadsheet) como formato nativo; XLSX es el de Excel."
+    },
+    {
+      "stem": "¿Qué hace una referencia absoluta como `$A$1`?",
+      "options": [
+        "Mantiene la referencia al copiar la fórmula",
+        "Cambia de fila al copiar",
+        "Convierte el valor en texto",
+        "Elimina la fórmula"
+      ],
+      "correct": "a",
+      "explanation": "Los signos `$` fijan columna y fila, de modo que la referencia no se desplaza al copiar la fórmula."
+    },
+    {
+      "stem": "¿Para qué sirve la función SUMA?",
+      "options": [
+        "Sumar los valores de un rango",
+        "Ordenar alfabéticamente",
+        "Crear una tabla dinámica",
+        "Cambiar el formato de una celda"
+      ],
+      "correct": "a",
+      "explanation": "SUMA agrega los valores de las celdas o rangos indicados."
+    },
+    {
+      "stem": "¿Qué permite una tabla dinámica?",
+      "options": [
+        "Resumir y agrupar datos por filas, columnas y valores",
+        "Cambiar el idioma del documento",
+        "Firmar digitalmente un PDF",
+        "Comprimir imágenes"
+      ],
+      "correct": "a",
+      "explanation": "Las tablas dinámicas resumen grandes conjuntos de datos y permiten analizarlos desde distintos puntos de vista."
+    },
+    {
+      "stem": "¿Por qué conviene usar estilos en un documento de texto?",
+      "options": [
+        "Para mantener coherencia, generar índices y mejorar la accesibilidad",
+        "Para que el documento ocupe más",
+        "Para impedir la edición",
+        "Para eliminar las tablas"
+      ],
+      "correct": "a",
+      "explanation": "Los estilos aplican formato coherente y permiten índices automáticos y una estructura accesible."
+    },
+    {
+      "stem": "¿Qué formato se recomienda para conservar un documento final sin alterar su apariencia?",
+      "options": ["PDF", "TXT", "CSV", "ODP"],
+      "correct": "a",
+      "explanation": "El PDF conserva la apariencia y es el formato habitual de distribución; PDF/A se usa para conservación a largo plazo."
+    },
+    {
+      "stem": "¿Qué hay que comprobar al importar un CSV en una hoja de cálculo?",
+      "options": [
+        "El separador y la codificación de caracteres",
+        "El color de la primera fila",
+        "El número de diapositivas",
+        "La firma digital"
+      ],
+      "correct": "a",
+      "explanation": "Un CSV no guarda tipos ni formato; el separador y la codificación (por ejemplo, UTF-8) determinan si las columnas y acentos se leen bien."
+    },
+    {
+      "stem": "¿Qué es una plantilla maestra en una presentación?",
+      "options": [
+        "Un patrón que define fondos, fuentes y estilos de las diapositivas",
+        "Una diapositiva con una imagen",
+        "Un archivo PDF",
+        "Una hoja de cálculo"
+      ],
+      "correct": "a",
+      "explanation": "La plantilla maestra da coherencia visual y evita repetir formato en cada diapositiva."
+    },
+    {
+      "stem": "¿Para qué sirve LibreOffice Base?",
+      "options": [
+        "Para crear bases de datos de escritorio, consultas e informes",
+        "Para editar vídeo",
+        "Para diseñar circuitos",
+        "Para navegar por internet"
+      ],
+      "correct": "a",
+      "explanation": "Base es el componente de bases de datos de LibreOffice, útil para pequeñas aplicaciones locales."
+    },
+    {
+      "stem": "¿Qué mejora la accesibilidad de un documento ofimático?",
+      "options": [
+        "Usar texto alternativo, estructura de encabezados y buen contraste",
+        "Usar solo imágenes escaneadas",
+        "Eliminar los estilos",
+        "Guardar todo en CSV"
+      ],
+      "correct": "a",
+      "explanation": "El texto alternativo, la jerarquía de encabezados y el contraste permiten que más personas y tecnologías de apoyo usen el documento."
+    }
+  ]
+}

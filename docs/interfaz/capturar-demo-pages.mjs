@@ -128,6 +128,10 @@ if (completo !== undefined) {
   check(`el tema ${completo.path} tiene apuntes completos y fuente`, /Apuntes completos/.test(texto) && /Fuente:/.test(texto));
   check(`el tema ${completo.path} tiene su práctica`, /Práctica de este tema/.test(texto));
   check(
+    `el tema ${completo.path} enlaza a las convocatorias`,
+    /Forma parte del temario común/.test(texto) && /Ver convocatorias/.test(texto),
+  );
+  check(
     `la ficha tiene migas «Temario › ${completo.path}»`,
     (await page.locator('.demo-breadcrumbs').innerText()).includes('Temario') &&
       (await page.locator('.demo-breadcrumbs').innerText()).includes(completo.path),

@@ -1,0 +1,135 @@
+{
+  "node_path": "II.14",
+  "title": "Sistemas operativos de usuario",
+  "source": {
+    "label": "Microsoft Learn — Documentación de Windows",
+    "url": "https://learn.microsoft.com/es-es/windows/"
+  },
+  "sections": [
+    {
+      "heading": "Qué hace un sistema operativo de usuario",
+      "body": "El **sistema operativo** gestiona los recursos del equipo y ofrece una interfaz para usarlo. Sus funciones principales son:\n\n- Gestionar **procesos**: crear, planificar y terminar programas.\n- Gestionar **memoria** y **almacenamiento** (ficheros y carpetas).\n- Controlar **usuarios, permisos** y acceso a los recursos.\n- Gestionar **dispositivos** y controladores.\n- Ofrecer la **interfaz de usuario** (escritorio, ventanas, línea de comandos).\n\nWindows y Linux de escritorio comparten esas funciones, pero difieren en la organización de usuarios, permisos y herramientas de administración."
+    },
+    {
+      "heading": "Windows 10/11: usuarios, permisos y control",
+      "body": "En Windows los usuarios se agrupan (por ejemplo, **Administradores** y **Usuarios estándar**). El **Control de cuentas de usuario (UAC)** pide confirmación cuando una acción requiere privilegios elevados, aunque la sesión sea de administrador.\n\nEl sistema de ficheros habitual es **NTFS**, con permisos como **Control total**, **Modificar**, **Lectura y ejecución**, **Lectura** y **Escritura**. Los permisos se heredan de la carpeta padre y pueden auditarse.\n\nLas **actualizaciones** de Windows corrigen vulnerabilidades y fallos; conviene aplicarlas de forma controlada. Herramientas como el **Administrador de tareas**, el **Visor de eventos** y la **restauración del sistema** ayudan a diagnosticar problemas."
+    },
+    {
+      "heading": "Linux de escritorio: usuarios, permisos y servicios",
+      "body": "En Linux cada usuario tiene un **UID** y pertenece a grupos. El superusuario es **root**; las tareas administrativas se hacen con **sudo**, no iniciando sesión como root.\n\nLos permisos de fichero se expresan con tres bloques: **propietario**, **grupo** y **otros**, con los bits **r** (lectura), **w** (escritura) y **x** (ejecución). Se cambian con `chmod` y el propietario con `chown`.\n\nLos **servicios** se gestionan con **systemd** (`systemctl`). Cada distribución usa su gestor de paquetes: `apt` en Debian/Ubuntu, `dnf` en Fedora, `pacman` en Arch. El escritorio puede ser GNOME, KDE Plasma, XFCE u otros."
+    },
+    {
+      "heading": "Permisos: comparación rápida",
+      "table": {
+        "columns": ["Aspecto", "Windows (NTFS)", "Linux"],
+        "rows": [
+          ["Modelo", "Listas de control de acceso (ACL)", "Bits rwx para propietario, grupo y otros"],
+          ["Administrador", "Cuenta de administrador + UAC", "root + sudo"],
+          ["Cambiar permisos", "Propiedades → Seguridad o icacls", "chmod / chown"],
+          ["Herencia", "Sí, desde la carpeta padre", "Permisos por fichero y directorio"],
+          ["Registro de eventos", "Visor de eventos", "journalctl / archivos de log"]
+        ]
+      }
+    },
+    {
+      "heading": "Diagnóstico y mantenimiento",
+      "body": "Ante un problema de usuario conviene seguir un orden:\n\n1. **Reproducir** el fallo y anotar el mensaje exacto.\n2. Revisar **espacio en disco**, memoria y procesos con el Administrador de tareas o `top`/`htop`.\n3. Consultar **registros**: Visor de eventos en Windows, `journalctl` en Linux.\n4. Comprobar **permisos** y credenciales si el fallo es de acceso.\n5. Aplicar **actualizaciones** y controladores; si el equipo no arranca, usar modo seguro o un medio de recuperación.\n\nLas copias y los puntos de restauración permiten volver atrás, pero no sustituyen un diagnóstico: primero se entiende el fallo, después se corrige."
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Una empleada no puede abrir una carpeta compartida en su equipo Windows; el resto del departamento sí puede.\n\n**Resolución.**\n\n- Se comprueba que el usuario pertenece al **grupo** con permiso de lectura.\n- Se revisan los permisos **NTFS** de la carpeta y la herencia: puede haber una denegación explícita para su cuenta.\n- Se comprueba que la sesión no está limitada por una directiva o por UAC.\n- Si el recurso está en red, se verifica la conexión y las credenciales usadas.\n\n**Conclusión.** El fallo de acceso casi siempre está en el modelo de permisos (usuario, grupo, ACL o herencia), no en el hardware."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Cuál es una función del sistema operativo?",
+      "options": [
+        "Gestionar procesos, memoria, ficheros y usuarios",
+        "Diseñar la base de datos de la aplicación",
+        "Redactar las leyes de la organización",
+        "Sustituir al cortafuegos de red"
+      ],
+      "correct": "a",
+      "explanation": "El sistema operativo gestiona los recursos del equipo (procesos, memoria, almacenamiento, usuarios y dispositivos)."
+    },
+    {
+      "stem": "¿Qué hace el Control de cuentas de usuario (UAC) en Windows?",
+      "options": [
+        "Pide confirmación cuando una acción requiere privilegios elevados",
+        "Crea copias de seguridad automáticas",
+        "Cifra todos los discos",
+        "Desinstala los controladores"
+      ],
+      "correct": "a",
+      "explanation": "UAC avisa y pide consentimiento antes de ejecutar acciones que requieren permisos de administrador."
+    },
+    {
+      "stem": "¿Qué sistema de ficheros es el habitual en Windows y permite permisos NTFS?",
+      "options": ["FAT32", "NTFS", "ext4", "ISO 9660"],
+      "correct": "b",
+      "explanation": "NTFS es el sistema de ficheros habitual de Windows y soporta permisos, herencia y auditoría."
+    },
+    {
+      "stem": "¿Qué significado tiene el permiso «rwx» para el propietario en Linux?",
+      "options": [
+        "Lectura, escritura y ejecución",
+        "Solo lectura",
+        "Lectura y escritura, sin ejecución",
+        "Ejecución y borrado"
+      ],
+      "correct": "a",
+      "explanation": "r = lectura, w = escritura y x = ejecución; los tres bits pueden combinarse."
+    },
+    {
+      "stem": "¿Con qué comando se cambian los permisos de un fichero en Linux?",
+      "options": ["chmod", "chown", "systemctl", "apt"],
+      "correct": "a",
+      "explanation": "chmod modifica los permisos; chown cambia el propietario y el grupo."
+    },
+    {
+      "stem": "¿Para qué sirve «sudo» en Linux?",
+      "options": [
+        "Para ejecutar un comando con privilegios de administrador",
+        "Para crear un usuario nuevo",
+        "Para montar un disco",
+        "Para cambiar el idioma del sistema"
+      ],
+      "correct": "a",
+      "explanation": "sudo permite ejecutar comandos concretos con privilegios elevados sin iniciar sesión como root."
+    },
+    {
+      "stem": "¿Qué herramienta de Windows muestra los eventos y errores del sistema?",
+      "options": [
+        "El Visor de eventos",
+        "El Bloc de notas",
+        "La calculadora",
+        "El explorador de archivos"
+      ],
+      "correct": "a",
+      "explanation": "El Visor de eventos recoge registros de aplicación, seguridad y sistema que ayudan a diagnosticar fallos."
+    },
+    {
+      "stem": "¿Qué comando de Linux permite consultar los registros del sistema con systemd?",
+      "options": ["journalctl", "chmod", "pacman", "top"],
+      "correct": "a",
+      "explanation": "journalctl consulta el registro de systemd; top muestra procesos y consumo de recursos."
+    },
+    {
+      "stem": "¿Qué gestor de paquetes es habitual en Debian y Ubuntu?",
+      "options": ["apt", "dnf", "pacman", "brew"],
+      "correct": "a",
+      "explanation": "apt se usa en la familia Debian/Ubuntu; dnf en Fedora y pacman en Arch."
+    },
+    {
+      "stem": "¿Cuál es el primer paso ante un problema de acceso a una carpeta compartida?",
+      "options": [
+        "Comprobar la pertenencia a grupos y los permisos del recurso",
+        "Formatear el equipo",
+        "Cambiar la placa base",
+        "Reinstalar toda la aplicación"
+      ],
+      "correct": "a",
+      "explanation": "Los fallos de acceso suelen estar en usuarios, grupos, ACL o herencia; conviene diagnosticarlos antes de actuaciones destructivas."
+    }
+  ]
+}

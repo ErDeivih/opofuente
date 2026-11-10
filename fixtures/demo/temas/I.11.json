@@ -1,0 +1,155 @@
+{
+  "node_path": "I.11",
+  "title": "Igualdad y violencia de género",
+  "source": {
+    "label": "Ley Orgánica 3/2007, de 22 de marzo, para la igualdad efectiva de mujeres y hombres; Ley Orgánica 1/2004, de medidas de protección integral contra la violencia de género",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2007-6115"
+  },
+  "sections": [
+    {
+      "heading": "El principio de igualdad y su alcance",
+      "body": "La **igualdad** es un derecho fundamental reconocido en el artículo 14 de la Constitución: mujeres y hombres son iguales ante la ley y no puede haber discriminación por razón de sexo. La **Ley Orgánica 3/2007** desarrolla ese principio para la vida política, civil, laboral, económica, social y cultural.\n\nLa ley no solo prohíbe discriminar: obliga a las administraciones a **integrar la perspectiva de género** en todas sus políticas (transversalidad), a prevenir conductas discriminatorias y a adoptar **acciones positivas** cuando una desigualdad real persiste.\n\nLa igualdad formal (la ley dice lo mismo para todos) no basta si las condiciones de partida son distintas; por eso se habla de **igualdad efectiva**."
+    },
+    {
+      "heading": "Acciones positivas y planes de igualdad",
+      "body": "Las **acciones positivas** son medidas temporales que corrigen situaciones de desigualdad real en un ámbito concreto. No son privilegios: buscan equiparar el punto de partida y deben ser proporcionadas y justificadas.\n\nLos **planes de igualdad** son conjuntos ordenados de medidas, con objetivos, responsables y evaluación. En las administraciones y en las empresas de cierto tamaño se exigen o se fomentan según la normativa; incluyen acceso al empleo, promoción, retribución, conciliación y prevención del acoso.\n\nEn el ámbito local, el ayuntamiento puede aprobar un plan municipal de igualdad, formar al personal y crear servicios de atención a las mujeres."
+    },
+    {
+      "heading": "Conciliación y corresponsabilidad",
+      "body": "La **conciliación** permite compaginar la vida personal, familiar y laboral. La ley impulsa permisos, excedencias y flexibilidad, pero también la **corresponsabilidad**: que el cuidado y las tareas domésticas no recaigan solo en las mujeres.\n\nLa conciliación no es un permiso graciable: es una condición para la igualdad real en el empleo. Las medidas deben aplicarse sin penalizar la carrera profesional de quien las usa, y las administraciones deben dar ejemplo en sus condiciones de trabajo."
+    },
+    {
+      "heading": "Violencia de género: concepto y protección",
+      "body": "La **Ley Orgánica 1/2004** regula la protección integral contra la violencia de género. Se refiere a la violencia que se ejerce sobre las mujeres por parte de quienes sean o hayan sido sus cónyuges o de quienes estén o hayan estado ligados a ellas por relaciones similares de afectividad, aun sin convivencia.\n\nNo es solo violencia física: incluye la **psicológica**, la **sexual**, la **económica** y la **digital**. La respuesta debe ser integral: prevención, asistencia, protección, persecución del delito y reparación.\n\nLos recursos habituales son la **orden de protección**, la asistencia jurídica, los servicios sociales y sanitarios, las casas de acogida y los puntos de atención especializada. La coordinación entre administraciones es esencial."
+    },
+    {
+      "heading": "Tabla de conceptos",
+      "table": {
+        "columns": ["Concepto", "Qué es"],
+        "rows": [
+          ["Igualdad formal", "La ley reconoce los mismos derechos sin discriminación"],
+          ["Igualdad efectiva", "Se corrigen las desigualdades reales para que el derecho se ejerza de verdad"],
+          ["Transversalidad", "Incorporar la perspectiva de género en todas las políticas"],
+          ["Acción positiva", "Medida temporal para corregir una desigualdad concreta"],
+          ["Corresponsabilidad", "Reparto equilibrado del cuidado y las tareas domésticas"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento quiere aprobar un plan de igualdad y reforzar la atención a mujeres víctimas de violencia de género.\n\n**Resolución.**\n\n- El **Pleno** aprueba el plan municipal, con objetivos medibles y presupuesto; no basta una declaración de intenciones.\n- El plan incluye formación del personal, lenguaje inclusivo en documentos y protocolos de prevención del acoso.\n- Se coordinan los servicios sociales, la policía local y la atención jurídica; se garantiza la derivación a los recursos autonómicos y estatales.\n- Se difunde un punto de atención y se revisan los protocolos de protección de datos para no exponer a las víctimas.\n\n**Conclusión.** La igualdad se demuestra con medidas concretas, presupuesto y evaluación; la protección de las víctimas exige coordinación, no actuaciones aisladas."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué norma regula la igualdad efectiva entre mujeres y hombres en España?",
+      "options": [
+        "La Ley Orgánica 3/2007",
+        "La Ley 39/2015",
+        "La Ley 7/1985",
+        "La Ley 9/2017"
+      ],
+      "correct": "a",
+      "explanation": "La Ley Orgánica 3/2007, de 22 de marzo, regula la igualdad efectiva de mujeres y hombres."
+    },
+    {
+      "stem": "¿Dónde se reconoce la igualdad ante la ley sin discriminación por razón de sexo?",
+      "options": [
+        "En el artículo 14 de la Constitución",
+        "En el artículo 1 del Código Civil",
+        "En la Ley de Contratos del Sector Público",
+        "En el Reglamento de protección de datos"
+      ],
+      "correct": "a",
+      "explanation": "El artículo 14 de la Constitución reconoce la igualdad ante la ley y prohíbe la discriminación por razón de sexo."
+    },
+    {
+      "stem": "¿Qué es una acción positiva?",
+      "options": [
+        "Una medida temporal para corregir una desigualdad real",
+        "Un privilegio permanente para un grupo",
+        "Una sanción por discriminación",
+        "Un subsidio económico sin finalidad"
+      ],
+      "correct": "a",
+      "explanation": "Las acciones positivas son medidas temporales y justificadas para corregir desigualdades de hecho y alcanzar la igualdad efectiva."
+    },
+    {
+      "stem": "¿Qué significa transversalidad de género?",
+      "options": [
+        "Aplicar la perspectiva de género en todas las políticas y actuaciones",
+        "Crear una única oficina de igualdad",
+        "Contratar solo a mujeres",
+        "Sustituir los planes de igualdad por campañas"
+      ],
+      "correct": "a",
+      "explanation": "La transversalidad exige incorporar la perspectiva de género en el conjunto de las políticas públicas, no solo en un área específica."
+    },
+    {
+      "stem": "¿Qué es la corresponsabilidad?",
+      "options": [
+        "Repartir el cuidado y las tareas domésticas entre mujeres y hombres",
+        "Que la mujer asuma el cuidado familiar",
+        "Que la empresa decida los permisos",
+        "Una sanción por absentismo"
+      ],
+      "correct": "a",
+      "explanation": "La corresponsabilidad implica un reparto equilibrado de las responsabilidades familiares y domésticas."
+    },
+    {
+      "stem": "¿Qué regula la Ley Orgánica 1/2004?",
+      "options": [
+        "La protección integral contra la violencia de género",
+        "El procedimiento administrativo",
+        "La contratación pública",
+        "El régimen local"
+      ],
+      "correct": "a",
+      "explanation": "La LO 1/2004 establece medidas de protección integral contra la violencia de género."
+    },
+    {
+      "stem": "¿Qué tipos de violencia incluye la violencia de género?",
+      "options": [
+        "Solo la física",
+        "La física, psicológica, sexual, económica y digital",
+        "Solo la que ocurre en el domicilio",
+        "Solo la que causa lesiones graves"
+      ],
+      "correct": "b",
+      "explanation": "La violencia de género incluye manifestaciones físicas, psicológicas, sexuales, económicas y digitales, no solo las agresiones físicas."
+    },
+    {
+      "stem": "¿Qué recurso judicial protege de forma inmediata a una víctima de violencia de género?",
+      "options": [
+        "La orden de protección",
+        "El recurso de amparo",
+        "La moción de censura",
+        "El aval bancario"
+      ],
+      "correct": "a",
+      "explanation": "La orden de protección es la medida judicial que puede acordar protección inmediata y coordinar las medidas civiles y penales."
+    },
+    {
+      "stem": "¿Qué debe incluir un plan municipal de igualdad para ser útil?",
+      "options": [
+        "Solo una declaración de intenciones",
+        "Objetivos medibles, medidas, responsables, presupuesto y evaluación",
+        "Únicamente formación para el personal",
+        "Un listado de sanciones"
+      ],
+      "correct": "b",
+      "explanation": "Un plan de igualdad debe concretar objetivos, medidas, responsables, recursos y mecanismos de seguimiento y evaluación."
+    },
+    {
+      "stem": "¿Qué papel tiene la coordinación entre administraciones en la violencia de género?",
+      "options": [
+        "Evitar que la víctima reciba ayuda",
+        "Garantizar una respuesta integral y evitar actuaciones aisladas",
+        "Sustituir a los jueces",
+        "Limitar el acceso a los servicios sociales"
+      ],
+      "correct": "b",
+      "explanation": "La protección integral exige coordinar servicios sociales, sanitarios, policiales y judiciales para evitar lagunas y duplicidades."
+    }
+  ]
+}

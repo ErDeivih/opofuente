@@ -1,22 +1,25 @@
 # Mapa de cobertura del temario
 
 **Publicado en la demo:** <https://erdeivih.github.io/opofuente-demo/#/cobertura> · **Verificado:**
-36/36 comprobaciones (10/11/2026). La tabla cuenta **solo el contenido propio publicado**; el
-material de academia o de terceros es referencia interna y no suma cobertura (decisión D-034).
+37/37 comprobaciones (10/11/2026), con **12/12 enlaces de convocatoria** abriendo (HTTP 200). La tabla
+cuenta **solo el contenido propio publicado**; el material de academia o de terceros es referencia
+interna y no suma cobertura (decisión D-034).
 
 ## Resumen
 
 | Bloque | Temas | Apuntes completos | Solo resumen | Pendientes | Con práctica |
 |---|---|---|---|---|---|
-| I · Administración y normativa | 12 | 11 | 0 | 1 | 11 |
-| II · Informática básica y ofimática | 5 | 1 | 0 | 4 | 1 |
+| I · Administración y normativa | 12 | 12 | 0 | 0 | 12 |
+| II · Informática básica y ofimática | 5 | 4 | 0 | 1 | 4 |
 | III · Sistemas, redes y comunicaciones | 9 | 4 | 0 | 5 | 4 |
 | IV · Datos y desarrollo | 7 | 1 | 0 | 6 | 1 |
 | V · Seguridad y administración electrónica | 7 | 2 | 0 | 5 | 2 |
-| **Total** | **40** | **19** | **0** | **21** | **19** |
+| **Total** | **40** | **23** | **0** | **17** | **23** |
 
-Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.12, II.13, III.19, III.20, III.21, III.24, IV.27, V.34, V.35. Los últimos incorporados son **III.19 Virtualización
-y contenedores** (Docker) y **IV.27 Bases de datos relacionales** (PostgreSQL).
+Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, III.19, III.20, III.21, III.24, IV.27, V.34, V.35. En esta tanda se han añadido **I.11 Igualdad y violencia de
+género**, **II.14 Sistemas operativos de usuario**, **II.15 Ofimática** y **II.16 Correo electrónico y
+colaboración**. I.12 ya estaba completo de una tanda anterior; por eso se añadió II.16 y se llega a
+23/40.
 
 ## Los 40 temas
 
@@ -32,12 +35,12 @@ y contenedores** (Docker) y **IV.27 Bases de datos relacionales** (PostgreSQL).
 | I.8 | La función pública local | Completos | Con práctica |
 | I.9 | Las haciendas locales y el presupuesto | Completos | Con práctica |
 | I.10 | La contratación del sector público (Ley 9/2017) | Completos | Con práctica |
-| I.11 | Igualdad y violencia de género | Pendiente | Pendiente |
+| I.11 | Igualdad y violencia de género | Completos | Con práctica |
 | I.12 | Transparencia y protección de datos en la Administración | Completos | Con práctica |
 | II.13 | Arquitectura de ordenadores | Completos | Con práctica |
-| II.14 | Sistemas operativos de usuario | Pendiente | Pendiente |
-| II.15 | Ofimática | Pendiente | Pendiente |
-| II.16 | Correo electrónico y colaboración | Pendiente | Pendiente |
+| II.14 | Sistemas operativos de usuario | Completos | Con práctica |
+| II.15 | Ofimática | Completos | Con práctica |
+| II.16 | Correo electrónico y colaboración | Completos | Con práctica |
 | II.17 | Licencias y software libre | Pendiente | Pendiente |
 | III.18 | Sistemas operativos de servidor | Pendiente | Pendiente |
 | III.19 | Virtualización y contenedores | Completos | Con práctica |
@@ -81,11 +84,11 @@ distinto (no hay otro tema del índice que trate procesadores) ni se publican.
 
 ## Coherencia del mapa y los sellos
 
-Comprobado con el build y con Playwright sobre la URL pública (36/36): los 40 temas de la tabla
-coinciden con los sellos de apuntes y práctica; los 19 completos tienen 3+ apartados, tabla, fuente y
-10 preguntas; los 21 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
-total (19 + 21 = 40) y no hay temas «solo resumen» hoy. Los **12 enlaces de convocatoria** abren (HTTP 200) y su texto
-empieza por «Bases de»; verificado con `verificar-convocatorias.mjs`.
+Comprobado con el build y con Playwright sobre la URL pública (37/37): los 40 temas de la tabla
+coinciden con los sellos de apuntes y práctica; los 23 completos tienen 3+ apartados, tabla, fuente y
+10 preguntas; los 17 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
+total (23 + 17 = 40) y no hay temas «solo resumen» hoy. Los **12 enlaces de convocatoria** abren
+(HTTP 200) y su texto empieza por «Bases de»; verificado con `verificar-convocatorias.mjs`.
 
 ## Regla de derechos
 
