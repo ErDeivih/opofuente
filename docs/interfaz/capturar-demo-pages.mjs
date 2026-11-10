@@ -71,6 +71,13 @@ check(
   (await enlaceConvocatoria.innerText()).startsWith('Bases de'),
 );
 check(
+  'las 12 convocatorias tienen su enlace con nombre',
+  (await page.locator('.demo-convocatorias a').count()) === 12 &&
+    (await page.locator('.demo-convocatorias a').allInnerTexts()).every((texto) =>
+      texto.startsWith('Bases de'),
+    ),
+);
+check(
   'la portada muestra la cobertura',
   /apuntes completos/.test(portada) && /con práctica/.test(portada),
 );

@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 10/11 (tarde): feedback de interfaz aplicado: practica con correccion al elegir (sin Comprobar) y reanudable; portada corta con Continuar y 3 practicas; enlaces de convocatoria con nombre; pestanas de 44 px y migas Temario › I.1; aviso unico con Como funciona; tema pendiente enlaza a temas completos. 19/40 apuntes completos, 21 pendientes, 190 preguntas. Verificacion local 35/35.
+resumen: Sesion 10/11: el objetivo de 19/40 ya estaba cumplido desde la tanda anterior; no se anaden dos temas mas para no salir del limite pedido. Verificado contra la realidad: 19 completos (todos con 10 preguntas y contenido), 21 pendientes sin contenido, 40 en total; mapa y sellos 36/36. Las 12 convocatorias abren (HTTP 200) y sus enlaces empiezan por "Bases de" con el nombre.
 estado: en-curso
-tarea: feedback de interfaz aplicado; queda publicar el build en Pages (build en cola) y seguir con los 21 temas
+tarea: contenido en 19/40; quedan 21 temas pendientes
 nivel: 2
-siguiente: comprobar que Pages termina el build y verificar 35/35 en la URL publica; seguir con los temas pendientes
-bloqueado: el build de GitHub Pages lleva varios minutos en building; si no termina, reintentar mas tarde
+siguiente: si quieres seguir, escribir 2 temas mas para 21/40; mantener mapa, PORTFOLIO y verificacion de enlaces
+bloqueado: ninguno
 fecha: 2026-11-10

@@ -80,7 +80,8 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **35/35** comprobaciones con Playwright contra la URL pública: portada,
+- **Verificación:** **36/36** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+  de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
   persistencia en `localStorage`.
@@ -131,5 +132,4 @@ servidor.
 4. Abre **Portada** y revisa las 12 convocatorias y el aviso único.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-19/40 temas con apuntes y práctica, 190 preguntas, 12 convocatorias, 35/35 comprobaciones; límites y
-derechos documentados.
+19/40 temas con apuntes y práctica, 190 preguntas, 12 convocatorias, 36/36 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **35/35**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **36/36**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -56,7 +56,7 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **35/35** y capturas.
+   → **36/36** y capturas.
 
 ## Verificación y capturas
 
@@ -64,7 +64,8 @@ El script comprueba contra la URL pública: portada con 12 convocatorias y un so
 portada corta con continuar, pestañas de 44 px, enlaces de convocatoria con texto, cobertura por
 bloque, mapa de 40 filas, sellos, búsqueda y filtros, migas, tema pendiente con enlace filtrado,
 corrección al elegir sin «Comprobar», enlace al BOE, reanudación por la pregunta 3, práctica completa,
-`localStorage` y ausencia de errores de página.
+`localStorage`, ausencia de errores de página y **12/12 enlaces de convocatoria con su nombre**
+(HTTP 200 comprobado con `docs/interfaz/verificar-convocatorias.mjs`).
 
 Capturas a **390 y 1280** en [`docs/capturas/demo-pages/`](capturas/demo-pages/):
 
