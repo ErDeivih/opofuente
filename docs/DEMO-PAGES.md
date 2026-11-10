@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **22/22**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **35/35**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -16,6 +16,12 @@ guarda en `localStorage`. **No hay cuenta, no hay servidor y no se envía nada.*
 - **12 convocatorias C1 de informática** a las que sirve el temario (10 por confirmar y 2 cerradas),
   más el perfil TAI. Se muestra en la portada, con enlace a las bases de cada una.
 - **Mapa de cobertura publicado** en `#/cobertura`: los 40 temas con su estado y su práctica.
+- **Portada corta**: cobertura, «Continuar donde lo dejé» y 3 prácticas siguientes; el resto está
+  en la pestaña Prácticas. Las pestañas miden 44 px y la ficha lleva migas «Temario › I.1».
+- **Práctica más rápida**: al elegir una opción se corrige al momento (sin «Comprobar») y aparece
+  «Siguiente»; el progreso y las respuestas se guardan para reanudar.
+- **Aviso único y corto** con «Cómo funciona»; el tema pendiente enlaza a «Ver temas completos»
+  (temario filtrado por «Con apuntes»).
 - Cobertura visible: en cada tema, sello de apuntes y de práctica; en cada bloque, «I: 11/12 con
   apuntes».
 - Índice con **búsqueda por código o título** y filtros «Con apuntes» / «Con práctica».
@@ -50,14 +56,15 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **22/22** y capturas.
+   → **35/35** y capturas.
 
 ## Verificación y capturas
 
 El script comprueba contra la URL pública: portada con 12 convocatorias y un solo aviso, 40 temas,
-cobertura por bloque, mapa de cobertura con 40 filas, sellos de apuntes/práctica, búsqueda por II.13,
-filtro «Con práctica», tema completo con fuente, tema pendiente, corrección con enlace al BOE,
-práctica completa, persistencia en `localStorage` y ausencia de errores de página.
+portada corta con continuar, pestañas de 44 px, enlaces de convocatoria con texto, cobertura por
+bloque, mapa de 40 filas, sellos, búsqueda y filtros, migas, tema pendiente con enlace filtrado,
+corrección al elegir sin «Comprobar», enlace al BOE, reanudación por la pregunta 3, práctica completa,
+`localStorage` y ausencia de errores de página.
 
 Capturas a **390 y 1280** en [`docs/capturas/demo-pages/`](capturas/demo-pages/):
 

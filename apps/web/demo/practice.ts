@@ -17,6 +17,70 @@ export interface PracticeResult {
 export type DemoProgress = Readonly<Record<string, PracticeResult>>;
 
 const STORAGE_KEY = 'opofuente-demo-progress-v1';
+const RESUME_KEY = 'opofuente-demo-resume-v1';
+
+export interface ResumeState {
+  readonly slug: string;
+  readonly index: number;
+  readonly answers: Readonly<Record<number, string>>;
+}
+
+export function loadResume(): ResumeState | null {
+  const store = storage();
+  if (store === null) {
+    return null;
+  }
+  try {
+    const raw = store.getItem(RESUME_KEY);
+    if (raw === null) {
+      return null;
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      'slug' in parsed &&
+      'index' in parsed &&
+      typeof parsed.slug === 'string' &&
+      typeof parsed.index === 'number'
+    ) {
+      const answers =
+        'answers' in parsed && typeof parsed.answers === 'object' && parsed.answers !== null
+          ? (parsed.answers as Record<number, string>)
+          : {};
+      return { slug: parsed.slug, index: parsed.index, answers };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveResume(
+  slug: string,
+  index: number,
+  answers: Readonly<Record<number, string>> = {},
+): void {
+  const store = storage();
+  if (store !== null) {
+    try {
+      store.setItem(RESUME_KEY, JSON.stringify({ slug, index, answers }));
+    } catch {
+      // Sin almacenamiento, la práctica sigue funcionando sin reanudar.
+    }
+  }
+}
+
+export function clearResume(): void {
+  const store = storage();
+  if (store !== null) {
+    try {
+      store.removeItem(RESUME_KEY);
+    } catch {
+      // Nada que hacer.
+    }
+  }
+}
 
 /** Puntuación directa: aciertos sobre el total, sin penalización (es una demo de práctica). */
 export function scoreAnswers(
@@ -84,6 +148,7 @@ export function resetProgress(): void {
   if (store !== null) {
     try {
       store.removeItem(STORAGE_KEY);
+      store.removeItem(RESUME_KEY);
     } catch {
       // Nada que hacer: la demo sigue funcionando sin persistencia.
     }

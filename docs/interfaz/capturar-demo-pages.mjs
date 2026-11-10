@@ -1,6 +1,6 @@
-// Verifica y captura la demo estática (local o GitHub Pages): portada con convocatorias, cobertura
-// por bloque, sellos de apuntes/práctica, búsqueda y filtro, tema completo, pendiente, práctica
-// completa, ficha de pregunta con texto oficial y persistencia en localStorage.
+// Verifica y captura la demo estática (local o GitHub Pages): portada corta con continuar,
+// convocatorias, cobertura, sellos, búsqueda/filtros, tema completo/pendiente, práctica sin
+// «Comprobar», reanudación, corrección con BOE y persistencia.
 //
 // Uso:
 //   node docs/interfaz/capturar-demo-pages.mjs http://localhost:8098
@@ -48,18 +48,32 @@ async function captura(hash, nombre, ancho) {
   return texto;
 }
 
-// Portada: convocatorias y un solo aviso.
+// Portada corta: cobertura, continuar, 3 prácticas, convocatorias y un solo aviso.
 const portada = await captura('', 'portada', 1280);
 check(
   'la portada dice a qué convocatorias sirve',
   /12 convocatorias C1 de informática/.test(portada) && /Ver las 12 convocatorias/.test(portada),
 );
 check('el aviso de demo aparece una sola vez', (await page.locator('.demo-warning').count()) === 1);
+check('el aviso tiene «Cómo funciona»', /Cómo funciona/.test(portada));
+check('la portada tiene «Continuar donde lo dejé»', /Continuar donde lo dejé/.test(portada));
+check(
+  'la portada muestra 3 prácticas siguientes',
+  (await page.locator('.demo-next li').count()) === 3,
+);
+const tabBox = await page.locator('.demo-nav .button').first().boundingBox();
+check('las pestañas miden al menos 44 px', tabBox !== null && tabBox.height >= 44);
+await captura('', 'portada', 390);
+await page.getByText('Ver las 12 convocatorias').click();
+const enlaceConvocatoria = page.locator('.demo-convocatorias a').first();
+check(
+  'el enlace de convocatoria tiene nombre como texto',
+  (await enlaceConvocatoria.innerText()).startsWith('Bases de'),
+);
 check(
   'la portada muestra la cobertura',
   /apuntes completos/.test(portada) && /con práctica/.test(portada),
 );
-await captura('', 'portada', 390);
 
 const temario = await captura('temario', 'temario', 1280);
 check('el temario enseña 5 bloques y 40 temas', /5 bloques/.test(temario) && /40 temas/.test(temario));
@@ -106,13 +120,29 @@ if (completo !== undefined) {
   const texto = await captura(`tema/${completo.path}`, 'tema-completo', 1280);
   check(`el tema ${completo.path} tiene apuntes completos y fuente`, /Apuntes completos/.test(texto) && /Fuente:/.test(texto));
   check(`el tema ${completo.path} tiene su práctica`, /Práctica de este tema/.test(texto));
+  check(
+    `la ficha tiene migas «Temario › ${completo.path}»`,
+    (await page.locator('.demo-breadcrumbs').innerText()).includes('Temario') &&
+      (await page.locator('.demo-breadcrumbs').innerText()).includes(completo.path),
+  );
   await captura(`tema/${completo.path}`, 'tema-completo', 390);
 }
 
 if (pendiente !== undefined) {
   const texto = await captura(`tema/${pendiente.path}`, 'tema-pendiente', 1280);
-  check(`el tema ${pendiente.path} dice «Pendiente»`, /Pendiente/.test(texto) && /todavía no está redactado/.test(texto));
+  check(
+    `el tema ${pendiente.path} dice «Apuntes pendientes»`,
+    /Apuntes pendientes/.test(texto) && /todavía no está redactado/.test(texto),
+  );
+  check('el tema pendiente enlaza a temas completos', /Ver temas completos/.test(texto));
   await captura(`tema/${pendiente.path}`, 'tema-pendiente', 390);
+  await page.getByRole('button', { name: 'Ver temas completos' }).click();
+  await page.waitForSelector('.demo-topic');
+  check(
+    'el enlace filtra el temario por «con apuntes»',
+    (await page.locator('.demo-topic').count()) === data.progress.apuntesCompletos &&
+      (await page.getByRole('button', { name: 'Con apuntes', exact: true }).getAttribute('aria-pressed')) === 'true',
+  );
 }
 
 if (practice !== undefined) {
@@ -124,9 +154,17 @@ if (practice !== undefined) {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(`${BASE}/#/practica/${practice.slug}`, { waitUntil: 'networkidle' });
   await page.waitForSelector('h1');
+  check(
+    'la práctica no tiene botón «Comprobar»',
+    (await page.getByRole('button', { name: 'Comprobar' }).count()) === 0,
+  );
+  check(
+    `la práctica tiene «Volver a ${practice.tema_path}»`,
+    /Volver a/.test(await page.locator('main').innerText()),
+  );
   await page.locator('input[type=radio]').first().check();
-  await page.getByRole('button', { name: 'Comprobar' }).click();
   const correccion = await page.locator('main').innerText();
+  check('elegir opción corrige al momento', /Correcto|Incorrecto/.test(correccion));
   check('la corrección enlaza el texto oficial', /Texto oficial/.test(correccion));
   check(
     'el enlace de la corrección apunta al BOE',
@@ -134,9 +172,21 @@ if (practice !== undefined) {
   );
   await page.screenshot({ path: path.join(OUT_DIR, 'correccion-1280.png'), fullPage: true });
   await page.getByRole('button', { name: 'Siguiente pregunta' }).click();
-  for (let i = 1; i < 10; i += 1) {
+
+  // Segunda pregunta y vuelta a la portada: debe ofrecer continuar.
+  await page.locator('input[type=radio]').first().check();
+  await page.getByRole('button', { name: 'Siguiente pregunta' }).click();
+  await page.goto(`${BASE}/#/`, { waitUntil: 'networkidle' });
+  check('la portada ofrece continuar tras dejar la práctica', /Continuar donde lo dejé/.test(await page.locator('main').innerText()));
+  await page.getByRole('button', { name: 'Continuar donde lo dejé' }).click();
+  await page.waitForSelector('input[type=radio]');
+  check(
+    'continuar reanuda por la pregunta 3',
+    /Pregunta 3 de 10/.test(await page.locator('main').innerText()),
+  );
+
+  for (let i = 2; i < 10; i += 1) {
     await page.locator('input[type=radio]').first().check();
-    await page.getByRole('button', { name: 'Comprobar' }).click();
     const esUltima = i === 9;
     await page.getByRole('button', { name: esUltima ? 'Ver resultado' : 'Siguiente pregunta' }).click();
   }

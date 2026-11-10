@@ -1,7 +1,7 @@
 # Mapa de cobertura del temario
 
 **Publicado en la demo:** <https://erdeivih.github.io/opofuente-demo/#/cobertura> · **Verificado:**
-22/22 comprobaciones (10/11/2026). La tabla cuenta **solo el contenido propio publicado**; el
+35/35 comprobaciones (10/11/2026). La tabla cuenta **solo el contenido propio publicado**; el
 material de academia o de terceros es referencia interna y no suma cobertura (decisión D-034).
 
 ## Resumen
@@ -81,7 +81,7 @@ distinto (no hay otro tema del índice que trate procesadores) ni se publican.
 
 ## Coherencia del mapa y los sellos
 
-Comprobado con el build y con Playwright sobre la URL pública (22/22): los 40 temas de la tabla
+Comprobado con el build y con Playwright sobre la URL pública (35/35): los 40 temas de la tabla
 coinciden con los sellos de apuntes y práctica; los 19 completos tienen 3+ apartados, tabla, fuente y
 10 preguntas; los 21 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
 total (19 + 21 = 40) y no hay temas «solo resumen» hoy.

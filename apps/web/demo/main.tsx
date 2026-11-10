@@ -11,7 +11,16 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import demoData from './data.json';
-import { loadProgress, resetProgress, saveResult, scoreAnswers, type PracticeResult } from './practice';
+import {
+  clearResume,
+  loadProgress,
+  loadResume,
+  resetProgress,
+  saveResult,
+  saveResume,
+  scoreAnswers,
+  type PracticeResult,
+} from './practice';
 import '../src/styles/global.css';
 import './demo.css';
 
@@ -293,7 +302,8 @@ function ConvocatoriasCard() {
       </p>
       <details className="demo-details">
         <summary>Ver las {total} convocatorias</summary>
-        <ul className="demo-convocatorias">
+      <aside className="demo-convocatorias" aria-label="Convocatorias">
+        <ul>
           {items.map((item) => (
             <li key={item.code}>
               <strong>{item.title}</strong>
@@ -303,12 +313,13 @@ function ConvocatoriasCard() {
               </span>
               {item.url !== '' && (
                 <a href={item.url} target="_blank" rel="noreferrer noopener">
-                  Bases
+                  Bases de {item.title}
                 </a>
               )}
             </li>
           ))}
         </ul>
+      </aside>
       </details>
     </section>
   );
@@ -335,60 +346,103 @@ function Header() {
   );
 }
 
+function ComoFunciona() {
+  return (
+    <>
+      <section className="page__header">
+        <h1>Cómo funciona</h1>
+        <p className="page__lead">
+          Es una demo estática: el temario va empaquetado y tu progreso se guarda en este navegador.
+        </p>
+      </section>
+      <section className="card">
+        <ol>
+          <li>Elige un tema en <strong>Temario</strong> o una práctica en <strong>Prácticas</strong>.</li>
+          <li>En la práctica, al elegir una opción se corrige al momento y verás la explicación.</li>
+          <li>El progreso se guarda en <code>localStorage</code>; puedes continuar donde lo dejaste.</li>
+          <li>Si borras los datos del sitio, se pierde el progreso. No hay cuenta ni servidor.</li>
+        </ol>
+        <div className="demo-actions">
+          <button className="button" type="button" onClick={() => { go(''); }}>
+            Volver a la portada
+          </button>
+        </div>
+      </section>
+    </>
+  );
+}
+
 function Home() {
   const progress = loadProgress();
+  const resume = loadResume();
+  const pendiente = data.practices.find((practice) => {
+    const saved = progress[practice.slug];
+    return saved !== undefined && saved.lastScore < saved.lastTotal;
+  });
+  const continuePractice =
+    (resume !== null ? PRACTICE_BY_SLUG.get(resume.slug) : undefined) ??
+    pendiente ??
+    data.practices[0];
+  const resumeQuestion =
+    resume !== null && continuePractice !== undefined && resume.slug === continuePractice.slug
+      ? Math.min(resume.index + 1, continuePractice.questions.length)
+      : null;
+  const siguientes =
+    continuePractice === undefined
+      ? data.practices.slice(0, 3)
+      : data.practices.filter((practice) => practice.slug !== continuePractice.slug).slice(0, 3);
+
   return (
     <>
       <section className="page__header">
         <h1>OpoFuente — demo estática</h1>
         <p className="page__lead">
-          Una muestra del temario común de informática C1: {data.progress.apuntesCompletos} temas con
-          apuntes completos y su práctica de 10 preguntas. Todo en tu navegador.
+          Temario común de informática C1: {data.progress.apuntesCompletos} temas con apuntes completos
+          y su práctica de 10 preguntas. Todo en tu navegador.
         </p>
       </section>
       <ProgressCard />
-      <ConvocatoriasCard />
+      {continuePractice !== undefined && (
+        <section className="card demo-continue">
+          <h2>Continuar</h2>
+          <p>
+            {resumeQuestion !== null
+              ? `${continuePractice.tema_path} · pregunta ${String(resumeQuestion)} de ${String(continuePractice.questions.length)}`
+              : `Empieza por ${continuePractice.tema_path}`}
+          </p>
+          <button
+            className="button"
+            type="button"
+            onClick={() => {
+              go(`practica/${continuePractice.slug}`);
+            }}
+          >
+            Continuar donde lo dejé
+          </button>
+        </section>
+      )}
       <section className="card">
-        <h2>Qué puedes hacer aquí</h2>
-        <ul>
-          <li>Ver la cobertura de los 40 temas: completos, solo resumen o pendientes.</li>
-          <li>Estudiar los temas redactados y hacer su práctica de 10 preguntas con explicación.</li>
-          <li>Consultar la ficha de cada pregunta y el texto oficial cuando se cita un artículo.</li>
-        </ul>
-        <p className="hint">
-          El progreso se guarda en <code>localStorage</code> de este navegador. Si lo borras, se
-          pierde; no hay cuenta ni sincronización.
-        </p>
-      </section>
-      <div className="demo-grid">
-        {data.practices.map((practice) => {
-          const saved = progress[practice.slug];
-          return (
-            <section className="card demo-card" key={practice.slug}>
-              <h2>{practice.title}</h2>
-              <p className="hint">
-                {practice.questions.length} preguntas · tema {practice.tema_path}
-              </p>
-              {saved !== undefined ? (
-                <p className="hint">
-                  Mejor resultado: <strong>{saved.best} %</strong> · {saved.attempts} intento(s)
-                </p>
-              ) : (
-                <p className="hint">Todavía no la has hecho.</p>
-              )}
+        <h2>Siguientes prácticas</h2>
+        <ul className="demo-next">
+          {siguientes.map((practice) => (
+            <li key={practice.slug}>
               <button
-                className="button"
+                className="button button--link"
                 type="button"
                 onClick={() => {
                   go(`practica/${practice.slug}`);
                 }}
               >
-                Empezar la práctica
+                {practice.tema_path} · {practice.title.replace(/^Práctica · /, '')}
               </button>
-            </section>
-          );
-        })}
-      </div>
+            </li>
+          ))}
+        </ul>
+        <button className="button button--link" type="button" onClick={() => { go('practicas'); }}>
+          Ver todas las prácticas
+        </button>
+      </section>
+      <ConvocatoriasCard />
     </>
   );
 }
@@ -454,9 +508,9 @@ function Cobertura() {
   );
 }
 
-function Temario() {
+function Temario({ initialFiltro = 'todos' }: { readonly initialFiltro?: Filtro }) {
   const [query, setQuery] = useState('');
-  const [filtro, setFiltro] = useState<Filtro>('todos');
+  const [filtro, setFiltro] = useState<Filtro>(initialFiltro);
   const search = normalized(query.trim());
   const blocks = data.curriculum.blocks
     .map((block) => ({
@@ -566,29 +620,51 @@ function Temario() {
   );
 }
 
+function Breadcrumbs({ path }: { path: string }) {
+  return (
+    <nav className="demo-breadcrumbs" aria-label="Migas de pan">
+      <button
+        className="button button--link"
+        type="button"
+        onClick={() => {
+          go('temario');
+        }}
+      >
+        Temario
+      </button>
+      <span aria-hidden="true">›</span>
+      <span aria-current="page">{path}</span>
+    </nav>
+  );
+}
+
 function PendingTopic({ topic, summary }: { topic: TopicContent; summary: TopicSummary }) {
   return (
     <>
       <section className="page__header">
-        <p className="hint">
-          <button className="button button--link" type="button" onClick={() => { go('temario'); }}>
-            ← Volver al temario
-          </button>
-        </p>
+        <Breadcrumbs path={summary.path} />
         <h1>{summary.title}</h1>
         <p className="page__lead">Tema {summary.path} · temario común de informática C1</p>
       </section>
       <section className="card demo-pending">
-        <h2>Pendiente</h2>
+        <h2>Apuntes pendientes.</h2>
         <p>
           Este tema <strong>todavía no está redactado</strong>. No se muestra un párrafo vacío ni
           contenido de relleno: simplemente falta.
         </p>
         <p className="hint">
           Hay {data.progress.apuntesCompletos} de {data.progress.total} temas con apuntes completos y{' '}
-          {data.progress.pendientes} pendientes. La aplicación completa mantiene el temario común con
-          sus 40 temas.
+          {data.progress.pendientes} pendientes.
         </p>
+        <button
+          className="button"
+          type="button"
+          onClick={() => {
+            go('temario/apuntes');
+          }}
+        >
+          Ver temas completos
+        </button>
         {topic.source.label !== '' && <SourceLine source={topic.source} />}
       </section>
     </>
@@ -615,11 +691,7 @@ function Tema({ path }: { path: string }) {
   return (
     <>
       <section className="page__header">
-        <p className="hint">
-          <button className="button button--link" type="button" onClick={() => { go('temario'); }}>
-            ← Volver al temario
-          </button>
-        </p>
+        <Breadcrumbs path={topic.path} />
         <h1>{topic.title}</h1>
         <p className="page__lead demo-topic__badges">
           Tema {topic.path} · <ApuntesBadge status={topic.apuntesStatus} />{' '}
@@ -826,11 +898,24 @@ function Pregunta({ slug, index }: { slug: string; index: number }) {
 }
 
 function PracticeRunner({ practice }: { practice: Practice }) {
-  const [index, setIndex] = useState(0);
+  const resumed = loadResume();
+  const initialIndex =
+    resumed !== null && resumed.slug === practice.slug
+      ? Math.min(Math.max(resumed.index, 0), practice.questions.length - 1)
+      : 0;
+  const [index, setIndex] = useState(initialIndex);
   const [selected, setSelected] = useState<string | null>(null);
-  const [checked, setChecked] = useState(false);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answered, setAnswered] = useState(false);
+  const [answers, setAnswers] = useState<Record<number, string>>(
+    resumed !== null && resumed.slug === practice.slug ? resumed.answers : {},
+  );
   const [result, setResult] = useState<PracticeResult | null>(null);
+
+  useEffect(() => {
+    if (result === null) {
+      saveResume(practice.slug, index, answers);
+    }
+  }, [answers, index, practice.slug, result]);
 
   const question = practice.questions[index];
 
@@ -863,6 +948,15 @@ function PracticeRunner({ practice }: { practice: Practice }) {
               className="button"
               type="button"
               onClick={() => {
+                go(`tema/${practice.tema_path}`);
+              }}
+            >
+              Volver a {practice.tema_path}
+            </button>
+            <button
+              className="button"
+              type="button"
+              onClick={() => {
                 go('practicas');
               }}
             >
@@ -882,21 +976,45 @@ function PracticeRunner({ practice }: { practice: Practice }) {
   const isLast = index + 1 === practice.questions.length;
 
   function finish(): void {
-    if (selected === null) {
+    clearResume();
+    const score = scoreAnswers(answers, practice.questions);
+    setResult(saveResult(practice.slug, score.correct, score.total));
+  }
+
+  function siguiente(): void {
+    if (!answered) {
       return;
     }
-    const respuestas = { ...answers, [index]: selected };
-    const score = scoreAnswers(respuestas, practice.questions);
-    setResult(saveResult(practice.slug, score.correct, score.total));
+    if (isLast) {
+      finish();
+      return;
+    }
+    const next = index + 1;
+    setIndex(next);
+    setSelected(null);
+    setAnswered(false);
+    saveResume(practice.slug, next, answers);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   return (
     <>
       <section className="page__header">
         <h1>{practice.title}</h1>
-        <p className="page__lead">
-          Pregunta {index + 1} de {practice.questions.length} · corrección al momento
-        </p>
+        <div className="demo-practice__top">
+          <p className="page__lead">
+            Pregunta {index + 1} de {practice.questions.length} · corrección al elegir
+          </p>
+          <button
+            className="button button--link"
+            type="button"
+            onClick={() => {
+              go(`tema/${practice.tema_path}`);
+            }}
+          >
+            Volver a {practice.tema_path}
+          </button>
+        </div>
       </section>
       <section className="card">
         <h2>{question.stem}</h2>
@@ -909,9 +1027,14 @@ function PracticeRunner({ practice }: { practice: Practice }) {
                   name="respuesta"
                   value={option.key}
                   checked={selected === option.key}
-                  disabled={checked}
+                  disabled={answered}
                   onChange={() => {
+                    if (answered) {
+                      return;
+                    }
                     setSelected(option.key);
+                    setAnswers((previous) => ({ ...previous, [index]: option.key }));
+                    setAnswered(true);
                   }}
                 />{' '}
                 <span className="demo-option__key">{option.key})</span> {option.text}
@@ -919,22 +1042,8 @@ function PracticeRunner({ practice }: { practice: Practice }) {
             </li>
           ))}
         </ul>
-        {!checked ? (
-          <div className="demo-actions">
-            <button
-              className="button"
-              type="button"
-              disabled={selected === null}
-              onClick={() => {
-                setChecked(true);
-                if (selected !== null) {
-                  setAnswers((previous) => ({ ...previous, [index]: selected }));
-                }
-              }}
-            >
-              Comprobar
-            </button>
-          </div>
+        {!answered ? (
+          <p className="hint">Elige una opción: se corrige al momento.</p>
         ) : (
           <>
             <div className={isCorrect ? 'demo-feedback demo-feedback--ok' : 'demo-feedback demo-feedback--bad'}>
@@ -943,19 +1052,7 @@ function PracticeRunner({ practice }: { practice: Practice }) {
             </div>
             {question.source !== undefined && <SourceLine source={question.source} official />}
             <div className="demo-actions">
-              <button
-                className="button"
-                type="button"
-                onClick={() => {
-                  if (isLast) {
-                    finish();
-                    return;
-                  }
-                  setIndex(index + 1);
-                  setSelected(null);
-                  setChecked(false);
-                }}
-              >
+              <button className="button" type="button" onClick={siguiente}>
                 {isLast ? 'Ver resultado' : 'Siguiente pregunta'}
               </button>
             </div>
@@ -971,8 +1068,12 @@ function App() {
   const parts = route.split('/').filter((part) => part !== '');
 
   let content: ReactElement;
-  if (parts[0] === 'temario') {
+  if (parts[0] === 'temario' && parts[1] === 'apuntes') {
+    content = <Temario initialFiltro="apuntes" key="apuntes" />;
+  } else if (parts[0] === 'temario') {
     content = <Temario />;
+  } else if (parts[0] === 'como-funciona') {
+    content = <ComoFunciona />;
   } else if (parts[0] === 'cobertura') {
     content = <Cobertura />;
   } else if (parts[0] === 'tema' && parts[1] !== undefined) {
@@ -995,7 +1096,16 @@ function App() {
     <div className="demo-shell">
       <Header />
       <div className="demo-warning" role="note">
-        {data.warning}
+        <span>{data.warning}</span>{' '}
+        <button
+          className="button button--link"
+          type="button"
+          onClick={() => {
+            go('como-funciona');
+          }}
+        >
+          Cómo funciona
+        </button>
       </div>
       <main className="demo-main">{content}</main>
       <footer className="demo-footer">

@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 10/11 (tarde): demo publica con 19/40 temas completos y practica (190 preguntas), 21 pendientes, 0 solo resumen; anadidos III.19 Virtualizacion y contenedores y IV.27 Bases de datos relacionales, de redaccion propia con fuente. Indice con avance por bloque (I: 11/12), busqueda y filtros; mapa y sellos verificados 22/22 contra la URL publica. PORTFOLIO.md actualizado a 19/40.
+resumen: Sesion 10/11 (tarde): feedback de interfaz aplicado: practica con correccion al elegir (sin Comprobar) y reanudable; portada corta con Continuar y 3 practicas; enlaces de convocatoria con nombre; pestanas de 44 px y migas Temario › I.1; aviso unico con Como funciona; tema pendiente enlaza a temas completos. 19/40 apuntes completos, 21 pendientes, 190 preguntas. Verificacion local 35/35.
 estado: en-curso
-tarea: portfolio y demo actualizados; quedan 21 temas comunes pendientes
+tarea: feedback de interfaz aplicado; queda publicar el build en Pages (build en cola) y seguir con los 21 temas
 nivel: 2
-siguiente: seguir con los 21 pendientes (prioridad IV y V tecnicos, I.11) y mantener PORTFOLIO.md y el mapa al dia
-bloqueado: publicar el temario TAI recuperado depende de confirmar derechos (material de academia y terceros); no se publica en GitHub Pages
+siguiente: comprobar que Pages termina el build y verificar 35/35 en la URL publica; seguir con los temas pendientes
+bloqueado: el build de GitHub Pages lleva varios minutos en building; si no termina, reintentar mas tarde
 fecha: 2026-11-10

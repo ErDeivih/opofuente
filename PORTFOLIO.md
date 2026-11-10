@@ -45,8 +45,10 @@ servidor.
   cerradas), más el perfil TAI.
 - **Mapa de cobertura** con los 40 temas y dos sellos por tema: apuntes (completos / solo resumen /
   pendiente) y práctica (con práctica / pendiente).
+- Portada corta con **«Continuar donde lo dejé»** y 3 prácticas siguientes.
 - Índice con **avance por bloque** («I: 11/12 con apuntes»), **búsqueda por código o título** y
   filtros «Con apuntes» / «Con práctica».
+- Práctica con corrección **al elegir** (sin «Comprobar»), reanudable, migas y pestañas de 44 px.
 - Práctica con corrección al momento, ficha de pregunta y **enlace al BOE** en la corrección.
 - Progreso del visitante en `localStorage`, sin registro; un solo aviso de demo, sin jerga.
 - Diseño responsive verificado a **390 y 1280 px**.
@@ -78,7 +80,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **22/22** comprobaciones con Playwright contra la URL pública: portada,
+- **Verificación:** **35/35** comprobaciones con Playwright contra la URL pública: portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
   persistencia en `localStorage`.
@@ -129,5 +131,5 @@ servidor.
 4. Abre **Portada** y revisa las 12 convocatorias y el aviso único.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-19/40 temas con apuntes y práctica, 190 preguntas, 12 convocatorias, 22/22 comprobaciones; límites y
+19/40 temas con apuntes y práctica, 190 preguntas, 12 convocatorias, 35/35 comprobaciones; límites y
 derechos documentados.
