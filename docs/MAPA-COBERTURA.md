@@ -8,15 +8,16 @@ material de academia o de terceros es referencia interna y no suma cobertura (de
 
 | Bloque | Temas | Apuntes completos | Solo resumen | Pendientes | Con práctica |
 |---|---|---|---|---|---|
-| I · Administración y normativa | 12 | 10 | 0 | 2 | 10 |
+| I · Administración y normativa | 12 | 11 | 0 | 1 | 11 |
 | II · Informática básica y ofimática | 5 | 1 | 0 | 4 | 1 |
-| III · Sistemas, redes y comunicaciones | 9 | 2 | 0 | 7 | 2 |
+| III · Sistemas, redes y comunicaciones | 9 | 3 | 0 | 6 | 3 |
 | IV · Datos y desarrollo | 7 | 0 | 0 | 7 | 0 |
 | V · Seguridad y administración electrónica | 7 | 2 | 0 | 5 | 2 |
-| **Total** | **40** | **15** | **0** | **25** | **15** |
+| **Total** | **40** | **17** | **0** | **23** | **17** |
 
-Temas completos: I.1, I.2, I.3, **I.4**, I.5, I.6, I.7, I.9, I.10, I.12, II.13, III.21, III.24,
-V.34 y **V.35**. Los dos últimos se han escrito desde cero en esta tanda.
+Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.12, II.13, III.20, III.21, III.24, V.34, V.35. Los dos últimos se han escrito desde cero en esta
+tanda: **I.8 La función pública local** (TREBEP y Ley 7/1985) y **III.20 Almacenamiento y copias de
+seguridad** (NIST SP 800-34).
 
 ## Los 40 temas
 
@@ -29,7 +30,7 @@ V.34 y **V.35**. Los dos últimos se han escrito desde cero en esta tanda.
 | I.5 | El procedimiento administrativo (Ley 39/2015) | Completos | Con práctica |
 | I.6 | El régimen jurídico del sector público (Ley 40/2015) | Completos | Con práctica |
 | I.7 | El personal al servicio de las administraciones (TREBEP) | Completos | Con práctica |
-| I.8 | La función pública local | Pendiente | Pendiente |
+| I.8 | La función pública local | Completos | Con práctica |
 | I.9 | Las haciendas locales y el presupuesto | Completos | Con práctica |
 | I.10 | La contratación del sector público (Ley 9/2017) | Completos | Con práctica |
 | I.11 | Igualdad y violencia de género | Pendiente | Pendiente |
@@ -41,7 +42,7 @@ V.34 y **V.35**. Los dos últimos se han escrito desde cero en esta tanda.
 | II.17 | Licencias y software libre | Pendiente | Pendiente |
 | III.18 | Sistemas operativos de servidor | Pendiente | Pendiente |
 | III.19 | Virtualización y contenedores | Pendiente | Pendiente |
-| III.20 | Almacenamiento y copias de seguridad | Pendiente | Pendiente |
+| III.20 | Almacenamiento y copias de seguridad | Completos | Con práctica |
 | III.21 | Redes | Completos | Con práctica |
 | III.22 | Comunicaciones | Pendiente | Pendiente |
 | III.23 | Servicios de red | Pendiente | Pendiente |

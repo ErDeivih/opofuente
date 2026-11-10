@@ -1,0 +1,154 @@
+{
+  "node_path": "I.8",
+  "title": "La función pública local",
+  "source": {
+    "label": "Real Decreto Legislativo 5/2015 (TREBEP) y Ley 7/1985, de bases del régimen local",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11719"
+  },
+  "sections": [
+    {
+      "heading": "Quién trabaja en un ayuntamiento",
+      "body": "El **personal al servicio de las administraciones públicas** no es un bloque homogéneo. El TREBEP distingue cuatro clases de empleados públicos:\n\n- **Funcionarios de carrera**: ocupan plazas de plantilla con carácter permanente y se rigen por el derecho administrativo.\n- **Funcionarios interinos**: cubren temporalmente plazas vacantes o sustituyen a titulares, por necesidades urgentes y sin ocupar la plaza con carácter definitivo.\n- **Personal laboral**: tiene contrato de trabajo, fijo o temporal, y se rige por el derecho laboral y el convenio aplicable.\n- **Personal eventual**: realiza funciones de confianza o asesoramiento especial; su nombramiento y cese son libres.\n\nEn el ámbito local hay además los **funcionarios con habilitación de carácter nacional** (secretario, interventor y tesorero), que desempeñan funciones de fe pública y control interno."
+    },
+    {
+      "heading": "Plantilla, relación de puestos de trabajo y oferta de empleo",
+      "body": "La **plantilla** es el conjunto de plazas dotadas presupuestariamente que el ayuntamiento puede cubrir. La **relación de puestos de trabajo (RPT)** describe cada puesto: denominación, grupo de clasificación, retribuciones complementarias, requisitos y forma de provisión.\n\nLa plantilla y la RPT las aprueba el **Pleno**. Cada año, si hay plazas vacantes y dotación presupuestaria, se aprueba la **oferta de empleo público**, que se publica para que los ciudadanos puedan concurrir.\n\nLa selección se rige por los principios de **igualdad, mérito, capacidad y publicidad**. Los sistemas ordinarios son la **oposición** (pruebas) y el **concurso-oposición** (méritos y pruebas)."
+    },
+    {
+      "heading": "Carrera, retribuciones y situaciones",
+      "body": "La **carrera profesional** permite progresar mediante la evaluación del desempeño y la formación. Las **retribuciones** se dividen en:\n\n- **Básicas**: sueldo, trienios y pagas extraordinarias.\n- **Complementarias**: complemento de puesto, complemento específico, productividad y gratificaciones por servicios extraordinarios.\n\nLas **situaciones administrativas** principales son el servicio activo, los servicios especiales, la excedencia (voluntaria, por cuidado de hijos o familiares) y la suspensión de funciones. Cada una determina los derechos y deberes del empleado."
+    },
+    {
+      "heading": "Régimen disciplinario",
+      "body": "El incumplimiento de los deberes puede dar lugar a **faltas leves, graves o muy graves**. Las sanciones van desde el apercibimiento o la suspensión de funciones hasta el traslado forzoso o la **separación del servicio**, que solo cabe por faltas muy graves.\n\nEl procedimiento disciplinario garantiza la audiencia del interesado y la motivación de la sanción. Las faltas y sanciones prescriben según su gravedad, y la sanción debe ser proporcional a la conducta."
+    },
+    {
+      "heading": "Tabla de clases de personal",
+      "table": {
+        "columns": ["Clase", "Vínculo", "Característica"],
+        "rows": [
+          ["Funcionario de carrera", "Estatutario, permanente", "Ocupa plaza de plantilla; derecho administrativo"],
+          ["Funcionario interino", "Estatutario, temporal", "Cubre plaza vacante o sustituye; no consolida la plaza"],
+          ["Personal laboral", "Contrato de trabajo", "Rige el derecho laboral y el convenio"],
+          ["Personal eventual", "Nombramiento libre", "Confianza o asesoramiento; cese libre"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento crea una plaza de técnico auxiliar de informática. Mientras se resuelve la convocatoria, el servicio queda desatendido.\n\n**Resolución.**\n\n- La plaza se incluye en la **plantilla** y en la **RPT**, con su grupo, retribuciones y requisitos; ambas las aprueba el Pleno.\n- Se aprueba la **oferta de empleo público** y se convoca un proceso selectivo por **oposición o concurso-oposición**, con bases publicadas.\n- Si la necesidad es urgente y la plaza está vacante, puede nombrarse un **funcionario interino** para cubrirla temporalmente, sin que ello consolide la plaza.\n- La persona seleccionada toma posesión como **funcionario de carrera** si supera el proceso; el interino cesa cuando se cubre la plaza.\n\n**Conclusión.** Plantilla, oferta y selección son pasos distintos; el interino es una solución temporal, no una forma de acceso a la carrera."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Cuáles son las clases de empleados públicos del TREBEP?",
+      "options": [
+        "Funcionarios de carrera, interinos, personal laboral y personal eventual",
+        "Funcionarios, autónomos, becarios y voluntarios",
+        "Solo funcionarios de carrera y personal laboral fijo",
+        "Funcionarios, militares y personal estatutario"
+      ],
+      "correct": "a",
+      "explanation": "El TREBEP distingue funcionarios de carrera, funcionarios interinos, personal laboral y personal eventual."
+    },
+    {
+      "stem": "¿Qué caracteriza al personal eventual?",
+      "options": [
+        "Ocupa una plaza de plantilla con carácter permanente",
+        "Realiza funciones de confianza o asesoramiento especial y su cese es libre",
+        "Accede por oposición y tiene carrera administrativa",
+        "Solo puede ser personal laboral indefinido"
+      ],
+      "correct": "b",
+      "explanation": "El personal eventual desempeña funciones de confianza o asesoramiento y es nombrado y cesado libremente; no es una vía de acceso a la función pública de carrera."
+    },
+    {
+      "stem": "¿Cuándo puede nombrarse un funcionario interino?",
+      "options": [
+        "Para cubrir una plaza vacante cuando no sea posible hacerlo con un funcionario de carrera o para sustituir a un titular",
+        "Para crear una plaza nueva sin pasar por el Pleno",
+        "Para ascender directamente a un funcionario de carrera",
+        "Para sustituir al alcalde en sus funciones políticas"
+      ],
+      "correct": "a",
+      "explanation": "La interinidad cubre necesidades urgentes y temporales, como plazas vacantes o sustituciones, sin consolidar la plaza."
+    },
+    {
+      "stem": "¿Quién aprueba la plantilla y la relación de puestos de trabajo de un ayuntamiento?",
+      "options": [
+        "El Alcalde",
+        "El Pleno",
+        "La Junta de Gobierno Local",
+        "El interventor"
+      ],
+      "correct": "b",
+      "explanation": "La plantilla y la RPT son competencia del Pleno, dentro de sus atribuciones de organización."
+    },
+    {
+      "stem": "¿Qué principios rigen la selección del personal al servicio de las administraciones?",
+      "options": [
+        "Antigüedad, simpatía y disponibilidad",
+        "Igualdad, mérito, capacidad y publicidad",
+        "Solo el mérito económico",
+        "Libre designación en todos los casos"
+      ],
+      "correct": "b",
+      "explanation": "El acceso a la función pública se rige por igualdad, mérito, capacidad y publicidad; la libre designación solo cabe para puestos concretos."
+    },
+    {
+      "stem": "¿Qué es la relación de puestos de trabajo?",
+      "options": [
+        "El listado de los empleados que trabajan cada día",
+        "La descripción de cada puesto: denominación, grupo, retribuciones y requisitos",
+        "El contrato del personal laboral",
+        "El calendario de vacaciones"
+      ],
+      "correct": "b",
+      "explanation": "La RPT describe los puestos y sus condiciones; la plantilla es el conjunto de plazas dotadas."
+    },
+    {
+      "stem": "¿Cuáles son retribuciones básicas?",
+      "options": [
+        "El complemento de productividad y las gratificaciones",
+        "El sueldo, los trienios y las pagas extraordinarias",
+        "El complemento específico y el de puesto",
+        "Las dietas por desplazamiento"
+      ],
+      "correct": "b",
+      "explanation": "Las retribuciones básicas son sueldo, trienios y pagas extraordinarias; el complemento de puesto, el específico y la productividad son complementarias."
+    },
+    {
+      "stem": "¿Qué implica la excedencia voluntaria?",
+      "options": [
+        "Mantener el servicio activo sin trabajar",
+        "No prestar servicio activo, con los derechos que la ley reconoce según el tipo de excedencia",
+        "Perder definitivamente la condición de funcionario",
+        "Ser sancionado por falta grave"
+      ],
+      "correct": "b",
+      "explanation": "La excedencia supone no prestar servicio activo; sus efectos y derechos dependen del tipo de excedencia."
+    },
+    {
+      "stem": "¿Qué sanción exige una falta muy grave?",
+      "options": [
+        "Solo un apercibimiento verbal",
+        "Puede llegar a la separación del servicio",
+        "Una multa económica",
+        "La pérdida de un día de vacaciones"
+      ],
+      "correct": "b",
+      "explanation": "La separación del servicio es la sanción más grave y solo procede por faltas muy graves."
+    },
+    {
+      "stem": "¿Quiénes son funcionarios con habilitación de carácter nacional en un ayuntamiento?",
+      "options": [
+        "El alcalde y los concejales",
+        "El secretario, el interventor y el tesorero",
+        "Los técnicos de informática",
+        "Los agentes de la policía local"
+      ],
+      "correct": "b",
+      "explanation": "Secretario, interventor y tesorero son funcionarios con habilitación nacional que ejercen fe pública y control interno."
+    }
+  ]
+}

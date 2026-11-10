@@ -11,12 +11,12 @@ Demo de lectura y práctica, sin backend: el temario va empaquetado y el progres
 guarda en `localStorage`. **No hay cuenta, no hay servidor y no se envía nada.**
 
 - Temario común completo: **5 bloques / 40 temas**.
-- **15 temas con apuntes completos** y **15 prácticas de 10 preguntas** (150 preguntas con respuesta
-  razonada); **25 pendientes**, marcados como tales; **0 solo resumen** por ahora.
+- **17 temas con apuntes completos** y **17 prácticas de 10 preguntas** (170 preguntas con respuesta
+  razonada); **23 pendientes**, marcados como tales; **0 solo resumen** por ahora.
 - **12 convocatorias C1 de informática** a las que sirve el temario (10 por confirmar y 2 cerradas),
   más el perfil TAI. Se muestra en la portada, con enlace a las bases de cada una.
 - **Mapa de cobertura publicado** en `#/cobertura`: los 40 temas con su estado y su práctica.
-- Cobertura visible: en cada tema, sello de apuntes y de práctica; en cada bloque, «I: 10/12 con
+- Cobertura visible: en cada tema, sello de apuntes y de práctica; en cada bloque, «I: 11/12 con
   apuntes».
 - Índice con **búsqueda por código o título** y filtros «Con apuntes» / «Con práctica».
 - Correcciones con enlace al **texto oficial del BOE** cuando el tema lo cita.
@@ -30,15 +30,15 @@ local; para publicarla con backend hace falta una cuenta de Render/Hugging Face
 
 | Bloque | Temas | Con apuntes | Pendientes | Con práctica |
 |---|---|---|---|---|
-| I · Administración y normativa | 12 | 10 | 2 | 10 |
+| I · Administración y normativa | 12 | 11 | 1 | 11 |
 | II · Informática básica y ofimática | 5 | 1 | 4 | 1 |
-| III · Sistemas, redes y comunicaciones | 9 | 2 | 7 | 2 |
+| III · Sistemas, redes y comunicaciones | 9 | 3 | 6 | 3 |
 | IV · Datos y desarrollo | 7 | 0 | 7 | 0 |
 | V · Seguridad y administración electrónica | 7 | 2 | 5 | 2 |
-| **Total** | **40** | **15** | **25** | **15** |
+| **Total** | **40** | **17** | **23** | **17** |
 
-Temas completos: I.1, I.2, I.3, **I.4**, I.5, I.6, I.7, I.9, I.10, I.12, II.13, III.21, III.24,
-V.34 y **V.35**.
+Temas completos: I.1, I.2, I.3, **I.4**, I.5, I.6, I.7, **I.8**, I.9, I.10, I.12, II.13,
+**III.20**, III.21, III.24, V.34 y **V.35**.
 Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 
 ## Regenerar y publicar
@@ -77,7 +77,7 @@ Capturas a **390 y 1280** en [`docs/capturas/demo-pages/`](capturas/demo-pages/)
 
 - Sin backend: no hay cuentas, ni progreso entre dispositivos, ni banco completo, ni biblioteca.
 - El progreso vive en el navegador; borrar datos del sitio lo elimina.
-- 25 temas aún no están redactados: la demo lo dice, no los rellena.
+- 23 temas aún no están redactados: la demo lo dice, no los rellena.
 - El temario TAI recuperado (33/33 temas, 330 preguntas) está **en local y es privado**: procede de
   material de terceros y no se publica aquí. Inventario y derechos en
   [`TEMARIO-RECUPERADO.md`](TEMARIO-RECUPERADO.md).
