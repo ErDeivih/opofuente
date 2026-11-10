@@ -95,6 +95,15 @@
 
 .demo-topic__title {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.demo-topic__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: flex-end;
 }
 
 .demo-status {
@@ -105,22 +114,129 @@
   white-space: nowrap;
 }
 
-.demo-status--completo {
+.demo-status--apuntes-completos {
   background: #e7f4e8;
   color: #1b5e20;
   border: 1px solid #2e7d32;
 }
 
-.demo-status--con_preguntas {
+.demo-status--apuntes-solo_resumen {
+  background: #fff8e1;
+  color: #7a5b00;
+  border: 1px solid #b08a00;
+}
+
+.demo-status--apuntes-pendiente,
+.demo-status--practica-pendiente {
+  background: #f1f3f4;
+  color: #5f6368;
+  border: 1px solid #9aa0a6;
+}
+
+.demo-status--practica-con_practica {
   background: #e8f0fe;
   color: #174ea6;
   border: 1px solid #1a73e8;
 }
 
-.demo-status--pendiente {
-  background: #f1f3f4;
-  color: #5f6368;
-  border: 1px solid #9aa0a6;
+.demo-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0.6rem 0;
+}
+
+.demo-stats > div {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+}
+
+.demo-stats strong {
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.demo-stats span {
+  color: var(--color-texto-suave);
+  font-size: 0.8rem;
+}
+
+.demo-details {
+  margin-top: 0.6rem;
+}
+
+.demo-details summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.demo-convocatorias {
+  margin: 0.6rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.demo-convocatorias li {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.demo-filters {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.demo-search {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+}
+
+.demo-search input {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  font: inherit;
+  color: var(--color-texto);
+}
+
+.demo-filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.demo-filter--active {
+  border-color: var(--color-acento);
+  background: var(--color-acento-suave);
+  color: var(--color-acento);
+  font-weight: 600;
+}
+
+.demo-block-progress {
+  margin: 0.2rem 0 0.5rem;
+  color: var(--color-texto-suave);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 560px) {
+  .demo-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .demo-topic {
+    flex-wrap: wrap;
+  }
+
+  .demo-topic__badges {
+    justify-content: flex-start;
+    width: 100%;
+  }
 }
 
 .demo-progress {

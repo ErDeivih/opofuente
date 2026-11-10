@@ -2,8 +2,9 @@
  * Demo estática de OpoFuente para GitHub Pages.
  *
  * No hay servidor ni API: todo el contenido viene empaquetado en `data.json`, y el progreso se guarda
- * en `localStorage`. Cada tema declara su estado (`completo`, `con_preguntas` o `pendiente`) y la
- * demo lo dice: los temas sin escribir se marcan «en preparación» en lugar de mostrar un párrafo vacío.
+ * en `localStorage`. Cada tema declara el estado de sus apuntes (`completos`, `solo_resumen` o
+ * `pendiente`) y de su práctica (`con_practica` o `pendiente`); el temario muestra ambos sellos y los
+ * temas sin escribir dicen «Pendiente» en lugar de mostrar un párrafo vacío.
  */
 
 import { useEffect, useState, type ReactElement } from 'react';
@@ -14,11 +15,18 @@ import { loadProgress, resetProgress, saveResult, scoreAnswers, type PracticeRes
 import '../src/styles/global.css';
 import './demo.css';
 
-type TopicStatus = 'completo' | 'con_preguntas' | 'pendiente';
+type ApuntesStatus = 'completos' | 'solo_resumen' | 'pendiente';
+type PracticaStatus = 'con_practica' | 'pendiente';
+type Filtro = 'todos' | 'apuntes' | 'practica';
 
 interface Option {
   readonly key: string;
   readonly text: string;
+}
+
+interface DemoSource {
+  readonly label: string;
+  readonly url: string;
 }
 
 interface Question {
@@ -26,12 +34,14 @@ interface Question {
   readonly options: readonly Option[];
   readonly correct: string;
   readonly explanation: string;
+  readonly source?: DemoSource;
 }
 
 interface Practice {
   readonly slug: string;
   readonly tema_path: string;
   readonly title: string;
+  readonly source: DemoSource;
   readonly questions: readonly Question[];
 }
 
@@ -46,15 +56,11 @@ interface DemoSection {
   readonly table?: DemoTable;
 }
 
-interface DemoSource {
-  readonly label: string;
-  readonly url: string;
-}
-
 interface TopicSummary {
   readonly path: string;
   readonly title: string;
-  readonly status: TopicStatus;
+  readonly apuntesStatus: ApuntesStatus;
+  readonly practicaStatus: PracticaStatus;
   readonly sectionCount: number;
   readonly questionCount: number;
 }
@@ -62,21 +68,46 @@ interface TopicSummary {
 interface TopicContent {
   readonly path: string;
   readonly title: string;
-  readonly status: TopicStatus;
+  readonly apuntesStatus: ApuntesStatus;
+  readonly practicaStatus: PracticaStatus;
   readonly source: DemoSource;
   readonly sections: readonly DemoSection[];
   readonly practiceSlug?: string;
 }
 
+interface Coverage {
+  readonly total: number;
+  readonly conApuntes: number;
+  readonly soloResumen: number;
+  readonly pendientes: number;
+  readonly conPractica: number;
+}
+
 interface Block {
   readonly path: string;
   readonly title: string;
+  readonly coverage: Coverage;
   readonly topics: readonly TopicSummary[];
+}
+
+interface Convocatoria {
+  readonly code: string;
+  readonly title: string;
+  readonly administration: string;
+  readonly territory: string;
+  readonly status: string;
+  readonly url: string;
 }
 
 interface DemoData {
   readonly title: string;
   readonly warning: string;
+  readonly convocatorias: {
+    readonly total: number;
+    readonly draft: number;
+    readonly archived: number;
+    readonly items: readonly Convocatoria[];
+  };
   readonly curriculum: {
     readonly code: string;
     readonly name: string;
@@ -86,10 +117,13 @@ interface DemoData {
   readonly practices: readonly Practice[];
   readonly progress: {
     readonly total: number;
-    readonly complete: number;
-    readonly withQuestions: number;
-    readonly pending: number;
+    readonly apuntesCompletos: number;
+    readonly soloResumen: number;
+    readonly pendientes: number;
+    readonly conPractica: number;
+    readonly sinPractica: number;
     readonly questions: number;
+    readonly convocatorias: number;
   };
 }
 
@@ -98,10 +132,15 @@ const TOPIC_LIST = data.curriculum.blocks.flatMap((block) => block.topics);
 const TOPIC_BY_PATH = new Map(TOPIC_LIST.map((topic) => [topic.path, topic]));
 const PRACTICE_BY_SLUG = new Map(data.practices.map((practice) => [practice.slug, practice]));
 
-const STATUS_LABEL: Readonly<Record<TopicStatus, string>> = {
-  completo: 'Completo',
-  con_preguntas: 'Con preguntas',
-  pendiente: 'En preparación',
+const APUNTES_LABEL: Readonly<Record<ApuntesStatus, string>> = {
+  completos: 'Apuntes completos',
+  solo_resumen: 'Solo resumen',
+  pendiente: 'Pendiente',
+};
+
+const PRACTICA_LABEL: Readonly<Record<PracticaStatus, string>> = {
+  con_practica: 'Con práctica',
+  pendiente: 'Práctica pendiente',
 };
 
 function go(path: string): void {
@@ -122,20 +161,26 @@ function useRoute(): string {
   return route;
 }
 
+function normalized(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 /** Texto con **negritas** y listas simples; no interpreta HTML. */
 function RichText({ text }: { text: string }) {
   return (
     <>
       {text.split(/\n\n+/).map((paragraph, index) => {
         const lines = paragraph.split('\n').map((line) => line.trim());
+        const withContent = lines.filter((line) => line !== '');
         const bullets = lines.filter((line) => line.startsWith('- '));
-        if (bullets.length === lines.filter((line) => line !== '').length && bullets.length > 0) {
+        if (bullets.length === withContent.length && bullets.length > 0) {
           return (
             <ul key={index}>
               {bullets.map((bullet, bulletIndex) => (
-                <li key={bulletIndex}>
-                  {withBold(bullet.slice(2))}
-                </li>
+                <li key={bulletIndex}>{withBold(bullet.slice(2))}</li>
               ))}
             </ul>
           );
@@ -156,36 +201,30 @@ function withBold(text: string): ReactElement[] {
   );
 }
 
-function StatusBadge({ status }: { status: TopicStatus }) {
-  return <span className={`demo-status demo-status--${status}`}>{STATUS_LABEL[status]}</span>;
-}
-
-function ProgressCard() {
-  const { total, complete, withQuestions, pending, questions } = data.progress;
-  const porcentaje = Math.round((complete / total) * 100);
+function ApuntesBadge({ status }: { status: ApuntesStatus }) {
   return (
-    <section className="card demo-progress" aria-labelledby="progreso-contenido">
-      <h2 id="progreso-contenido">Contenido de esta demo</h2>
-      <p>
-        <strong>{complete}</strong> temas completos · <strong>{withQuestions}</strong> con preguntas ·{' '}
-        <strong>{pending}</strong> en preparación (de {total})
-      </p>
-      <div className="demo-bar" role="progressbar" aria-valuenow={porcentaje} aria-valuemin={0} aria-valuemax={100} aria-label="Temas completos">
-        <span style={{ width: `${String(porcentaje)}%` }} />
-      </div>
-      <p className="hint">
-        {questions} preguntas de test en total. Los {complete} temas completos incluyen su práctica;
-        los {pending} pendientes aún no están escritos y se marcan «en preparación». Un tema completo
-        lleva apartados, tabla, ejemplo, fuente y 10 preguntas.
-      </p>
-    </section>
+    <span className={`demo-status demo-status--apuntes-${status}`}>{APUNTES_LABEL[status]}</span>
   );
 }
 
-function SourceLine({ source }: { source: DemoSource }) {
+function PracticaBadge({ status }: { status: PracticaStatus }) {
+  return (
+    <span className={`demo-status demo-status--practica-${status}`}>{PRACTICA_LABEL[status]}</span>
+  );
+}
+
+function SourceLine({ source, official = false }: { source: DemoSource; official?: boolean }) {
+  if (source.label === '') {
+    return null;
+  }
   return (
     <p className="hint demo-source">
-      Fuente: {source.url !== '' ? (
+      {official
+        ? source.url.includes('boe.es')
+          ? 'Texto oficial (BOE): '
+          : 'Fuente oficial: '
+        : 'Fuente: '}
+      {source.url !== '' ? (
         <a href={source.url} target="_blank" rel="noreferrer noopener">
           {source.label}
         </a>
@@ -193,6 +232,81 @@ function SourceLine({ source }: { source: DemoSource }) {
         source.label
       )}
     </p>
+  );
+}
+
+function ProgressCard() {
+  const { total, apuntesCompletos, soloResumen, pendientes, conPractica, questions } = data.progress;
+  const porcentaje = Math.round((apuntesCompletos / total) * 100);
+  return (
+    <section className="card demo-progress" aria-labelledby="progreso-contenido">
+      <h2 id="progreso-contenido">Cobertura del temario</h2>
+      <div className="demo-stats">
+        <div>
+          <strong>{apuntesCompletos}</strong>
+          <span>apuntes completos</span>
+        </div>
+        <div>
+          <strong>{soloResumen}</strong>
+          <span>solo resumen</span>
+        </div>
+        <div>
+          <strong>{pendientes}</strong>
+          <span>pendientes</span>
+        </div>
+        <div>
+          <strong>{conPractica}</strong>
+          <span>con práctica</span>
+        </div>
+      </div>
+      <div
+        className="demo-bar"
+        role="progressbar"
+        aria-valuenow={porcentaje}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Temas con apuntes completos"
+      >
+        <span style={{ width: `${String(porcentaje)}%` }} />
+      </div>
+      <p className="hint">
+        {questions} preguntas de test en total. Los apuntes completos incluyen apartados, tabla,
+        ejemplo, fuente y práctica de 10 preguntas.
+      </p>
+    </section>
+  );
+}
+
+function ConvocatoriasCard() {
+  const { total, draft, archived, items } = data.convocatorias;
+  return (
+    <section className="card" aria-labelledby="convocatorias">
+      <h2 id="convocatorias">Convocatorias a las que sirve</h2>
+      <p>
+        Un <strong>temario común</strong> para <strong>{total} convocatorias C1 de informática</strong>{' '}
+        ({draft} por confirmar y {archived} cerradas) y el perfil TAI. No se copia el temario por
+        convocatoria: se comparte y cada una aplica sus particularidades.
+      </p>
+      <details className="demo-details">
+        <summary>Ver las {total} convocatorias</summary>
+        <ul className="demo-convocatorias">
+          {items.map((item) => (
+            <li key={item.code}>
+              <strong>{item.title}</strong>
+              <span className="hint">
+                {[item.administration, item.territory].filter((part) => part !== '').join(' · ')}
+                {item.status === 'archived' ? ' · cerrada' : ' · por confirmar'}
+              </span>
+              {item.url !== '' && (
+                <a href={item.url} target="_blank" rel="noreferrer noopener">
+                  Bases
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+      </details>
+    </section>
   );
 }
 
@@ -221,18 +335,18 @@ function Home() {
       <section className="page__header">
         <h1>OpoFuente — demo estática</h1>
         <p className="page__lead">
-          Una muestra del temario común de informática C1: {data.progress.complete} temas redactados
-          con apartados, tablas, ejemplos, fuente y 10 preguntas cada uno. Todo funciona en tu
-          navegador, sin cuenta y sin servidor.
+          Una muestra del temario común de informática C1: {data.progress.apuntesCompletos} temas con
+          apuntes completos y su práctica de 10 preguntas. Todo en tu navegador.
         </p>
       </section>
       <ProgressCard />
+      <ConvocatoriasCard />
       <section className="card">
         <h2>Qué puedes hacer aquí</h2>
         <ul>
-          <li>Recorrer los 40 temas y ver cuáles están completos y cuáles en preparación.</li>
+          <li>Ver la cobertura de los 40 temas: completos, solo resumen o pendientes.</li>
           <li>Estudiar los temas redactados y hacer su práctica de 10 preguntas con explicación.</li>
-          <li>Ver la ficha de cada pregunta con su respuesta razonada.</li>
+          <li>Consultar la ficha de cada pregunta y el texto oficial cuando se cita un artículo.</li>
         </ul>
         <p className="hint">
           El progreso se guarda en <code>localStorage</code> de este navegador. Si lo borras, se
@@ -273,21 +387,86 @@ function Home() {
 }
 
 function Temario() {
+  const [query, setQuery] = useState('');
+  const [filtro, setFiltro] = useState<Filtro>('todos');
+  const search = normalized(query.trim());
+  const blocks = data.curriculum.blocks
+    .map((block) => ({
+      ...block,
+      topics: block.topics.filter((topic) => {
+        const coincide = search === '' || normalized(`${topic.path} ${topic.title}`).includes(search);
+        if (!coincide) {
+          return false;
+        }
+        if (filtro === 'apuntes') {
+          return topic.apuntesStatus === 'completos';
+        }
+        if (filtro === 'practica') {
+          return topic.practicaStatus === 'con_practica';
+        }
+        return true;
+      }),
+    }))
+    .filter((block) => block.topics.length > 0);
+  const totalVisibles = blocks.reduce((total, block) => total + block.topics.length, 0);
+
   return (
     <>
       <section className="page__header">
         <h1>Temario</h1>
         <p className="page__lead">
           {data.curriculum.name}: {data.curriculum.blocks.length} bloques · {TOPIC_LIST.length} temas.
-          El estado de cada tema se ve en su insignia.
+          Cada tema muestra el estado de sus apuntes y de su práctica.
         </p>
       </section>
       <ProgressCard />
-      {data.curriculum.blocks.map((block) => (
+      <section className="card demo-filters" aria-label="Buscar y filtrar el temario">
+        <label className="demo-search">
+          <span>Buscar por código o título</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+            }}
+            placeholder="I.1, Constitución, redes…"
+          />
+        </label>
+        <div className="demo-filter-buttons">
+          {(
+            [
+              ['todos', 'Todos'],
+              ['apuntes', 'Con apuntes'],
+              ['practica', 'Con práctica'],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={filtro === value ? 'button demo-filter--active' : 'button'}
+              aria-pressed={filtro === value}
+              onClick={() => {
+                setFiltro(value);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="hint">
+          {totalVisibles} tema(s) visibles de {TOPIC_LIST.length}.
+        </p>
+      </section>
+      {blocks.map((block) => (
         <section className="card" key={block.path}>
           <h2>
             {block.path} · {block.title}
           </h2>
+          <p className="demo-block-progress">
+            {block.path}: {block.coverage.conApuntes}/{block.coverage.total} con apuntes ·{' '}
+            {block.coverage.conPractica}/{block.coverage.total} con práctica
+            {block.coverage.pendientes > 0 ? ` · ${block.coverage.pendientes} pendientes` : ''}
+          </p>
           <ul className="demo-topics">
             {block.topics.map((topic) => (
               <li key={topic.path}>
@@ -300,13 +479,21 @@ function Temario() {
                 >
                   <span className="demo-topic__path">{topic.path}</span>
                   <span className="demo-topic__title">{topic.title}</span>
-                  <StatusBadge status={topic.status} />
+                  <span className="demo-topic__badges">
+                    <ApuntesBadge status={topic.apuntesStatus} />
+                    <PracticaBadge status={topic.practicaStatus} />
+                  </span>
                 </button>
               </li>
             ))}
           </ul>
         </section>
       ))}
+      {blocks.length === 0 && (
+        <section className="card">
+          <p>No hay temas que coincidan con la búsqueda.</p>
+        </section>
+      )}
     </>
   );
 }
@@ -324,15 +511,15 @@ function PendingTopic({ topic, summary }: { topic: TopicContent; summary: TopicS
         <p className="page__lead">Tema {summary.path} · temario común de informática C1</p>
       </section>
       <section className="card demo-pending">
-        <h2>En preparación</h2>
+        <h2>Pendiente</h2>
         <p>
-          Este tema <strong>todavía no está redactado en la demo</strong>. No se muestra un párrafo
-          vacío ni contenido de relleno: simplemente falta.
+          Este tema <strong>todavía no está redactado</strong>. No se muestra un párrafo vacío ni
+          contenido de relleno: simplemente falta.
         </p>
         <p className="hint">
-          Hay {data.progress.complete} de {data.progress.total} temas completos y{' '}
-          {data.progress.pending} en preparación. La aplicación completa mantiene el temario común con
-          sus 40 temas y el contenido se irá publicando aquí.
+          Hay {data.progress.apuntesCompletos} de {data.progress.total} temas con apuntes completos y{' '}
+          {data.progress.pendientes} pendientes. La aplicación completa mantiene el temario común con
+          sus 40 temas.
         </p>
         {topic.source.label !== '' && <SourceLine source={topic.source} />}
       </section>
@@ -348,11 +535,12 @@ function Tema({ path }: { path: string }) {
   const topic: TopicContent = data.topics[path] ?? {
     path,
     title: summary.title,
-    status: 'pendiente',
+    apuntesStatus: 'pendiente',
+    practicaStatus: 'pendiente',
     source: { label: '', url: '' },
     sections: [],
   };
-  if (topic.status === 'pendiente') {
+  if (topic.apuntesStatus === 'pendiente') {
     return <PendingTopic topic={topic} summary={summary} />;
   }
   const practice = data.practices.find((item) => item.tema_path === path);
@@ -365,9 +553,9 @@ function Tema({ path }: { path: string }) {
           </button>
         </p>
         <h1>{topic.title}</h1>
-        <p className="page__lead">
-          Tema {topic.path} · <StatusBadge status={topic.status} /> · {topic.sections.length}{' '}
-          apartados
+        <p className="page__lead demo-topic__badges">
+          Tema {topic.path} · <ApuntesBadge status={topic.apuntesStatus} />{' '}
+          <PracticaBadge status={topic.practicaStatus} />
         </p>
       </section>
       {topic.sections.map((section) => (
@@ -405,7 +593,7 @@ function Tema({ path }: { path: string }) {
           Contenido propio de la demo a partir de la fuente citada; no reproduce texto de academias.
         </p>
       </section>
-      {practice !== undefined && (
+      {practice !== undefined ? (
         <section className="card">
           <h2>Práctica de este tema</h2>
           <p className="hint">
@@ -448,6 +636,11 @@ function Tema({ path }: { path: string }) {
             ))}
           </ol>
         </section>
+      ) : (
+        <section className="card demo-pending">
+          <h2>Práctica pendiente</h2>
+          <p>Este tema todavía no tiene práctica publicada en la demo.</p>
+        </section>
       )}
     </>
   );
@@ -460,7 +653,7 @@ function Practicas() {
       <section className="page__header">
         <h1>Prácticas</h1>
         <p className="page__lead">
-          {data.practices.length} prácticas de demostración, una por tema redactado. Se corrigen al
+          {data.practices.length} prácticas, una por tema con apuntes completos. Se corrigen al
           momento y guardan tu mejor resultado en este navegador.
         </p>
       </section>
@@ -546,6 +739,7 @@ function Pregunta({ slug, index }: { slug: string; index: number }) {
         </ul>
         <h3>Por qué</h3>
         <p>{question.explanation}</p>
+        {question.source !== undefined && <SourceLine source={question.source} official />}
       </section>
       <div className="demo-actions">
         {index > 0 && (
@@ -679,6 +873,7 @@ function PracticeRunner({ practice }: { practice: Practice }) {
               <strong>{isCorrect ? 'Correcto.' : `Incorrecto: era ${question.correct}.`}</strong>{' '}
               {question.explanation}
             </div>
+            {question.source !== undefined && <SourceLine source={question.source} official />}
             <div className="demo-actions">
               <button
                 className="button"
@@ -730,14 +925,11 @@ function App() {
     <div className="demo-shell">
       <Header />
       <div className="demo-warning" role="note">
-        <strong>Demo.</strong> {data.warning}
+        {data.warning}
       </div>
       <main className="demo-main">{content}</main>
       <footer className="demo-footer">
-        <p>
-          OpoFuente es una aplicación local. Esta página es una demo estática con contenido propio:
-          no incluye Guardia Civil, ni tu corpus, ni guarda nada fuera de este navegador.
-        </p>
+        <p>OpoFuente · demo estática · contenido propio</p>
       </footer>
     </div>
   );

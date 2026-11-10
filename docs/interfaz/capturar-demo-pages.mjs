@@ -1,5 +1,6 @@
-// Verifica y captura la demo estática (local o GitHub Pages): temario con progreso, tema completo,
-// tema en preparación, práctica completa, ficha de pregunta y persistencia en localStorage.
+// Verifica y captura la demo estática (local o GitHub Pages): portada con convocatorias, cobertura
+// por bloque, sellos de apuntes/práctica, búsqueda y filtro, tema completo, pendiente, práctica
+// completa, ficha de pregunta con texto oficial y persistencia en localStorage.
 //
 // Uso:
 //   node docs/interfaz/capturar-demo-pages.mjs http://localhost:8098
@@ -24,11 +25,10 @@ function check(name, ok, detail = '') {
   console.log(`${ok ? 'OK  ' : 'FALLO'} ${name}${detail ? ` — ${detail}` : ''}`);
 }
 
-// Datos publicados: el script no asume qué temas están completos; los descubre del propio build.
 const data = await (await fetch(`${BASE}/data.json`)).json();
 const topics = data.curriculum.blocks.flatMap((block) => block.topics);
-const completo = topics.find((topic) => topic.status === 'completo');
-const pendiente = topics.find((topic) => topic.status === 'pendiente');
+const completo = topics.find((topic) => topic.apuntesStatus === 'completos');
+const pendiente = topics.find((topic) => topic.apuntesStatus === 'pendiente');
 const practice = data.practices[0];
 
 const browser = await chromium.launch();
@@ -48,31 +48,51 @@ async function captura(hash, nombre, ancho) {
   return texto;
 }
 
+// Portada: convocatorias y un solo aviso.
+const portada = await captura('', 'portada', 1280);
+check(
+  'la portada dice a qué convocatorias sirve',
+  /12 convocatorias C1 de informática/.test(portada) && /Ver las 12 convocatorias/.test(portada),
+);
+check('el aviso de demo aparece una sola vez', (await page.locator('.demo-warning').count()) === 1);
+check(
+  'la portada muestra la cobertura',
+  /apuntes completos/.test(portada) && /con práctica/.test(portada),
+);
+await captura('', 'portada', 390);
+
 const temario = await captura('temario', 'temario', 1280);
 check('el temario enseña 5 bloques y 40 temas', /5 bloques/.test(temario) && /40 temas/.test(temario));
-check(
-  'la demo marca el progreso (completos / en preparación)',
-  /temas completos/.test(temario) && /en preparación/.test(temario),
-);
-check('hay al menos 5 temas completos', data.progress.complete >= 5, `${data.progress.complete}`);
+check('hay avance por bloque', /I: \d+\/12 con apuntes/.test(temario));
+check('los sellos de apuntes y práctica están visibles', /Apuntes completos/.test(temario) && /Con práctica/.test(temario));
+check('hay al menos 5 temas con apuntes', data.progress.apuntesCompletos >= 5, `${data.progress.apuntesCompletos}`);
 await captura('temario', 'temario', 390);
+
+// Búsqueda y filtro.
+await page.setViewportSize({ width: 1280, height: 900 });
+await page.goto(`${BASE}/#/temario`, { waitUntil: 'networkidle' });
+await page.locator('input[type=search]').fill('II.13');
+await page.waitForTimeout(200);
+check('la búsqueda por código deja un tema', (await page.locator('.demo-topic').count()) === 1);
+await page.locator('input[type=search]').fill('');
+await page.getByRole('button', { name: 'Con práctica', exact: true }).click();
+await page.waitForTimeout(200);
+check(
+  'el filtro «Con práctica» deja las prácticas',
+  (await page.locator('.demo-topic').count()) === data.progress.conPractica,
+);
+await page.getByRole('button', { name: 'Todos', exact: true }).click();
 
 if (completo !== undefined) {
   const texto = await captura(`tema/${completo.path}`, 'tema-completo', 1280);
-  check(
-    `el tema ${completo.path} tiene apartados y fuente`,
-    /apartados/.test(texto) && /Fuente:/.test(texto),
-  );
+  check(`el tema ${completo.path} tiene apuntes completos y fuente`, /Apuntes completos/.test(texto) && /Fuente:/.test(texto));
   check(`el tema ${completo.path} tiene su práctica`, /Práctica de este tema/.test(texto));
   await captura(`tema/${completo.path}`, 'tema-completo', 390);
 }
 
 if (pendiente !== undefined) {
   const texto = await captura(`tema/${pendiente.path}`, 'tema-pendiente', 1280);
-  check(
-    `el tema ${pendiente.path} dice «En preparación»`,
-    /En preparación/.test(texto) && /todavía no está redactado/.test(texto),
-  );
+  check(`el tema ${pendiente.path} dice «Pendiente»`, /Pendiente/.test(texto) && /todavía no está redactado/.test(texto));
   await captura(`tema/${pendiente.path}`, 'tema-pendiente', 390);
 }
 
@@ -85,7 +105,17 @@ if (practice !== undefined) {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(`${BASE}/#/practica/${practice.slug}`, { waitUntil: 'networkidle' });
   await page.waitForSelector('h1');
-  for (let i = 0; i < 10; i += 1) {
+  await page.locator('input[type=radio]').first().check();
+  await page.getByRole('button', { name: 'Comprobar' }).click();
+  const correccion = await page.locator('main').innerText();
+  check('la corrección enlaza el texto oficial', /Texto oficial/.test(correccion));
+  check(
+    'el enlace de la corrección apunta al BOE',
+    (await page.locator('main .demo-source a').first().getAttribute('href'))?.includes('boe.es') ?? false,
+  );
+  await page.screenshot({ path: path.join(OUT_DIR, 'correccion-1280.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Siguiente pregunta' }).click();
+  for (let i = 1; i < 10; i += 1) {
     await page.locator('input[type=radio]').first().check();
     await page.getByRole('button', { name: 'Comprobar' }).click();
     const esUltima = i === 9;

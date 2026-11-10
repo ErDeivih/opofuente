@@ -25,7 +25,8 @@ por sesiones anteriores) · **Salida local:** `data/temario-recuperado/` (ignora
 
 **Hallazgo importante:** los PDF `Tema1_1v2026`, `Tema2v2025`, `Tema3_*` son **diapositivas de
 Computación de Altas Prestaciones** (procesadores, pipeline, predicción de saltos), no temas de la
-oposición C1. No se han importado como temario; quedan inventariados.
+oposición C1. Se han copiado a `data/sources/` como **complemento de II.13** y su cotejo está en
+[`FUENTES-PDF.md`](FUENTES-PDF.md); no se publican.
 
 ### Documentos fuente y páginas
 
