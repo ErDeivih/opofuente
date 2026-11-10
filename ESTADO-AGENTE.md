@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 10/11 (tanda final): 37/40. Nuevos IV.33 Informes y explotacion de datos, V.36 Criptografia y firma electronica y V.37 Proteccion de datos aplicada; IV.34 no existe en el temario y V.35 ya estaba completo. Guia de estudio en #/guia con orden de bloques y temas flojos (<70% de la ultima practica). 37 completos, 3 pendientes (V.38-V.40), 370 preguntas; 48/48 y 12/12 enlaces.
-estado: en-curso
-tarea: 37/40; bloques I-IV completos
+resumen: Sesion 10/11 (cierre): temario completo 40/40. Nuevos V.38 Ciberseguridad, V.39 Administracion electronica y V.40 Accesibilidad y usabilidad; V.36 ya estaba completo. 40 apuntes, 40 practicas y 400 preguntas; mapa al 100% y 0 pendientes; 46/46 comprobaciones y 12/12 enlaces (200). PORTFOLIO.md actualizado con el estado final y capturas 390.
+estado: completado
+tarea: temario y demo completos; portfolio al dia
 nivel: 2
-siguiente: V.38 Ciberseguridad, V.39 Administracion electronica y V.40 Accesibilidad para cerrar 40/40; mantener guia, mapa y PORTFOLIO
+siguiente: mantener la demo, revisar contenido y decidir si se publica el TAI recuperado (derechos); no hay temas pendientes
 bloqueado: ninguno
 fecha: 2026-11-10

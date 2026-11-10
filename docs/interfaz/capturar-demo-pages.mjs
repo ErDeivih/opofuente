@@ -135,7 +135,7 @@ check(
 );
 
 // Revisión de los dos temas de la tanda: contenido, tabla y 10 preguntas.
-for (const temaId of ['III.19', 'III.20', 'III.26', 'IV.30']) {
+for (const temaId of ['III.19', 'III.20', 'III.26', 'IV.30', 'V.40']) {
   const nombre = temaId.toLowerCase().replace('.', '-');
   const texto = await captura(`tema/${temaId}`, `tema-${nombre}`, 390);
   check(

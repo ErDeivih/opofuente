@@ -92,10 +92,9 @@ No falta ningún tema TAI.
 El temario común es **otro catálogo** (40 temas normalizados para C1 local), no una copia del TAI.
 Estado actual de la demo pública, sin tocar el contenido recuperado:
 
-- **37 temas completos** con contenido propio y práctica (I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8,
-  I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22,
-  III.23, III.24, III.25, III.26, IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, IV.33, V.34, V.35, V.36, V.37).
-- **3 pendientes**, por bloque:
+- **40 temas completos** con contenido propio y práctica: temario completo (I.1-I.12, II.13-II.17,
+  III.18-III.26, IV.27-IV.33 y V.34-V.40).
+- **0 pendientes**: temario completo.
 
 | Bloque | Temas pendientes |
 |---|---|

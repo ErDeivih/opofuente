@@ -1,7 +1,7 @@
 # Mapa de cobertura del temario
 
 **Publicado en la demo:** <https://erdeivih.github.io/opofuente-demo/#/cobertura> · **Verificado:**
-48/48 comprobaciones (10/11/2026), con **12/12 enlaces de convocatoria** abriendo (HTTP 200). La tabla
+46/46 comprobaciones (10/11/2026), con **12/12 enlaces de convocatoria** abriendo (HTTP 200). La tabla
 cuenta **solo el contenido propio publicado**; el material de academia o de terceros es referencia
 interna y no suma cobertura (decisión D-034).
 
@@ -13,11 +13,11 @@ interna y no suma cobertura (decisión D-034).
 | II · Informática básica y ofimática | 5 | 5 | 100% | 0 | 0 | 5 |
 | III · Sistemas, redes y comunicaciones | 9 | 9 | 100% | 0 | 0 | 9 |
 | IV · Datos y desarrollo | 7 | 7 | 100% | 0 | 0 | 7 |
-| V · Seguridad y administración electrónica | 7 | 4 | 57% | 0 | 3 | 4 |
-| **Total** | **40** | **37** | **92%** | **0** | **3** | **37** |
+| V · Seguridad y administración electrónica | 7 | 7 | 100% | 0 | 0 | 7 |
+| **Total** | **40** | **40** | **100%** | **0** | **0** | **40** |
 
-Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26, IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, IV.33, V.34, V.35, V.36, V.37. En esta tanda se han añadido **IV.33 Informes y explotación
-de datos**, **V.36 Criptografía y firma electrónica** y **V.37 Protección de datos aplicada**.
+Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26, IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, IV.33, V.34, V.35, V.36, V.37, V.38, V.39, V.40. **Temario completo**: los 40 temas tienen apuntes propios,
+tabla, ejemplo, fuente y práctica de 10 preguntas.
 
 ## Los 40 temas
 
@@ -60,9 +60,9 @@ de datos**, **V.36 Criptografía y firma electrónica** y **V.37 Protección de 
 | V.35 | El Esquema Nacional de Seguridad (ENS, RD 311/2022) | Completos | Con práctica |
 | V.36 | Criptografía y firma electrónica | Completos | Con práctica |
 | V.37 | Protección de datos aplicada | Completos | Con práctica |
-| V.38 | Ciberseguridad | Pendiente | Pendiente |
-| V.39 | Administración electrónica práctica | Pendiente | Pendiente |
-| V.40 | Accesibilidad y usabilidad | Pendiente | Pendiente |
+| V.38 | Ciberseguridad | Completos | Con práctica |
+| V.39 | Administración electrónica práctica | Completos | Con práctica |
+| V.40 | Accesibilidad y usabilidad | Completos | Con práctica |
 
 ## PDFs de apoyo y su código
 
@@ -82,15 +82,14 @@ distinto (no hay otro tema del índice que trate procesadores) ni se publican.
 
 ## Coherencia del mapa y los sellos
 
-Comprobado con el build y con Playwright sobre la URL pública (48/48): los 40 temas de la tabla
-coinciden con los sellos de apuntes y práctica; los 37 completos tienen 3+ apartados, tabla, fuente y
-10 preguntas; los 3 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
-total (37 + 3 = 40) y no hay temas «solo resumen» hoy. Los **12 enlaces de convocatoria** abren
-(HTTP 200) y su texto empieza por «Bases de»; verificado con `verificar-convocatorias.mjs`.
+Comprobado con el build y con Playwright sobre la URL pública (46/46): los 40 temas de la tabla
+coinciden con los sellos de apuntes y práctica; los 40 completos tienen 3+ apartados, tabla, fuente y
+10 preguntas; no hay pendientes ni temas «solo resumen». La suma por bloque cuadra con el total
+(40 + 0 = 40). Los **12 enlaces de convocatoria** abren (HTTP 200) y su texto empieza por «Bases de»;
+verificado con `verificar-convocatorias.mjs`.
 
 ## Regla de derechos
 
 El material de academia y de terceros **no se publica** (D-034). Se usa solo como referencia interna
 en `data/` o en el disco local. Los apuntes publicados son de redacción propia y citan fuente oficial
-(BOE, TUE/TFUE, RFC, ISO, NIST). Un tema con PDF de apoyo sigue «Pendiente» si no tiene apuntes
-propios publicados. El temario TAI recuperado (33/33 temas) tampoco se publica.
+(BOE, TUE/TFUE, RFC, ISO, NIST). El temario TAI recuperado (33/33 temas) tampoco se publica.

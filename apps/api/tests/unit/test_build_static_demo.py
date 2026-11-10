@@ -24,7 +24,7 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
     assert counts["withQuestions"] == counts["complete"], "hoy todo tema completo tiene su práctica"
     assert counts["complete"] + counts["pending"] == counts["topics"]
     assert counts["practices"] == counts["complete"], "cada tema completo tiene su práctica"
-    assert counts["pending"] >= 1, "debe quedar algún tema pendiente (es honesto)"
+    assert counts["pending"] == counts["topics"] - counts["complete"]
     assert counts["questions"] == counts["complete"] * 10
     assert counts["convocatorias"] == 12
 
@@ -46,7 +46,8 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
         topic["path"]: topic for block in data["curriculum"]["blocks"] for topic in block["topics"]
     }
     assert len(topics) == 40
-    assert any(topic["apuntesStatus"] == "pendiente" for topic in topics.values())
+    if counts["pending"] > 0:
+        assert any(topic["apuntesStatus"] == "pendiente" for topic in topics.values())
     assert all("apuntesStatus" in topic and "practicaStatus" in topic for topic in topics.values())
 
     for block in data["curriculum"]["blocks"]:

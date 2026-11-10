@@ -1,0 +1,148 @@
+{
+  "node_path": "V.40",
+  "title": "Accesibilidad y usabilidad",
+  "source": {
+    "label": "W3C WAI — Web Content Accessibility Guidelines (WCAG)",
+    "url": "https://www.w3.org/WAI/standards-guidelines/wcag/"
+  },
+  "sections": [
+    {
+      "heading": "Accesibilidad y usabilidad",
+      "body": "La **accesibilidad** garantiza que cualquier persona pueda usar un producto, incluidas las personas con discapacidad. La **usabilidad** mide la facilidad para lograr un objetivo con eficacia, eficiencia y satisfacción. No son lo mismo, pero se refuerzan: una web accesible suele ser más usable para todos.\n\nLa accesibilidad no es solo para personas ciegas: afecta a baja visión, sordera, movilidad reducida, dislexia, personas mayores o quien usa el móvil con mala cobertura. Los **productos de apoyo** (lectores de pantalla, ampliadores, conmutadores) dependen de que el contenido esté bien construido."
+    },
+    {
+      "heading": "Los principios POUR",
+      "body": "Las **WCAG** organizan los requisitos en cuatro principios:\n\n- **Perceptible**: la información se puede percibir (texto alternativo, contraste, subtítulos).\n- **Operable**: se puede usar con teclado y otros dispositivos, sin trampas de foco.\n- **Comprensible**: lenguaje claro, comportamiento predecible, errores explicados.\n- **Robusto**: funciona con tecnologías de apoyo y navegadores distintos.\n\nCada criterio tiene niveles **A**, **AA** y **AAA**; el nivel AA es el objetivo habitual de las administraciones."
+    },
+    {
+      "heading": "Estructura y navegación",
+      "body": "El **HTML semántico** da estructura: encabezados jerárquicos, listas, tablas con cabeceras, formularios con `label`. Un lector de pantalla navega por encabezados y regiones; si todo son `div`, no hay mapa.\n\nLa **navegación por teclado** debe funcionar sin ratón: orden lógico, foco visible, enlaces con texto descriptivo y sin trampas. Los enlaces «haz clic aquí» no informan del destino.\n\nEl **contraste** mínimo, el tamaño de texto y la posibilidad de ampliar sin perder contenido son requisitos básicos."
+    },
+    {
+      "heading": "Formularios, contenido y multimedia",
+      "body": "Cada campo debe tener **etiqueta** asociada, instrucciones claras y mensajes de error que indiquen qué corregir. No se debe usar el color como única forma de transmitir información.\n\nLas imágenes necesitan **texto alternativo** si aportan información; las decorativas, `alt=\"\"`. Los vídeos necesitan subtítulos y, si es posible, audiodescripción. Las tablas deben tener cabeceras y no usarse para maquetar.\n\nEl **lenguaje claro** reduce la carga cognitiva y ayuda a todas las personas."
+    },
+    {
+      "heading": "Evaluación y mejora",
+      "body": "La evaluación combina **herramientas automáticas** (detectan parte de los problemas), **revisión manual** (teclado, lector de pantalla, contraste) y **pruebas con personas** usuarias.\n\nLa accesibilidad es un proceso continuo: se integra en el diseño, el desarrollo y las pruebas, no se añade al final. Un informe de auditoría sin corrección no mejora el producto.\n\nLa norma **EN 301 549** armoniza los requisitos de accesibilidad para productos y servicios TIC en la UE."
+    },
+    {
+      "heading": "Tabla POUR",
+      "table": {
+        "columns": ["Principio", "Pregunta", "Ejemplo"],
+        "rows": [
+          ["Perceptible", "¿Se puede percibir?", "Texto alternativo y contraste"],
+          ["Operable", "¿Se puede usar?", "Teclado y foco visible"],
+          ["Comprensible", "¿Se entiende?", "Lenguaje claro y errores explicados"],
+          ["Robusto", "¿Funciona con ayudas?", "HTML semántico y compatibilidad"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento publica un formulario de cita previa que solo funciona con ratón y usa iconos sin texto.\n\n**Resolución.**\n\n- Se sustituyen los iconos por controles con **etiqueta** y texto alternativo.\n- Se garantiza la **navegación por teclado** y un foco visible; se revisa el orden.\n- Se añaden mensajes de error claros y se asocian a cada campo.\n- Se comprueba el **contraste** y el tamaño de texto; se prueba a 200 % de zoom.\n- Se valida con herramientas automáticas y con un lector de pantalla; si se puede, con personas usuarias.\n\n**Conclusión.** La accesibilidad se demuestra usando el formulario sin ratón y con un lector; el cumplimiento formal no basta si la persona no puede completar la cita."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué garantiza la accesibilidad?",
+      "options": [
+        "Que cualquier persona, incluidas las personas con discapacidad, pueda usar el producto",
+        "Que la web cargue más rápido",
+        "Que el diseño sea más bonito",
+        "Que no haya contraseñas"
+      ],
+      "correct": "a",
+      "explanation": "La accesibilidad elimina barreras para que todas las personas puedan percibir, entender, navegar e interactuar."
+    },
+    {
+      "stem": "¿Qué significa el principio «perceptible» de WCAG?",
+      "options": [
+        "Que la información se puede percibir por distintos sentidos y tecnologías",
+        "Que la web sea visible en Google",
+        "Que el servidor esté disponible",
+        "Que el contenido sea gratuito"
+      ],
+      "correct": "a",
+      "explanation": "Perceptible incluye alternativas textuales, contraste, subtítulos y no depender solo de un sentido."
+    },
+    {
+      "stem": "¿Qué nivel de WCAG se suele exigir en las administraciones?",
+      "options": ["AA", "A", "AAA", "Ninguno"],
+      "correct": "a",
+      "explanation": "El nivel AA es el objetivo habitual; AAA es más exigente y no siempre alcanzable para todo el contenido."
+    },
+    {
+      "stem": "¿Por qué es importante el HTML semántico?",
+      "options": [
+        "Porque da estructura y permite navegar por encabezados y regiones con tecnologías de apoyo",
+        "Porque hace la web más colorida",
+        "Porque sustituye a CSS",
+        "Porque elimina la necesidad de probar"
+      ],
+      "correct": "a",
+      "explanation": "Los elementos semánticos aportan significado y estructura, esenciales para lectores de pantalla y navegación."
+    },
+    {
+      "stem": "¿Qué debe tener cada campo de un formulario?",
+      "options": [
+        "Una etiqueta asociada y mensajes de error claros",
+        "Solo un placeholder",
+        "Un color diferente",
+        "Un icono sin texto"
+      ],
+      "correct": "a",
+      "explanation": "La etiqueta identifica el campo; los errores deben explicar qué corregir y asociarse al campo."
+    },
+    {
+      "stem": "¿Qué texto alternativo debe llevar una imagen decorativa?",
+      "options": ["Uno vacío (`alt=\"\"`)", "El nombre del fichero", "Una descripción larga", "Ninguno, se elimina el alt"],
+      "correct": "a",
+      "explanation": "Las imágenes decorativas se ocultan a las tecnologías de apoyo con alt vacío; las informativas necesitan descripción."
+    },
+    {
+      "stem": "¿Qué es una trampa de foco?",
+      "options": [
+        "Una situación en la que el foco no puede salir de un componente con el teclado",
+        "Un error de contraste",
+        "Un enlace roto",
+        "Una imagen sin cargar"
+      ],
+      "correct": "a",
+      "explanation": "Las trampas de foco impiden navegar; el usuario debe poder salir con el teclado."
+    },
+    {
+      "stem": "¿Qué requisito tiene un vídeo accesible?",
+      "options": [
+        "Subtítulos y, cuando proceda, audiodescripción",
+        "Solo música de fondo",
+        "Autoplay sin controles",
+        "Resolución 4K obligatoria"
+      ],
+      "correct": "a",
+      "explanation": "Los subtítulos hacen accesible el audio; la audiodescripción describe lo visual relevante."
+    },
+    {
+      "stem": "¿Cómo se evalúa de forma completa la accesibilidad?",
+      "options": [
+        "Con herramientas automáticas, revisión manual y pruebas con personas usuarias",
+        "Solo con una herramienta automática",
+        "Solo mirando el diseño",
+        "Solo con el validador de HTML"
+      ],
+      "correct": "a",
+      "explanation": "Las herramientas detectan parte de los problemas; la revisión manual y las pruebas reales son imprescindibles."
+    },
+    {
+      "stem": "¿Qué relación hay entre accesibilidad y usabilidad?",
+      "options": [
+        "Son conceptos distintos pero se refuerzan: lo accesible suele ser más usable",
+        "Son exactamente lo mismo",
+        "La usabilidad solo aplica a personas con discapacidad",
+        "La accesibilidad solo aplica a móviles"
+      ],
+      "correct": "a",
+      "explanation": "La accesibilidad elimina barreras y la usabilidad mide la facilidad de uso; mejorar una suele mejorar la otra."
+    }
+  ]
+}

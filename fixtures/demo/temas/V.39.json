@@ -1,0 +1,149 @@
+{
+  "node_path": "V.39",
+  "title": "Administración electrónica práctica",
+  "source": {
+    "label": "Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-10565"
+  },
+  "sections": [
+    {
+      "heading": "Marco y derechos del ciudadano",
+      "body": "La **Ley 39/2015** regula el procedimiento administrativo común y la **Ley 40/2015** el régimen jurídico del sector público. Ambas impulsan la tramitación electrónica y la interoperabilidad.\n\nEl ciudadano tiene derecho a relacionarse electrónicamente con la Administración, a conocer el estado de su expediente, a identificar a las autoridades y a no aportar documentos que la Administración ya posea o pueda obtener.\n\nLa **sede electrónica** es la dirección oficial de la Administración en internet; el **registro electrónico** recibe solicitudes y documentos con constancia de fecha y hora."
+    },
+    {
+      "heading": "Sede, registro y plazos",
+      "body": "La sede electrónica debe identificar al titular, publicar su normativa y garantizar la autenticidad y disponibilidad. El **registro electrónico** anota la entrada y salida de documentos y emite justificante.\n\nLos plazos se cuentan conforme a la ley; los sábados, domingos y festivos no se consideran hábiles para muchos trámites. Un registro puede tener horario limitado, y una solicitud presentada fuera de plazo puede ser extemporánea.\n\nEl **Punto de Acceso General (PAG)** centraliza el acceso a los servicios y a la información de las administraciones."
+    },
+    {
+      "heading": "Identificación, firma y representación",
+      "body": "La identificación puede hacerse con **certificado electrónico** cualificado, **Cl@ve** u otros sistemas admitidos. No confundir identificación (quién eres) con firma (quién asume el contenido).\n\nLa firma electrónica puede ser simple, avanzada o cualificada; el tipo exigido depende del trámite. La **representación** puede acreditarse mediante apoderamiento o inscripción en el registro electrónico de apoderamientos.\n\nLos sistemas deben permitir el acceso a personas con diversidad funcional y ofrecer alternativas cuando sea necesario."
+    },
+    {
+      "heading": "Notificaciones y expediente",
+      "body": "La **notificación electrónica** se practica por comparecencia en la sede o por dirección electrónica habilitada. Si no se accede en el plazo previsto, se entiende rechazada y el procedimiento sigue.\n\nEl **expediente administrativo** reúne documentos, informes, actos y pruebas; el interesado puede consultarlo y obtener copia. La **tramitación** incluye iniciación, instrucción, audiencia y resolución.\n\nEl archivo y la conservación deben garantizar autenticidad, integridad y disponibilidad a largo plazo."
+    },
+    {
+      "heading": "Interoperabilidad y servicios comunes",
+      "body": "El **Esquema Nacional de Interoperabilidad (ENI)** fija estándares para que los sistemas se entiendan: formatos, documentos, metadatos y plazos.\n\nLos servicios comunes incluyen registro, notificaciones, firma, apoderamiento y plataforma de intermediación. La administración debe reutilizar estos servicios en lugar de construir duplicados.\n\nLa protección de datos, la accesibilidad y la seguridad son requisitos transversales de cualquier trámite electrónico."
+    },
+    {
+      "heading": "Tabla de elementos",
+      "table": {
+        "columns": ["Elemento", "Función", "Clave práctica"],
+        "rows": [
+          ["Sede electrónica", "Dirección oficial de la Administración", "Identidad y disponibilidad"],
+          ["Registro electrónico", "Entrada y salida de documentos", "Justificante y fecha"],
+          ["Firma electrónica", "Asumir el contenido", "Tipo adecuado al trámite"],
+          ["Notificación", "Comunicar actos", "Acceso y plazo"],
+          ["ENI", "Interoperabilidad", "Formatos y metadatos comunes"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Una vecina presenta una solicitud de ayuda en la sede electrónica un viernes a las 22:00.\n\n**Resolución.**\n\n- La **sede** debe estar disponible y el registro emitir **justificante** con fecha y hora; si el plazo es hábil, se calcula según la ley.\n- La identificación se hace con **certificado** o **Cl@ve**; la firma se aplica al formulario.\n- La Administración consulta los datos que ya posee y no le pide repetirlos.\n- Las **notificaciones** se practican por la dirección habilitada; la interesada debe acceder al contenido.\n- El **expediente** queda disponible para consulta y el trámite se resuelve y notifica.\n\n**Conclusión.** La administración electrónica no es un formulario web: es sede, registro, identidad, firma, notificación y expediente funcionando con garantías."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué ley regula el procedimiento administrativo común?",
+      "options": ["La Ley 39/2015", "La Ley 40/2015", "La Ley 7/1985", "La Ley 9/2017"],
+      "correct": "a",
+      "explanation": "La Ley 39/2015 regula el procedimiento administrativo común; la 40/2015, el régimen jurídico del sector público."
+    },
+    {
+      "stem": "¿Qué es la sede electrónica?",
+      "options": [
+        "La dirección oficial de la Administración en internet",
+        "El edificio donde trabaja el alcalde",
+        "Un registro de papel",
+        "Una base de datos interna"
+      ],
+      "correct": "a",
+      "explanation": "La sede electrónica identifica al titular y publica los servicios y la normativa de la Administración."
+    },
+    {
+      "stem": "¿Qué garantiza el registro electrónico?",
+      "options": [
+        "La constancia de entrada y salida de documentos con fecha y justificante",
+        "La firma de los contratos",
+        "La resolución del expediente",
+        "El pago de tasas"
+      ],
+      "correct": "a",
+      "explanation": "El registro anota la presentación y emite justificante, lo que acredita fecha y hora."
+    },
+    {
+      "stem": "¿Qué diferencia hay entre identificación y firma?",
+      "options": [
+        "La identificación acredita quién eres; la firma asume el contenido",
+        "Son lo mismo",
+        "La firma acredita quién eres",
+        "La identificación sustituye al registro"
+      ],
+      "correct": "a",
+      "explanation": "Identificarse es decir quién eres; firmar es asumir el documento y su contenido."
+    },
+    {
+      "stem": "¿Qué sistema de identificación es habitual en la Administración española?",
+      "options": ["Cl@ve", "SMTP", "DNS", "DHCP"],
+      "correct": "a",
+      "explanation": "Cl@ve es un sistema común de identificación; también se usan certificados electrónicos cualificados."
+    },
+    {
+      "stem": "¿Qué ocurre si no se accede a una notificación electrónica en plazo?",
+      "options": [
+        "Se entiende rechazada y el procedimiento continúa",
+        "El expediente se cancela para siempre",
+        "Se envía por correo postal obligatoriamente",
+        "Se reinicia el plazo sin consecuencias"
+      ],
+      "correct": "a",
+      "explanation": "La notificación electrónica se entiende rechazada si no se accede en el plazo, con los efectos previstos."
+    },
+    {
+      "stem": "¿Para qué sirve el registro electrónico de apoderamientos?",
+      "options": [
+        "Para acreditar la representación ante la Administración",
+        "Para registrar vehículos",
+        "Para firmar contratos privados",
+        "Para pagar impuestos"
+      ],
+      "correct": "a",
+      "explanation": "El registro de apoderamientos acredita que una persona actúa en representación de otra."
+    },
+    {
+      "stem": "¿Qué es el ENI?",
+      "options": [
+        "El Esquema Nacional de Interoperabilidad",
+        "El Esquema Nacional de Seguridad",
+        "Una red de área local",
+        "Un registro de empleados"
+      ],
+      "correct": "a",
+      "explanation": "El ENI fija estándares de interoperabilidad; el ENS es el esquema de seguridad."
+    },
+    {
+      "stem": "¿Qué derecho tiene el ciudadano respecto a los documentos que ya posee la Administración?",
+      "options": [
+        "No aportarlos de nuevo cuando la Administración pueda obtenerlos",
+        "Aportarlos siempre en papel",
+        "Firmarlos todos",
+        "Publicarlos en el BOE"
+      ],
+      "correct": "a",
+      "explanation": "La ley impulsa la interoperabilidad para no pedir al ciudadano documentos que la Administración ya tiene o puede consultar."
+    },
+    {
+      "stem": "¿Qué requisito transversal debe cumplir un trámite electrónico?",
+      "options": [
+        "Accesibilidad, seguridad y protección de datos",
+        "Solo tener un formulario bonito",
+        "Usar una única contraseña compartida",
+        "Eliminar las notificaciones"
+      ],
+      "correct": "a",
+      "explanation": "Accesibilidad, seguridad y protección de datos son requisitos de cualquier servicio electrónico."
+    }
+  ]
+}
