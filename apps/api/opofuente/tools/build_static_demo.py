@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -236,6 +237,50 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
 
     total_preguntas = sum(len(practica["questions"]) for practica in practicas)
 
+    supuestos = []
+    supuestos_dir = project_root() / "fixtures" / "demo" / "supuestos"
+    for fichero in sorted(supuestos_dir.glob("*.json")):
+        supuesto = json.loads(fichero.read_text(encoding="utf-8"))
+        preguntas_supuesto = supuesto.get("questions")
+        if not isinstance(preguntas_supuesto, list) or len(preguntas_supuesto) != 20:
+            raise RuntimeError(f"{fichero.name}: un supuesto debe tener 20 preguntas")
+        for pregunta in preguntas_supuesto:
+            if len(pregunta.get("options", [])) != 4:
+                raise RuntimeError(f"{fichero.name}: opciones incompletas en un supuesto")
+            if pregunta.get("correct") not in {"a", "b", "c", "d", "ANULADA"}:
+                raise RuntimeError(f"{fichero.name}: respuesta inválida en un supuesto")
+        supuestos.append(
+            {
+                "slug": supuesto["slug"],
+                "year": supuesto["year"],
+                "conv": supuesto["conv"],
+                "block": supuesto["block"],
+                "title": supuesto["title"],
+                "difficulty": supuesto["difficulty"],
+                "official": supuesto["official"],
+                "estimatedMinutes": supuesto["estimatedMinutes"],
+                "statement": supuesto["statement"],
+                "steps": supuesto["steps"],
+                "topics": supuesto["topics"],
+                "source": supuesto["source"],
+                "questions": [
+                    {
+                        "stem": pregunta["stem"],
+                        "options": [
+                            {
+                                "key": chr(ord("a") + indice),
+                                "text": re.sub(r"^[a-dA-D][\).:]\s*", "", opcion),
+                            }
+                            for indice, opcion in enumerate(pregunta["options"])
+                        ],
+                        "correct": pregunta["correct"],
+                        "justification": pregunta["justification"],
+                    }
+                    for pregunta in preguntas_supuesto
+                ],
+            }
+        )
+
     casos = []
     casos_dir = project_root() / "fixtures" / "demo" / "casos"
     for fichero in sorted(casos_dir.glob("*.json")):
@@ -307,6 +352,7 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
         "topics": contenido,
         "practices": practicas,
         "cases": casos,
+        "supuestos": supuestos,
         "progress": {
             "total": total_temas,
             "apuntesCompletos": apuntes_completos,
@@ -317,6 +363,8 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
             "questions": total_preguntas,
             "cases": len(casos),
             "caseQuestions": sum(len(caso["questions"]) for caso in casos),
+            "supuestos": len(supuestos),
+            "supuestoQuestions": sum(len(supuesto["questions"]) for supuesto in supuestos),
             "convocatorias": convocatorias["total"],
         },
     }
@@ -332,6 +380,8 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
         "questions": total_preguntas,
         "cases": len(casos),
         "caseQuestions": sum(len(caso["questions"]) for caso in casos),
+        "supuestos": len(supuestos),
+        "supuestoQuestions": sum(len(supuesto["questions"]) for supuesto in supuestos),
         "convocatorias": convocatorias["total"],
     }
 

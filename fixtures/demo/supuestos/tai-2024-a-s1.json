@@ -1,0 +1,181 @@
+{
+  "slug": "tai-2024-a-s1",
+  "year": 2024,
+  "conv": "TAI-L 2024 · modelo A",
+  "block": "IV",
+  "title": "Becas para personas opositoras",
+  "difficulty": "media",
+  "official": true,
+  "estimatedMinutes": 30,
+  "statement": "El organismo en el que trabaja tramita becas para personas opositoras y necesita un sistema de información que cubra todo el ciclo de concesión. El modelo de datos del sistema se organiza en cinco tablas. **Interesado** guarda a cada solicitante con su identificador, documento de identidad, nombre, dos apellidos y correo. **SolicitudBeca** registra cada solicitud con su identificador, la referencia al interesado, la referencia al cuerpo de beca, la fecha de presentación, el estado y el año de la convocatoria. **FicheroAdjunto** almacena los documentos que se cuelgan de una solicitud, con su identificador, la solicitud a la que pertenecen y el nombre del fichero. **CuerpoBecado** contiene los cuerpos destinatarios (código y denominación) y **Estado** los valores posibles del estado de la solicitud.\n\nEl frontal web permite a los interesados autenticarse, firmar y presentar solicitudes, subsanaciones y alegaciones, además de descargar los listados que publique el organismo. El backend atiende a ese frontal y, mediante una aplicación de gestión, permite al personal público consultar la información y la documentación presentadas y publicar los listados. El frontal se construye con un framework JavaScript, HTML5 y CSS3; el backend puede ser .NET o Java según el equipo. El código se aloja en GitHub, la documentación aportada se gestiona en un gestor documental y se reutilizan servicios del Catálogo de Servicios de Administración Digital.\n\nLas preguntas recorren desarrollo web y accesibilidad, bases de datos y SQL, programación y UML, interoperabilidad y servicios web, y un detalle de firma electrónica en SOAP.",
+  "steps": [
+    "Leer el caso y fijar las piezas: modelo de datos, frontal web, backend, aplicación de gestión, GitHub, gestor documental y servicios reutilizados.",
+    "Dibujar mentalmente las tablas con sus claves primarias y foráneas para resolver multiplicidades y sentencias SQL sin dudar.",
+    "Separar las áreas del temario: bases de datos y SQL (IV.27 y IV.28), gestores y ORM (IV.29), programación, UML y Java (IV.30), desarrollo web (IV.31), interoperabilidad y servicios web (IV.32), firma y criptografía (V.36) y accesibilidad (V.40).",
+    "En cada pregunta, descartar opciones por un dato técnico verificable (atributo HTML, palabra clave SQL, tipo de Java, clase de C#, patrón de documentación) en lugar de por impresión general.",
+    "Corregir con la plantilla oficial del modelo A y revisar las que fallan para localizar el concepto exacto que se domina peor."
+  ],
+  "topics": ["IV.27", "IV.28", "IV.29", "IV.30", "IV.31", "IV.32", "V.36", "V.40"],
+  "source": {
+    "label": "INAP — Cuestionario TAI-L 2024, modelo A (Supuesto I)",
+    "url": "https://sede.inap.gob.es/documents/59312/2364268/Cuestionario_TAI_LI_2024_A_M8L91VL1CL_154AB89SD658.pdf/43a5d8c6-3f74-dbca-8452-c00408125ff8",
+    "pages": "pp. 8-10"
+  },
+  "questions": [
+    {
+      "stem": "En el formulario de solicitud, el campo de correo electrónico no debe admitir más de 100 caracteres. ¿Qué atributo HTML lo consigue?",
+      "options": [
+        "a) size=\"100\"",
+        "b) max=\"100\"",
+        "c) maxlength=\"100\"",
+        "d) length=\"100\""
+      ],
+      "correct": "c",
+      "justification": "maxlength es el atributo que limita el número de caracteres que el usuario puede escribir. size solo fija el ancho visual del control, max no existe para este tipo de campo y length no es un atributo válido del elemento input."
+    },
+    {
+      "stem": "Según se elija .NET o Java para el backend, ¿qué pareja de ORM es la correcta?",
+      "options": [
+        "a) JPA en .NET e Hibernate en Java",
+        "b) Hibernate en .NET y Entity Framework en Java",
+        "c) Entity Framework en .NET e Hibernate en Java",
+        "d) Spring Data en .NET e Hibernate en Java"
+      ],
+      "correct": "c",
+      "justification": "Entity Framework es el ORM habitual del ecosistema .NET y Hibernate el de Java, donde implementa la especificación JPA. JPA y Spring Data pertenecen a Java, no a .NET, y las opciones a), b) y d) cruzan tecnologías de plataformas distintas."
+    },
+    {
+      "stem": "Hay que insertar un registro en la tabla CuerpoBecado con código «TAI» y denominación «Técnico Auxiliar de Informática». ¿Cuál de estas sentencias es correcta?",
+      "options": [
+        "a) INSERT INTO CuerpoBecado (Codigo, Denominacion) VALUES ('TAI, 'Técnico Auxiliar de Informática');",
+        "b) INSERT INTO CuerpoBecado (Codigo, Denominacion) VALUES (TAI, Técnico Auxiliar de Informática);",
+        "c) INSERT TO CuerpoBecado (Codigo, Denominacion) VALUES ('TAI', 'Técnico Auxiliar de Informática');",
+        "d) INSERT INTO CuerpoBecado (Codigo, Denominacion) VALUES ('TAI', 'Técnico Auxiliar de Informática');"
+      ],
+      "correct": "d",
+      "justification": "La opción d) usa la palabra clave INSERT INTO, cierra las comillas simples de los dos valores y respeta el orden de columnas. La a) deja una cadena sin cerrar, la b) escribe los textos sin comillas y la c) emplea INSERT TO, que no es sintaxis SQL válida."
+    },
+    {
+      "stem": "¿Qué cardinalidad existe entre SolicitudBeca y FicheroAdjunto en el modelo de datos del supuesto?",
+      "options": [
+        "a) Una solicitud puede tener N ficheros adjuntos",
+        "b) Una solicitud puede tener como máximo un fichero adjunto",
+        "c) N solicitudes pueden compartir M ficheros adjuntos",
+        "d) Una solicitud puede tener cero o un único fichero adjunto"
+      ],
+      "correct": "a",
+      "justification": "FicheroAdjunto lleva IdSolicitudBeca como clave foránea, de modo que cada fichero pertenece a una solicitud y una misma solicitud puede acumular varios documentos. Por eso la relación es de uno a muchos; las opciones b) y d) limitan el lado de los ficheros y la c) describe una relación muchos a muchos que el modelo no recoge."
+    },
+    {
+      "stem": "El sitio debe cumplir la normativa de accesibilidad web. ¿Qué herramienta automatizada sirve para comprobar ese cumplimiento?",
+      "options": ["a) QualWeb", "b) Equal Automatic Checker", "c) AccSite", "d) Shovel"],
+      "correct": "a",
+      "justification": "QualWeb es la herramienta de evaluación automática de accesibilidad que figura en el ecosistema de referencia del examen. Las otras tres denominaciones no corresponden a herramientas de accesibilidad reconocidas, por lo que no permiten justificar un informe de conformidad."
+    },
+    {
+      "stem": "El formulario de solicitud es extenso y hace muchas consultas de datos. ¿Qué técnica conviene para que la página se genere en el servidor?",
+      "options": ["a) Server Sent Events", "b) Ajax", "c) WebSocket", "d) Server Side Rendering"],
+      "correct": "d",
+      "justification": "Server Side Rendering construye el HTML en el servidor y lo entrega ya montado, lo que aligera el trabajo del navegador. Server Sent Events, Ajax y WebSocket son mecanismos de comunicación o actualización de datos en el cliente, no de renderizado en servidor."
+    },
+    {
+      "stem": "Para representar el flujo de autenticación, firma, guardado, asiento registral y justificante de presentación, ¿qué diagrama UML es el adecuado?",
+      "options": ["a) Diagrama de paquetes", "b) Diagrama de objetos", "c) Diagrama de secuencia", "d) Diagrama entidad/relación"],
+      "correct": "c",
+      "justification": "El diagrama de secuencia muestra el orden temporal de los mensajes entre actores y objetos, que es justo lo que se quiere describir. El de paquetes organiza módulos, el de objetos representa instancias y sus enlaces, y el entidad/relación modela datos, no un flujo de acciones."
+    },
+    {
+      "stem": "Si el backend se desarrolla en Java, ¿qué tecnología permite generar un cliente de servicios web?",
+      "options": ["a) Apache Flink", "b) Apache Xalan", "c) Apache Xerces", "d) Apache CXF"],
+      "correct": "d",
+      "justification": "Apache CXF es un framework de servicios web que genera clientes y servidores para JAX-WS y JAX-RS. Flink se orienta al procesamiento de flujos, Xalan a transformaciones XSLT y Xerces al análisis de documentos XML; ninguno de ellos es la herramienta de cliente de servicios web."
+    },
+    {
+      "stem": "En el entorno Java, ¿qué API se utiliza para convertir elementos XML en clases y objetos?",
+      "options": ["a) JAXB", "b) JPA", "c) JAXR", "d) JAX-RS"],
+      "correct": "a",
+      "justification": "JAXB es la API de binding entre XML y objetos Java. JPA se ocupa de la persistencia relacional, JAXR del acceso a registros de servicios y JAX-RS de servicios REST, por lo que no resuelven el mapeo XML-clase."
+    },
+    {
+      "stem": "Al elegir herramientas para analizar y mejorar la calidad del código, ¿cuál NO aporta nada en ese terreno?",
+      "options": ["a) SonarQube", "b) Un linter de JavaScript", "c) PMD", "d) Mercurial"],
+      "correct": "d",
+      "justification": "Mercurial es un sistema de control de versiones distribuido: gestiona el historial del código, pero no analiza su calidad. SonarQube, los linters y PMD sí revisan reglas de estilo, defectos y métricas de calidad."
+    },
+    {
+      "stem": "Para controlar el plazo de presentación de solicitudes con Java, ¿qué clase nativa representa a la vez una fecha y una hora?",
+      "options": ["a) LocalDateTime", "b) LocalDate", "c) LocalTime", "d) OffsetTime"],
+      "correct": "a",
+      "justification": "LocalDateTime combina fecha y hora sin zona horaria. LocalDate solo contiene la fecha, LocalTime solo la hora y OffsetTime añade un desplazamiento horario a la hora, pero no la fecha completa."
+    },
+    {
+      "stem": "Se va a documentar la capa de servicios web de la aplicación. ¿Cuál de estas opciones NO es un formato o lenguaje válido para documentarlos?",
+      "options": ["a) RAML", "b) REST", "c) WSDL", "d) OpenAPI/Swagger"],
+      "correct": "b",
+      "justification": "REST es un estilo arquitectónico, no un formato para describir servicios. RAML, WSDL y OpenAPI/Swagger son lenguajes o especificaciones que sí permiten documentar contratos de servicios web."
+    },
+    {
+      "stem": "Hay que crear una tabla Subsanacion con IdSubsanacion e IdSolicitudBeca numéricos y TextoFundamento de 2000 caracteres. ¿Qué sentencia es la correcta?",
+      "options": [
+        "a) CREATE TABLE Subsanacion (IdSubsanacion bigint, IdSolicitudBeca bigint, TextoFundamento varchar(2000));",
+        "b) CREATE Subsanacion (IdSubsanacion bigint, IdSolicitudBeca bigint, TextoFundamento varchar(2000));",
+        "c) CREATE NEW TABLE Subsanacion (IdSubsanacion bigint, IdSolicitudBeca bigint, TextoFundamento varchar(2000));",
+        "d) CREATE TABLE Subsanacion AS (IdSubsanacion bigint, IdSolicitudBeca bigint, TextoFundamento varchar(2000));"
+      ],
+      "correct": "a",
+      "justification": "La forma correcta de definir una tabla nueva con sus columnas es CREATE TABLE seguido del nombre y la lista de columnas. La b) omite TABLE, la c) usa NEW, que no forma parte de la sintaxis estándar, y la d) emplea AS, pensado para crear una tabla a partir de una consulta."
+    },
+    {
+      "stem": "Con alta concurrencia, se quiere evitar lecturas sucias y lecturas no repetibles, pero se aceptan lecturas fantasma. ¿Qué nivel de aislamiento corresponde?",
+      "options": ["a) Serializable", "b) Read committed", "c) Read uncommitted", "d) Repeatable read"],
+      "correct": "d",
+      "justification": "Según el estándar SQL, Read committed evita las lecturas sucias pero permite las no repetibles; Repeatable read evita las sucias y las no repetibles y deja pasar las fantasma; Serializable las evita todas. La opción c) es el nivel más débil y permite leer datos no confirmados."
+    },
+    {
+      "stem": "La aplicación debe integrarse con GEISER, cuyos servicios web son SOAP. ¿Con qué se firman las peticiones que genera la aplicación?",
+      "options": ["a) WS-Security", "b) SAML", "c) JWT", "d) XML-Encryption"],
+      "correct": "a",
+      "justification": "WS-Security define cómo firmar y cifrar mensajes SOAP mediante XML Signature y XML Encryption, que es el mecanismo aplicable al servicio. SAML y JWT son formatos de afirmaciones o tokens de autenticación, y XML-Encryption solo cifra: no aporta por sí mismo la firma de la petición."
+    },
+    {
+      "stem": "Se quiere generar el justificante en PDF con la librería iText para .NET. ¿Qué comando instala el paquete desde NuGet?",
+      "options": ["a) dotnet add package iText", "b) dotnet install package iText", "c) dotnet add iText", "d) dotnet install iText"],
+      "correct": "a",
+      "justification": "La CLI de .NET instala paquetes con la forma «dotnet add package <nombre>». Las variantes con install no son válidas para esta operación y «dotnet add iText» no indica que se trate de un paquete NuGet."
+    },
+    {
+      "stem": "Según «Técnicas y Prácticas» de Métrica v3, si se busca optimizar el modelo físico para reducir o simplificar los accesos a la base de datos, ¿qué acción se aplica?",
+      "options": [
+        "a) Combinar entidades cuando los accesos se repiten en transacciones distintas",
+        "b) Eliminar entidades",
+        "c) Introducir elementos redundantes",
+        "d) Normalizar las tablas hasta la forma normal de Boyce-Codd"
+      ],
+      "correct": "c",
+      "justification": "La optimización del modelo físico puede introducir redundancia controlada para disminuir el número de accesos y uniones. Normalizar hasta FNBC persigue lo contrario y eliminar entidades no es una técnica de optimización; combinar entidades por frecuencia de acceso no es la acción que recoge la guía para este objetivo."
+    },
+    {
+      "stem": "En un sprint de SCRUM se detecta una mala práctica que puede ralentizar el proyecto. ¿En qué reunión se plantea para buscar la mejora continua?",
+      "options": ["a) Daily Scrum", "b) Sprint Retrospective", "c) Sprint Planning", "d) Sprint Review"],
+      "correct": "b",
+      "justification": "La Sprint Retrospective es la reunión dedicada a revisar cómo ha funcionado el equipo y a acordar mejoras para los siguientes sprints. La Daily Scrum coordina el trabajo diario, la Planning planifica el sprint y la Review presenta el incremento al cliente."
+    },
+    {
+      "stem": "La integración con la Plataforma de Intermediación de Datos se apoya en una arquitectura orientada a servicios. ¿Cuáles son sus componentes principales?",
+      "options": [
+        "a) Servicio, proveedor, consumidor y orquestador de servicios",
+        "b) Servicio, proveedor, consumidor y depurador de servicios",
+        "c) Servicio, proveedor, consumidor y comparador de servicios",
+        "d) Servicio, proveedor, consumidor y registro de servicios"
+      ],
+      "correct": "d",
+      "justification": "En SOA los componentes básicos son el servicio, el proveedor que lo publica, el consumidor que lo utiliza y el registro donde se localizan los servicios. El orquestador, el depurador y el comparador son piezas o utilidades que pueden apoyar la arquitectura, pero no forman parte del núcleo del modelo."
+    },
+    {
+      "stem": "Si el backend se desarrolla en .NET con C#, ¿cómo se declara que un tipo de dato es opcional (anulable)?",
+      "options": ["a) int? Telefono", "b) int|null Telefono", "c) int:null Telefono", "d) int ?? Telefono"],
+      "correct": "a",
+      "justification": "En C# el operador ? aplicado a un tipo de valor declara un Nullable<T>, de modo que la variable puede contener un valor o null. Las formas int|null, int:null e int ?? no son sintaxis válida para declarar el tipo."
+    }
+  ]
+}

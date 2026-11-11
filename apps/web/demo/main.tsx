@@ -40,6 +40,7 @@ interface Option {
 interface DemoSource {
   readonly label: string;
   readonly url: string;
+  readonly pages?: string;
 }
 
 interface Question {
@@ -52,6 +53,29 @@ interface Question {
 
 interface ExamQuestion extends Question {
   readonly topic: string;
+}
+
+interface SupuestoQuestion {
+  readonly stem: string;
+  readonly options: readonly Option[];
+  readonly correct: string;
+  readonly justification: string;
+}
+
+interface Supuesto {
+  readonly slug: string;
+  readonly year: number;
+  readonly conv: string;
+  readonly block: string;
+  readonly title: string;
+  readonly difficulty: string;
+  readonly official: boolean;
+  readonly estimatedMinutes: number;
+  readonly statement: string;
+  readonly steps: readonly string[];
+  readonly topics: readonly string[];
+  readonly source: DemoSource;
+  readonly questions: readonly SupuestoQuestion[];
 }
 
 interface CaseEntry {
@@ -163,6 +187,7 @@ interface DemoData {
   readonly topics: Readonly<Record<string, TopicContent>>;
   readonly practices: readonly Practice[];
   readonly cases: readonly CaseEntry[];
+  readonly supuestos: readonly Supuesto[];
   readonly progress: {
     readonly total: number;
     readonly apuntesCompletos: number;
@@ -173,6 +198,8 @@ interface DemoData {
     readonly questions: number;
     readonly cases: number;
     readonly caseQuestions: number;
+    readonly supuestos: number;
+    readonly supuestoQuestions: number;
     readonly convocatorias: number;
   };
 }
@@ -412,6 +439,9 @@ function Header() {
         </button>
         <button className="button" type="button" onClick={() => { go('estadisticas'); }}>
           Estadísticas
+        </button>
+        <button className="button" type="button" onClick={() => { go('supuestos'); }}>
+          Supuestos
         </button>
       </nav>
     </header>
@@ -1084,7 +1114,7 @@ function Estadisticas() {
               <tbody>
                 {attempts.map((attempt) => (
                   <tr key={attempt.id}>
-                    <td data-label="Tipo">{attempt.type === 'exam' ? 'Examen' : attempt.type === 'case' ? 'Caso' : 'Práctica'}</td>
+                    <td data-label="Tipo">{attempt.type === 'exam' ? 'Examen' : attempt.type === 'case' ? 'Caso' : attempt.type === 'supuesto' ? 'Supuesto' : 'Práctica'}</td>
                     <td data-label="Bloque">{attempt.block === 'TODOS' ? 'Todos' : attempt.block}</td>
                     <td data-label="Detalle">{attempt.convocatoria ?? attempt.topic}</td>
                     <td data-label="Fecha">{fechaCorta(attempt.date)}</td>
@@ -1097,6 +1127,262 @@ function Estadisticas() {
             </table>
           </div>
         )}
+      </section>
+    </>
+  );
+}
+
+function Supuestos() {
+  const [year, setYear] = useState<'todos' | number>('todos');
+  const [block, setBlock] = useState<'todos' | 'III' | 'IV'>('todos');
+  const years = [...new Set(data.supuestos.map((supuesto) => supuesto.year))].sort((a, b) => b - a);
+  const filtrados = data.supuestos.filter(
+    (supuesto) =>
+      (year === 'todos' || supuesto.year === year) &&
+      (block === 'todos' || supuesto.block === block),
+  );
+  return (
+    <>
+      <section className="page__header">
+        <h1>Supuestos</h1>
+        <p className="page__lead">
+          Casos prácticos de los bloques III y IV con 20 preguntas y resolución razonada. Primero los
+          oficiales del INAP, después los propios.
+        </p>
+      </section>
+      <section className="card">
+        <h2>Filtros</h2>
+        <div className="demo-filter-buttons">
+          <button className={year === 'todos' ? 'button demo-filter--active' : 'button'} type="button" onClick={() => { setYear('todos'); }}>
+            Todos los años
+          </button>
+          {years.map((item) => (
+            <button
+              key={item}
+              className={year === item ? 'button demo-filter--active' : 'button'}
+              type="button"
+              onClick={() => { setYear(item); }}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+        <div className="demo-filter-buttons">
+          <button className={block === 'todos' ? 'button demo-filter--active' : 'button'} type="button" onClick={() => { setBlock('todos'); }}>
+            Todos los bloques
+          </button>
+          <button className={block === 'III' ? 'button demo-filter--active' : 'button'} type="button" onClick={() => { setBlock('III'); }}>
+            Bloque III
+          </button>
+          <button className={block === 'IV' ? 'button demo-filter--active' : 'button'} type="button" onClick={() => { setBlock('IV'); }}>
+            Bloque IV
+          </button>
+        </div>
+        <p className="hint">{filtrados.length} supuesto(s) · 20 preguntas cada uno · sin corrección hasta el final.</p>
+      </section>
+      {filtrados.length === 0 ? (
+        <section className="card"><p>No hay supuestos con esos filtros.</p></section>
+      ) : (
+        filtrados.map((supuesto) => (
+          <section className="card" key={supuesto.slug}>
+            <h2>{supuesto.title}</h2>
+            <p className="hint">
+              {supuesto.year} · {supuesto.conv} · Bloque {supuesto.block} · Dificultad {supuesto.difficulty} ·{' '}
+              {supuesto.estimatedMinutes} min · {supuesto.official ? 'Oficial INAP' : 'Propio'}
+            </p>
+            <p>{supuesto.statement.replace(/\*\*/g, '').slice(0, 240)}…</p>
+            <p className="hint">Temas: {supuesto.topics.join(' · ')}</p>
+            <div className="demo-actions">
+              <button className="button" type="button" onClick={() => { go(`supuesto/${supuesto.slug}`); }}>
+                Ver enunciado y resolución
+              </button>
+              <button className="button button--link" type="button" onClick={() => { go(`resolver-supuesto/${supuesto.slug}`); }}>
+                Resolver como examen
+              </button>
+            </div>
+          </section>
+        ))
+      )}
+    </>
+  );
+}
+
+function SupuestoDetalle({ slug }: { readonly slug: string }) {
+  const supuesto = data.supuestos.find((item) => item.slug === slug);
+  if (supuesto === undefined) {
+    return <p className="hint">Ese supuesto no existe.</p>;
+  }
+  return (
+    <>
+      <section className="page__header">
+        <p className="hint">
+          <button className="button button--link" type="button" onClick={() => { go('supuestos'); }}>
+            ← Volver a supuestos
+          </button>
+        </p>
+        <h1>{supuesto.title}</h1>
+        <p className="page__lead">
+          {supuesto.year} · {supuesto.conv} · Bloque {supuesto.block} · {supuesto.difficulty} ·{' '}
+          {supuesto.estimatedMinutes} min · {supuesto.official ? 'Oficial INAP' : 'Propio'}
+        </p>
+      </section>
+      <section className="card">
+        <h2>Enunciado</h2>
+        <RichText text={supuesto.statement} />
+        <p className="hint">Fuente: <a href={supuesto.source.url} target="_blank" rel="noreferrer">{supuesto.source.label}</a> · {supuesto.source.pages}</p>
+      </section>
+      <section className="card">
+        <h2>Resolución paso a paso</h2>
+        <ol>
+          {supuesto.steps.map((paso) => <li key={paso}>{paso}</li>)}
+        </ol>
+      </section>
+      <section className="card">
+        <h2>Temas que toca</h2>
+        <div className="demo-filter-buttons">
+          {supuesto.topics.map((path) => (
+            <button key={path} className="button button--link" type="button" onClick={() => { go(`tema/${path}`); }}>
+              {path}
+            </button>
+          ))}
+        </div>
+        <div className="demo-actions">
+          <button className="button" type="button" onClick={() => { go(`resolver-supuesto/${supuesto.slug}`); }}>
+            Resolver como examen (20 preguntas)
+          </button>
+        </div>
+        <p className="hint">Sin corrección hasta el final; al terminar verás la puntuación y la justificación de cada respuesta.</p>
+      </section>
+    </>
+  );
+}
+
+function SupuestoRunner({ slug }: { readonly slug: string }) {
+  const supuesto = data.supuestos.find((item) => item.slug === slug);
+  const [index, setIndex] = useState(0);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [finished, setFinished] = useState(false);
+  if (supuesto === undefined) {
+    return <p className="hint">Ese supuesto no existe.</p>;
+  }
+  const question = supuesto.questions[index];
+  if (question === undefined) {
+    return <p className="hint">Este supuesto no tiene preguntas.</p>;
+  }
+  if (finished) {
+    const puntuables = supuesto.questions.filter((item) => item.correct !== 'ANULADA');
+    const aciertos = puntuables.filter(
+      (item) => answers[supuesto.questions.indexOf(item)] === item.correct,
+    ).length;
+    const nota = puntuables.length === 0 ? 0 : Math.round((aciertos / puntuables.length) * 100);
+    return (
+      <>
+        <section className="page__header">
+          <h1>Resultado del supuesto</h1>
+          <p className="page__lead">
+            {supuesto.title} · {aciertos} de {puntuables.length} puntuables · nota {nota} %
+          </p>
+        </section>
+        <section className="card">
+          <h2>Resolución paso a paso</h2>
+          <ol>{supuesto.steps.map((paso) => <li key={paso}>{paso}</li>)}</ol>
+          <div className="demo-actions">
+            <button className="button" type="button" onClick={() => { setIndex(0); setAnswers({}); setSelected(null); setFinished(false); }}>
+              Repetir supuesto
+            </button>
+            <button className="button button--link" type="button" onClick={() => { go('supuestos'); }}>
+              Volver a supuestos
+            </button>
+          </div>
+        </section>
+        <section className="card">
+          <h2>Revisión de las 20 preguntas</h2>
+          <ol className="demo-fallos">
+            {supuesto.questions.map((item, posicion) => {
+              const elegida = answers[posicion];
+              const anulada = item.correct === 'ANULADA';
+              const correcta = elegida === item.correct;
+              return (
+                <li key={item.stem}>
+                  <p><strong>{posicion + 1}. {item.stem}</strong></p>
+                  <p className="hint">
+                    Tu respuesta: {elegida ?? 'en blanco'} · {anulada ? 'ANULADA por el tribunal' : `correcta: ${item.correct}`}
+                    {anulada ? '' : correcta ? ' · correcto' : ' · fallo'}
+                  </p>
+                  <p>{item.justification}</p>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      </>
+    );
+  }
+  const esUltima = index + 1 === supuesto.questions.length;
+  return (
+    <>
+      <section className="page__header">
+        <h1>{supuesto.title}</h1>
+        <p className="page__lead">
+          Pregunta {index + 1} de 20 · {supuesto.estimatedMinutes} min estimados · sin corrección hasta el final
+        </p>
+      </section>
+      <section className="card">
+        <h2>{question.stem}</h2>
+        <ul className="demo-options">
+          {question.options.map((option) => (
+            <li key={option.key}>
+              <label className="demo-option">
+                <input
+                  type="radio"
+                  name="supuesto"
+                  value={option.key}
+                  checked={selected === option.key}
+                  onChange={() => {
+                    setSelected(option.key);
+                    setAnswers((previous) => ({ ...previous, [index]: option.key }));
+                  }}
+                />{' '}
+                <span className="demo-option__key">{option.key})</span> {option.text}
+              </label>
+            </li>
+          ))}
+        </ul>
+        <div className="demo-actions">
+          <button
+            className="button"
+            type="button"
+            disabled={selected === null}
+            onClick={() => {
+              if (esUltima) {
+                const puntuables = supuesto.questions.filter((item) => item.correct !== 'ANULADA');
+                const aciertos = puntuables.filter(
+                  (item) => answers[supuesto.questions.indexOf(item)] === item.correct,
+                ).length;
+                saveAttempt({
+                  type: 'supuesto',
+                  block: supuesto.block,
+                  topic: supuesto.slug,
+                  label: `Supuesto ${supuesto.title}`,
+                  correct: aciertos,
+                  total: puntuables.length,
+                  percent: puntuables.length === 0 ? 0 : Math.round((aciertos / puntuables.length) * 100),
+                });
+                setFinished(true);
+                return;
+              }
+              setIndex(index + 1);
+              setSelected(answers[index + 1] ?? null);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            {esUltima ? 'Terminar y ver resultado' : 'Siguiente pregunta'}
+          </button>
+          <button className="button button--link" type="button" onClick={() => { go(`supuesto/${supuesto.slug}`); }}>
+            Abandonar
+          </button>
+        </div>
       </section>
     </>
   );
@@ -1872,6 +2158,12 @@ function App() {
     content = <Tema path={parts[1]} />;
   } else if (parts[0] === 'practicas') {
     content = <Practicas />;
+  } else if (parts[0] === 'supuestos') {
+    content = <Supuestos />;
+  } else if (parts[0] === 'supuesto' && parts[1] !== undefined) {
+    content = <SupuestoDetalle slug={parts[1]} />;
+  } else if (parts[0] === 'resolver-supuesto' && parts[1] !== undefined) {
+    content = <SupuestoRunner slug={parts[1]} />;
   } else if (parts[0] === 'caso' && parts[1] !== undefined) {
     const caso = CASE_BY_SLUG.get(parts[1]);
     content =

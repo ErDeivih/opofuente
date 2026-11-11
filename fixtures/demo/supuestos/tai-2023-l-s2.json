@@ -1,0 +1,257 @@
+{
+  "slug": "tai-2023-l-s2",
+  "year": 2023,
+  "conv": "TAI-L 2023 · Supuesto II",
+  "block": "III",
+  "title": "Segmentación de la red y servicios del departamento",
+  "difficulty": "media",
+  "official": true,
+  "estimatedMinutes": 28,
+  "statement": "En la Subdirección General de Informática de un organismo público, el departamento de Sistemas, Comunicaciones y Seguridad ha decidido rediseñar la infraestructura de red y le encarga colaborar en la implantación. La situación de partida (Modelo A) es una única red 10.20.30.0/24 en la que conviven los puestos de usuario, las aplicaciones, las bases de datos Oracle y MySQL y la conexión a Internet. Tras los estudios previos se acuerda segmentarla en cuatro subredes —puestos de usuario, bases de datos, aplicaciones y DMZ— y desplegar un clúster de dos cortafuegos que aplique las reglas de conectividad y encaminamiento necesarias (Modelo B). Los puestos de usuario usan Windows 10; los servidores de aplicaciones, bases de datos y DMZ ejecutan Red Hat Enterprise Linux 7.4.",
+  "steps": [
+    "Identificar los elementos que comparten la red 10.20.30.0/24 y calcular la máscara que permite dividirla en cuatro subredes.",
+    "Asignar las cuatro subredes (usuarios, bases de datos, aplicaciones y DMZ) y situar el clúster de cortafuegos como punto de control.",
+    "Resolver las tareas de los puestos Windows 10 (caché DNS, cuentas locales y tabla de rutas) y de los servidores Linux (almacenamiento, monitorización, captura y Apache).",
+    "Configurar y asegurar los servicios de red compartidos: proxy-caché, correo seguro, SSH/SCP, VLAN y WAF.",
+    "Revisar los elementos de seguridad y firma (segundo factor, algoritmos de huella y herramientas del CCN-CERT) antes de validar la solución."
+  ],
+  "topics": [
+    "II.14",
+    "III.18",
+    "III.19",
+    "III.20",
+    "III.21",
+    "III.23",
+    "III.24",
+    "IV.31",
+    "V.36",
+    "V.38"
+  ],
+  "source": {
+    "label": "INAP — Cuestionario TAI-L 2023 (OEP 2022), Supuesto II",
+    "url": "https://sede.inap.gob.es/documents/59312/2194858/Cuestionario+TAI-L_2023.pdf/505d8c94-69a3-2971-b013-76c83e442ba1",
+    "pages": "pp. 11-14"
+  },
+  "questions": [
+    {
+      "stem": "Los puestos de usuario tienen Windows 10 y hay que vaciar la caché de resolución DNS. ¿Qué comando se ejecuta desde la consola de PowerShell?",
+      "options": [
+        "ipconfig /dnsflush",
+        "ipconfig /flushdns",
+        "ifconifg --erase dnscache",
+        "ifconifg --clean dnscache"
+      ],
+      "correct": "b",
+      "justification": "ipconfig /flushdns vacía la caché del cliente DNS en Windows. La opción /dnsflush no existe y las dos variantes con «ifconifg» ni siquiera son comandos válidos: el equivalente de Linux es ifconfig, que no admite --erase ni --clean."
+    },
+    {
+      "stem": "En todos los equipos existe una cuenta local llamada Infocentro para labores de mantenimiento. Desde PowerShell, ¿qué comando permite consultar la información de esa cuenta?",
+      "options": [
+        "net user Infocentro",
+        "netuser Infocentro",
+        "info user Infocentro",
+        "infouser Infocentro"
+      ],
+      "correct": "a",
+      "justification": "net user Infocentro es la orden de Windows que muestra y administra cuentas locales. netuser, info user e infouser no son comandos del sistema, por lo que el resto de opciones falla."
+    },
+    {
+      "stem": "Dentro de la administración del almacenamiento, ¿qué significa «thin provisioning»?",
+      "options": [
+        "Es un mecanismo de despliegue de discos en red para clientes ligeros.",
+        "Es una tecnología que permite agregar discos físicos en caliente a las cabinas de la SAN.",
+        "Es un método de virtualización de almacenamiento que permite asignar el espacio de almacenamiento de una manera flexible bajo demanda.",
+        "Es un método por el que se asigna todo el espacio virtualizado disponible y se va a reduciendo (shrinking) a medida que el cliente lo descarta."
+      ],
+      "correct": "c",
+      "justification": "El aprovisionamiento fino compromete capacidad solo a medida que el volumen se llena, de ahí su flexibilidad. La opción d describe el aprovisionamiento grueso con recuperación de espacio, la a se refiere a escritorios ligeros y la b a la ampliación en caliente de una cabina."
+    },
+    {
+      "stem": "En un servidor Linux de la subred de aplicaciones se va a instalar una herramienta de monitorización. ¿Cuál de estas opciones cumple esa función?",
+      "options": [
+        "Check_MK",
+        "Reddis",
+        "Jenkins",
+        "Nagstamon"
+      ],
+      "correct": "a",
+      "justification": "Check_MK es un sistema de monitorización de servidores. Redis es una base de datos en memoria, Jenkins es un servidor de integración continua y Nagstamon es un cliente de escritorio que consulta el estado de instalaciones Nagios o Icinga, pero no monitoriza por sí mismo."
+    },
+    {
+      "stem": "Para segmentar la red 10.20.30.0 del Modelo A en cuatro subredes, ¿qué máscara de subred se necesita?",
+      "options": [
+        "255.255.255.194",
+        "255.255.255.192",
+        "255.255.255.196",
+        "255.255.255.190"
+      ],
+      "correct": "b",
+      "justification": "Cuatro subredes exigen 2 bits (2^2 = 4), así que el prefijo pasa de /24 a /26 y la máscara es 255.255.255.192. Las otras tres máscaras no son válidas porque sus bits no son contiguos."
+    },
+    {
+      "stem": "En un servidor Linux que sirve la intranet se quiere borrar la caché de direcciones MAC. ¿Qué comando se emplea?",
+      "options": [
+        "ip delete cache",
+        "arp -d",
+        "iptables -d mac",
+        "ip flush"
+      ],
+      "correct": "b",
+      "justification": "arp -d elimina entradas de la tabla ARP, que es la caché de direcciones físicas. ip delete cache e ip flush no son órdenes válidas e iptables -d mac borra reglas de cortafuegos, no la caché ARP."
+    },
+    {
+      "stem": "La subred de puestos de usuario del Modelo B es 10.20.30.0/26. ¿Cuáles son su dirección de red y su dirección de broadcast?",
+      "options": [
+        "10.20.30.0 y 10.20.30.255",
+        "10.20.30.1 y 10.20.30.62",
+        "10.20.30.0 y 10.20.30.63",
+        "10.20.30.64 y 10.20.30.127"
+      ],
+      "correct": "c",
+      "justification": "Un /26 agrupa 64 direcciones: la de red es la primera (10.20.30.0) y la de broadcast la última (10.20.30.63). Las direcciones .1 y .62 son el primer y el último host, y .64 y .127 pertenecen ya a la subred siguiente."
+    },
+    {
+      "stem": "Para optimizar la salida a Internet se instalará un proxy-caché que atienda HTTP, HTTP/2 y HTTPS. ¿Qué solución cumple esa función?",
+      "options": [
+        "INFLUXDB",
+        "GRAFANA",
+        "CHECK_MK",
+        "SQUID"
+      ],
+      "correct": "d",
+      "justification": "Squid es un proxy-caché con soporte de HTTP, HTTPS y HTTP/2. InfluxDB es una base de datos de series temporales, Grafana sirve para visualizar métricas y Check_MK monitoriza sistemas; ninguno actúa como proxy de navegación."
+    },
+    {
+      "stem": "Con el teletrabajo implantado por VPN se añade, como medida de seguridad, un código enviado por SMS al móvil del trabajador. ¿Cómo se denomina esa validación?",
+      "options": [
+        "Factor electrónico de autenticación.",
+        "Autenticación electrónica de usuarios.",
+        "Doble factor de autenticación.",
+        "Factor único de autenticación."
+      ],
+      "correct": "c",
+      "justification": "Se combinan dos factores de naturaleza distinta: algo que el usuario sabe (su contraseña) y algo que posee (el código recibido en el móvil). Eso es doble factor; las opciones a y b son descripciones genéricas y la d contradice la existencia de dos pruebas."
+    },
+    {
+      "stem": "En la DMZ se va a ofrecer correo seguro. ¿Qué puertos seguros corresponden a POP, SMTP e IMAP?",
+      "options": [
+        "POP:993 / SMTP:465 / IMAP:995",
+        "POP:995 / SMTP:495 / IMAP:963",
+        "POP:995 / SMTP:465 / IMAP:993",
+        "POP:965 / SMTP:495 / IMAP:993"
+      ],
+      "correct": "c",
+      "justification": "Los puertos cifrados son POP3S 995, SMTPS 465 e IMAPS 993. Las demás combinaciones cruzan esos números o incluyen puertos que no corresponden a esos servicios."
+    },
+    {
+      "stem": "Para firmar con AutoFirma 1.8.2 en los equipos de la organización, ¿qué algoritmo de huella está permitido entre los siguientes?",
+      "options": [
+        "ECDSA",
+        "MD5",
+        "SHA384",
+        "DSA"
+      ],
+      "correct": "c",
+      "justification": "SHA-384 es una función de huella admitida por AutoFirma. MD5 está obsoleto y no se acepta, mientras que ECDSA y DSA son algoritmos de firma, no funciones de huella."
+    },
+    {
+      "stem": "Se van a desplegar puntos de acceso Wi-Fi. ¿Qué estándar puede funcionar en las bandas de 2,4 GHz, 5 GHz y 6 GHz?",
+      "options": [
+        "No existe la banda de los 6 GHz",
+        "802.11ax",
+        "802.11ac",
+        "802.11be"
+      ],
+      "correct": "d",
+      "justification": "802.11be (Wi-Fi 7) opera en 2,4, 5 y 6 GHz. El 802.11ac solo usa 5 GHz y el 802.11ax se definió para 2,4 y 5 GHz (la banda de 6 GHz se incorporó después con Wi-Fi 6E); la opción a es falsa porque esa banda existe."
+    },
+    {
+      "stem": "Desde un equipo de la subred de usuarios, el administrador se conecta a otras subredes por SSH y SCP. ¿Qué puerto o puertos debe permitir el cortafuegos?",
+      "options": [
+        "Puerto 21 para SSH y 22 para SCP.",
+        "Puerto 22 para SSH y 21 para SCP.",
+        "Puerto 21 tanto para SSH como SCP.",
+        "Puerto 22 tanto para SSH como SCP."
+      ],
+      "correct": "d",
+      "justification": "SSH escucha en el puerto 22 y SCP viaja sobre SSH, por lo que ambos usan el mismo puerto. El 21 corresponde a FTP y no interviene en este acceso."
+    },
+    {
+      "stem": "Si en un servidor se instala IIS, ¿qué comando se utiliza para reiniciarlo?",
+      "options": [
+        "IIS RESET",
+        "IISRESET",
+        "RESET IIS",
+        "RESETIIS"
+      ],
+      "correct": "b",
+      "justification": "IISRESET es la utilidad de Windows que reinicia el servicio IIS. Las demás expresiones no son comandos válidos."
+    },
+    {
+      "stem": "En un servidor Linux hay que capturar el tráfico de la interfaz eth1 y guardarlo en fichero.out para analizarlo después. ¿Qué sentencia es correcta?",
+      "options": [
+        "snoop -d eth1 -w fichero.out",
+        "tcpdump -i any -o fichero.out",
+        "tcpdump -i eth1 -w fichero.out",
+        "snoop -d any -o fichero.out"
+      ],
+      "correct": "c",
+      "justification": "tcpdump -i eth1 -w fichero.out captura en la interfaz indicada y escribe el resultado en el fichero. La opción -i any capturaría en todas las interfaces, -o no es la opción de salida de tcpdump y snoop es una herramienta de Solaris que no emplea -w."
+    },
+    {
+      "stem": "Un servidor Apache 2.4 sirve la intranet en intranet.sgi.es y debe atender también páginas de otros dominios. ¿Qué directiva debe usar?",
+      "options": [
+        "VirtualMachine",
+        "VirtualDomain",
+        "VirtualHost",
+        "VirtualIp"
+      ],
+      "correct": "c",
+      "justification": "Apache 2.4 usa la directiva <VirtualHost> para alojar varios dominios en el mismo servidor. VirtualMachine, VirtualDomain y VirtualIp no existen como directivas de Apache."
+    },
+    {
+      "stem": "Al crear una VLAN nueva, ¿qué opción hace que las tramas Ethernet incorporen la etiqueta con el identificador de VLAN?",
+      "options": [
+        "untagged",
+        "tagged",
+        "id",
+        "trunk"
+      ],
+      "correct": "b",
+      "justification": "En el modo tagged las tramas salen con la etiqueta 802.1Q que contiene el identificador de VLAN. untagged no etiqueta, id no es un modo y trunk designa el enlace que transporta varias VLAN, no la etiqueta en sí."
+    },
+    {
+      "stem": "El CCN-CERT publica herramientas de seguridad. ¿Cuál de las siguientes se dedica al análisis avanzado de malware?",
+      "options": [
+        "NADA",
+        "CADA",
+        "ADA",
+        "SADA"
+      ],
+      "correct": "c",
+      "justification": "ADA es la plataforma del CCN-CERT para el análisis avanzado de malware. Las siglas NADA, CADA y SADA no corresponden a esa herramienta."
+    },
+    {
+      "stem": "En el clúster de cortafuegos se quiere filtrar y monitorizar el tráfico HTTP que llega desde Internet a los servidores web. ¿Qué módulo hay que implementar?",
+      "options": [
+        "WAT - Web Administration Tool",
+        "WAF - Web Application Firewall",
+        "VFN - Virtual Firewall Network",
+        "WFL7 - Web Firewall Layer 7"
+      ],
+      "correct": "b",
+      "justification": "El WAF (Web Application Firewall) inspecciona y filtra el tráfico HTTP y HTTPS en la capa de aplicación, que es lo que se pide. WAT, VFN y WFL7 no son módulos reales con esa función."
+    },
+    {
+      "stem": "En los equipos Windows 10 de la subred de usuarios se necesita consultar la tabla de enrutamiento. ¿Qué comando la muestra?",
+      "options": [
+        "route show",
+        "ip route ls",
+        "route print",
+        "ip route print"
+      ],
+      "correct": "c",
+      "justification": "route print muestra la tabla de enrutamiento en Windows. route show, ip route ls e ip route print no son órdenes válidas de Windows; la sintaxis ip route es propia de Linux."
+    }
+  ]
+}

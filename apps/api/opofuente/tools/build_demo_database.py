@@ -122,7 +122,13 @@ def _tema_csv(fixture_path: Path) -> tuple[str, str]:
                 ]
             )
         )
-    return "\n".join(lines) + "\n", str(data["apuntes"])
+    apuntes = data.get("apuntes")
+    if not apuntes:
+        apuntes = "\n\n".join(
+            f"{seccion.get('heading', '')}\n{seccion.get('body', '')}".strip()
+            for seccion in data.get("sections", [])
+        )
+    return "\n".join(lines) + "\n", str(apuntes)
 
 
 def build_demo_database(*, out: Path, workdir: Path) -> dict[str, int]:

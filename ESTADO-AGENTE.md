@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 11/11: inventario y extraccion de 147 fuentes locales, 5 temas largos reescritos (I.1, III.21, IV.27, V.34, V.35) con 2.488-3.064 palabras, 70 casos tipo test, 27 tablas, 3 SVG propios y fuentes citadas; cada tema con commit propio. Demo 71/71 y 40/40; quedan 35 temas y hay 5 sin fuente local suficiente.
+resumen: Sesion 11/11: pestaña Supuestos con 3 supuestos oficiales del INAP resueltos (2024-A-S1, 2023-L-S1 y 2023-L-S2), 60 preguntas, 20 por supuesto, resolucion paso a paso, justificaciones, filtros por año/bloque y modo examen sin correccion hasta el final. 77/77 comprobaciones; demo 40/40, 400 preguntas base, 5 casos y 3 supuestos.
 estado: completado
-tarea: cinco temas largos integrados y demo actualizada
+tarea: supuestos oficiales integrados y demo actualizada
 nivel: 2
-siguiente: continuar con los siguientes temas segun fuentes; priorizar los que tienen TAI completo y no reescribir aun II.15, II.17, IV.33, I.9 ni I.10
+siguiente: anadir mas supuestos oficiales si aparecen y crear supuestos propios de bloque III/IV; no publicar material de academia
 bloqueado: ninguno
 fecha: 2026-11-11

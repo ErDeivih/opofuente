@@ -67,7 +67,7 @@ export function saveErrata(errata: Omit<Errata, 'id' | 'createdAt'>): Errata {
 
 export interface Attempt {
   readonly id: string;
-  readonly type: 'practice' | 'exam' | 'case';
+  readonly type: 'practice' | 'exam' | 'case' | 'supuesto';
   readonly block: string;
   readonly topic: string;
   readonly label: string;

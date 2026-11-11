@@ -107,7 +107,7 @@ check('hay al menos 5 temas con apuntes', data.progress.apuntesCompletos >= 5, `
 await captura('temario', 'temario', 390);
 check(
   'las pestañas se ven a 390 px y miden 44 px',
-  (await page.locator('.demo-nav .button').count()) === 6 &&
+  (await page.locator('.demo-nav .button').count()) === 7 &&
     (await page.locator('.demo-nav .button').evaluateAll((botones) =>
       botones.every((boton) => boton.getBoundingClientRect().height >= 44),
     )),
@@ -337,6 +337,32 @@ check(
   'las estadísticas listan los temas más flojos',
   /Temas más flojos/.test(estadisticas) && estadisticas.includes(practice?.tema_path ?? ''),
 );
+
+// Supuestos: listado, filtro y resolución de 20 preguntas sin corrección.
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`${BASE}/#/supuestos`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+const supuestos = await page.locator('main').innerText();
+check('la pestaña Supuestos lista los supuestos oficiales', /Supuestos/.test(supuestos) && (await page.locator('.demo-card, section.card h2').count()) >= 3);
+check('los supuestos indican año, bloque y dificultad', /2024/.test(supuestos) && /Bloque IV/.test(supuestos) && /Dificultad media/.test(supuestos));
+await page.screenshot({ path: path.join(OUT_DIR, 'supuestos-390.png'), fullPage: true });
+await page.getByRole('button', { name: '2024', exact: true }).click();
+await page.waitForTimeout(150);
+check('el filtro por año deja el supuesto de 2024', /Becas para personas opositoras/.test(await page.locator('main').innerText()));
+await page.goto(`${BASE}/#/supuesto/tai-2024-a-s1`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+const detalle = await page.locator('main').innerText();
+check('el supuesto muestra enunciado, resolución y temas', /Enunciado/.test(detalle) && /Resolución paso a paso/.test(detalle) && /Temas que toca/.test(detalle));
+await page.getByRole('button', { name: /Resolver como examen/ }).click();
+await page.waitForSelector('input[type=radio]');
+for (let i = 0; i < 20; i += 1) {
+  await page.locator('input[type=radio]').first().check();
+  await page.getByRole('button', { name: i === 19 ? 'Terminar y ver resultado' : 'Siguiente pregunta' }).click();
+}
+const resultadoSupuesto = await page.locator('main').innerText();
+check('el supuesto da nota al terminar', /Resultado del supuesto/.test(resultadoSupuesto) && /nota/.test(resultadoSupuesto));
+check('el supuesto revisa las 20 preguntas', /Revisión de las 20 preguntas/.test(resultadoSupuesto));
+await page.screenshot({ path: path.join(OUT_DIR, 'supuesto-resultado-390.png'), fullPage: true });
 
 // Examen completo: mezcla de bloques, tiempo total y penalización.
 await page.setViewportSize({ width: 390, height: 844 });

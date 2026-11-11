@@ -1,0 +1,181 @@
+{
+  "slug": "tai-2023-l-s1",
+  "year": 2023,
+  "conv": "TAI-L 2023 · Supuesto I",
+  "block": "IV",
+  "title": "Representación electrónica con Cl@ve PIN",
+  "difficulty": "media",
+  "official": true,
+  "estimatedMinutes": 30,
+  "statement": "Una administración pone en marcha un sistema para que un interesado autorice a un representante a actuar en su nombre en un trámite concreto. El sistema tiene tres piezas: un frontal web —el Punto de Acceso General— donde se reúnen los trámites y se otorga la representación; un proceso que tramita las solicitudes, envía notificaciones push a los representantes y recaba los consentimientos; y un módulo de gestión para el personal funcionario de atención al público.\n\nEl flujo es el siguiente. El interesado pulsa «Otorgar representación» en un trámite y el sistema genera un enlace único con caducidad que se envía al representante mediante notificación push. Cuando el representante abre el enlace se le ofrece la acción «Obtener PIN» y debe usar la aplicación móvil Cl@ve PIN para conseguir un PIN válido. El funcionario, desde el módulo de gestión, compara el PIN generado para la operación con el que le muestra el representante y permite el trámite si ambos coinciden.\n\nReglas del modelo: un interesado puede pedir representación para tantos trámites como quiera; un trámite puede ser solicitado por cualquier número de interesados; una representación solo es válida para un trámite a la vez; y un representante puede obtener permisos en cualquier número de trámites. En las preguntas conviven el diseño de clases y patrones, Java y sus colecciones, SQL y gestores de bases de datos, desarrollo web, pruebas y accesibilidad, y un detalle de seguridad que el tribunal decidió anular.",
+  "steps": [
+    "Leer el caso y separar las tres piezas del sistema: frontal web, proceso de notificaciones y módulo de gestión.",
+    "Fijar las multiplicidades entre interesado, trámite, solicitud de representación y representante antes de contestar la primera pregunta.",
+    "Identificar el área del temario que toca cada pregunta: UML y Java (IV.30), SQL y gestores (IV.28 y IV.29), desarrollo web y pruebas (IV.31), interoperabilidad (IV.32), criptografía (V.36) y accesibilidad (V.40).",
+    "Descartar opciones por un dato técnico concreto (modificador de visibilidad, tipo de colección, sentencia SQL, patrón de diseño) y no por impresión general.",
+    "Corregir con la plantilla oficial y revisar la pregunta anulada: un buen test también explica por qué el tribunal la dejó sin efecto."
+  ],
+  "topics": ["IV.30", "IV.28", "IV.29", "IV.31", "IV.32", "V.36", "V.40"],
+  "source": {
+    "label": "INAP — Cuestionario TAI-L 2023 (OEP 2022), Supuesto I",
+    "url": "https://sede.inap.gob.es/documents/59312/2194858/Cuestionario+TAI-L_2023.pdf/505d8c94-69a3-2971-b013-76c83e442ba1",
+    "pages": "pp. 8-10"
+  },
+  "questions": [
+    {
+      "stem": "En el diagrama de clases del sistema, ¿qué multiplicidades entre «Solicitud de representación» y «Trámite» son compatibles con las reglas del enunciado?",
+      "options": [
+        "«1» en el lado SR>T y «1» en el lado T>SR",
+        "«1» en el lado SR>T y «0..N» en el lado T>SR",
+        "«0..N» en el lado SR>T y «1» en el lado T>SR",
+        "«1..N» en el lado SR>T y «0..N» en el lado T>SR"
+      ],
+      "correct": "c",
+      "justification": "Una representación solo vale para un trámite a la vez (desde T>SR, cardinalidad 1) y un trámite puede ser solicitado por varios interesados (desde SR>T, 0..N). Las opciones a) y b) intercambian las cardinalidades y la d) permite que una representación cubra varios trámites, lo que contradice el enunciado."
+    },
+    {
+      "stem": "En Java SE 17, ¿qué visibilidad deben tener los atributos de la clase Data Access Object «Solicitudes» para poder acceder a ellos directamente desde cualquier objeto, sin usar métodos?",
+      "options": ["public", "protected", "Sin modificador (visibilidad de paquete)", "private"],
+      "correct": "a",
+      "justification": "public permite el acceso desde cualquier clase sin mediación de métodos. protected limita el acceso a la jerarquía de herencia y al paquete, la ausencia de modificador deja visibilidad de paquete y private restringe el acceso a la propia clase."
+    },
+    {
+      "stem": "En Java SE 17, ¿cuál de los siguientes tipos de colección no admite elementos duplicados?",
+      "options": ["List", "Stack", "Collection", "Set"],
+      "correct": "d",
+      "justification": "Set es la interfaz de conjuntos y no admite duplicados por definición. List y Stack sí los admiten, y Collection es la interfaz raíz común a listas, conjuntos y colas, por lo que no define esa restricción."
+    },
+    {
+      "stem": "Para crear una tabla llamada Usuario con las columnas idUsuario (bigint, clave primaria) y nombre (varchar(255)), ¿qué sentencia SQL hay que ejecutar?",
+      "options": [
+        "ALTER TABLE Usuario (idUsuario bigint PRIMARY KEY, nombre varchar(255));",
+        "INSERT TABLE Usuario (idUsuario bigint PRIMARY KEY, nombre varchar(255));",
+        "CREATE TABLE Usuario (idUsuario bigint PRIMARY KEY, nombre varchar(255));",
+        "DROP TABLE Usuario (idUsuario bigint PRIMARY KEY, nombre varchar(255));"
+      ],
+      "correct": "c",
+      "justification": "CREATE TABLE es la sentencia DDL que define una tabla nueva con sus columnas, tipos y restricciones. ALTER TABLE modifica una tabla existente, INSERT inserta filas y DROP elimina la tabla; ninguna de ellas crea la estructura."
+    },
+    {
+      "stem": "Si el motor de base de datos fuese Oracle, ¿qué lenguaje procedimental permite insertar sentencias SQL y se almacena compilado dentro de la base de datos?",
+      "options": ["TRANSACT SQL", "PL/SQL", "FORTRAN", "COBOL"],
+      "correct": "b",
+      "justification": "PL/SQL es el lenguaje procedimental de Oracle, permite combinar SQL con estructuras de control y sus bloques se guardan compilados en la base (procedimientos, funciones y paquetes). TRANSACT SQL es de SQL Server, y FORTRAN y COBOL son lenguajes generales sin relación con el motor."
+    },
+    {
+      "stem": "Se hereda una librería ya compilada que conecta con el servicio de comprobación de Cl@ve PIN y se quiere reutilizar ese objeto sin modificar la librería. ¿Qué patrón de diseño encaja?",
+      "options": [
+        "Adaptador (Adapter)",
+        "Singleton",
+        "Chain of responsibility (cadena de responsabilidad)",
+        "Iterador (Iterator)"
+      ],
+      "correct": "a",
+      "justification": "El patrón Adaptador envuelve una interfaz existente para que el sistema la utilice a través de la interfaz que espera, que es justo el problema de una librería heredada con una API distinta. Singleton controla la instanciación, la cadena de responsabilidad encadena manejadores y el iterador recorre colecciones: ninguno resuelve la incompatibilidad de interfaces."
+    },
+    {
+      "stem": "¿Cuál es la última versión del estándar UML, según la fuente oficial?",
+      "options": ["2.5", "2.4.1", "2.4", "3.0"],
+      "correct": "a",
+      "justification": "La última versión aprobada del estándar UML es la 2.5. Las versiones 2.4 y 2.4.1 son anteriores, y 3.0 no existe como versión aprobada de UML."
+    },
+    {
+      "stem": "En UML, ¿qué describe un diagrama de componentes?",
+      "options": [
+        "La estructura del sistema con sus clases, atributos y relaciones",
+        "La división del software en componentes y las dependencias entre ellos",
+        "El hardware de despliegue, los componentes implementados en él y sus asociaciones en un momento concreto",
+        "Una vista completa o parcial de la estructura del sistema modelado en un momento específico"
+      ],
+      "correct": "b",
+      "justification": "El diagrama de componentes muestra cómo se divide el software en componentes y qué dependencias hay entre ellos. La opción a) describe el diagrama de clases, la c) el diagrama de despliegue y la d) es una definición genérica de los diagramas de estructura."
+    },
+    {
+      "stem": "¿Qué framework se puede usar para aplicaciones de escritorio nativas .NET?",
+      "options": [".NET MAUI", "Blazor Hybrid", "JavaFX", "WebView"],
+      "correct": "a",
+      "justification": ".NET MAUI es el framework de Microsoft para interfaces nativas multiplataforma en .NET, incluido escritorio. Blazor Hybrid combina componentes web dentro de una aplicación nativa y no es el framework de escritorio nativo propiamente dicho, JavaFX pertenece al ecosistema Java y WebView es un componente de navegador embebido."
+    },
+    {
+      "stem": "¿Qué normativa define los requisitos de accesibilidad de los sitios web y aplicaciones móviles de los organismos del sector público?",
+      "options": [
+        "Orden Ministerial 1112/2018, de 7 de septiembre",
+        "Ley Orgánica 1112/2018, de 7 de septiembre",
+        "Ley 1112/2018, de 7 de septiembre",
+        "Real Decreto 1112/2018, de 7 de septiembre"
+      ],
+      "correct": "d",
+      "justification": "El Real Decreto 1112/2018, de 7 de septiembre, regula los requisitos de accesibilidad de los sitios web y aplicaciones para dispositivos móviles del sector público, transponiendo la Directiva (UE) 2016/2102. Las otras opciones alteran el rango de la norma: una orden ministerial, una ley orgánica y una ley no regulan esa materia con ese contenido."
+    },
+    {
+      "stem": "En una aplicación Java, ¿qué paquetes se emplearían para establecer la conexión con la base de datos de NOTIFICACION?",
+      "options": ["java.database", "javax.naming y javax.sql", "javax.io y javax.servlet", "javax.servlet"],
+      "correct": "b",
+      "justification": "javax.sql aporta las interfaces de acceso a datos (DataSource, Connection) y javax.naming permite localizar recursos como el DataSource publicado por el servidor de aplicaciones mediante JNDI. java.database no existe, y javax.io y javax.servlet no son paquetes de conexión a bases de datos."
+    },
+    {
+      "stem": "Se quiere desarrollar un microservicio para que el personal funcionario consulte el estado de una notificación enviada. ¿Qué especificación de la comunidad, alineada con Jakarta EE Core Profile, es la indicada?",
+      "options": ["Jakarta Authentication", "Jakarta Batch", "MicroProfile", "Jakarta Connectors"],
+      "correct": "c",
+      "justification": "MicroProfile es la especificación de la comunidad orientada a microservicios y alineada con Jakarta EE. Jakarta Authentication, Jakarta Batch y Jakarta Connectors cubren autenticación, procesamiento por lotes y conectores, respectivamente, no el desarrollo del microservicio."
+    },
+    {
+      "stem": "El equipo decide usar Selenium WebDriver. ¿Para qué?",
+      "options": [
+        "Para mejorar la accesibilidad de las páginas web facilitando audios a partir del texto",
+        "Para automatizar la ejecución de pruebas en el navegador",
+        "Para minimizar el tiempo de carga de la página web",
+        "Para diseñar páginas web adaptables"
+      ],
+      "correct": "b",
+      "justification": "Selenium WebDriver automatiza la interacción con el navegador para ejecutar pruebas de extremo a extremo. No mejora la accesibilidad, no optimiza el rendimiento y no sustituye al diseño adaptable."
+    },
+    {
+      "stem": "¿Cuál de las siguientes es una herramienta de análisis de seguridad y calidad de código?",
+      "options": ["SonarQube", "SonarCode", "SonarCuality", "SonarSrc"],
+      "correct": "a",
+      "justification": "SonarQube es la herramienta de análisis estático que detecta errores, malas prácticas y vulnerabilidades en el código. SonarCode, SonarCuality y SonarSrc son nombres inventados que imitan el del producto real."
+    },
+    {
+      "stem": "¿Cuál de los siguientes es un protocolo de seguridad usado en las comunicaciones HTTP?",
+      "options": ["TLS", "SSL", "STARTTLS", "WPA2"],
+      "correct": "ANULADA",
+      "justification": "El tribunal anuló esta pregunta porque admite más de una respuesta defendible: TLS y su antecesor SSL son los protocolos criptográficos que aseguran las comunicaciones HTTP en HTTPS, y STARTTLS es el mecanismo para promocionar una conexión en claro a una conexión cifrada. Solo WPA2 es un protocolo de seguridad de redes inalámbricas, no de HTTP. Con varias opciones válidas, la plantilla oficial la declara nula y no puntúa."
+    },
+    {
+      "stem": "¿Qué tecnología es adecuada para implementar la recepción de notificaciones nativas en los teléfonos inteligentes del representante y del interesado?",
+      "options": ["WebView", "Mobile push", "CDMA", "Wi-Fi"],
+      "correct": "b",
+      "justification": "Las notificaciones push llegan al dispositivo a través de los servicios de notificación del sistema operativo (APNs en iOS, FCM en Android). WebView es un componente de navegador embebido, CDMA es una tecnología de telefonía móvil y Wi-Fi solo proporciona conectividad."
+    },
+    {
+      "stem": "Si piden modificar el color de un botón del frontal web, ¿qué lenguaje de estilos se emplearía?",
+      "options": ["XML", "SGML", "XSL", "CSS"],
+      "correct": "d",
+      "justification": "CSS es el lenguaje de hojas de estilo que controla la presentación del HTML, incluidos colores, tipografías y espaciados. XML y SGML describen estructura y XSL transforma documentos XML; ninguno es el lenguaje de estilos del frontal web."
+    },
+    {
+      "stem": "¿Cómo se conoce el conjunto de pautas, componentes y herramientas que respaldan las mejores prácticas de diseño de interfaz de usuario y que pertenece a Google?",
+      "options": ["WCAG 2.1", "WAI-ARIA", "Material Design", "Inclusive Design"],
+      "correct": "c",
+      "justification": "Material Design es el sistema de diseño de Google con guías, componentes y herramientas. WCAG son las pautas de accesibilidad del W3C, WAI-ARIA especifica roles y atributos para tecnologías de asistencia e «Inclusive Design» es un enfoque de diseño, no el sistema de Google."
+    },
+    {
+      "stem": "¿A qué corresponde el ataque conocido por el acrónimo CSRF, que permite al atacante forzar al usuario a ejecutar acciones no deseadas en una aplicación web en la que ya está autenticado?",
+      "options": [
+        "Cross Site Request Forgery",
+        "Cross Site Repeat Forgery",
+        "Cross Site Reduction Forgery",
+        "Cross Send Request Forgery"
+      ],
+      "correct": "a",
+      "justification": "CSRF significa Cross Site Request Forgery: el atacante induce al navegador de la víctima, que ya tiene sesión abierta, a enviar una petición no deseada. Las otras tres expresiones son variantes inventadas del acrónimo."
+    },
+    {
+      "stem": "¿Qué software permite automatizar la construcción y el despliegue de un proyecto utilizando el concepto de pipelines?",
+      "options": ["Jenkins", "RabbitMQ", "Apache Kafka", "Subversion"],
+      "correct": "a",
+      "justification": "Jenkins es el servidor de automatización que define pipelines de integración y despliegue continuo. RabbitMQ y Apache Kafka son sistemas de mensajería y Subversion es un sistema de control de versiones, no una herramienta de pipelines de construcción."
+    }
+  ]
+}

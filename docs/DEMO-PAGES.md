@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **71/71**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **77/77**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -30,6 +30,8 @@ guarda en `localStorage`. **No hay cuenta, no hay servidor y no se envía nada.*
 - **Casos prácticos**: 5 escenarios de 10 preguntas sobre los temas más delgados.
 - **Temas largos**: I.1, III.21, IV.27, V.34 y V.35 con 2.488-3.064 palabras, 70 test cases y SVG
   propios; sustituyen a la ficha corta en la página del tema.
+- **Supuestos** en `#/supuestos`: 3 supuestos oficiales del INAP, filtro por año/bloque, 20 preguntas,
+  resolución paso a paso y modo examen sin corrección hasta el final.
 - **Estadísticas** en `#/estadisticas`: acierto por tema y bloque, y los 5 temas más flojos con enlace directo.
 - **Portada corta**: cobertura, «Continuar donde lo dejé» y 3 prácticas siguientes; el resto está
   en la pestaña Prácticas. Las pestañas miden 44 px y la ficha lleva migas «Temario › I.1».
@@ -72,7 +74,7 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **71/71** y capturas.
+   → **77/77** y capturas.
 
 ## Verificación y capturas
 
@@ -106,6 +108,8 @@ Revisión final móvil en [`REVISION-FINAL-2026-11-10.md`](REVISION-FINAL-2026-1
 | Examen (ajustes) | — | `examen-390.png` |
 | Examen completo | — | `examen-completo-390.png` |
 | Resultado del examen | — | `examen-resultado-390.png` |
+| Supuestos | — | `supuestos-390.png` |
+| Resultado de supuesto | — | `supuesto-resultado-390.png` |
 | Estadísticas | — | `estadisticas-390.png` |
 | Estadísticas vacías | — | `estadisticas-vacia-390.png` |
 | Corrección con BOE | `correccion-1280.png` | — |
