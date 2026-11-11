@@ -66,6 +66,6 @@ En los temas largos, la cabecera tiene **«Test del tema»**. Un toque desplaza 
 
 ## Verificación
 
-**90/90** comprobaciones Playwright en la URL pública: índice, un solo resumen/fuentes, H2/cuerpo,
+**91/91** comprobaciones Playwright en la URL pública: índice, un solo resumen/fuentes, H2/cuerpo,
 sin scroll horizontal, continuar leyendo, simulacro 80+20 con nota y vigencia. 12/12 enlaces de
 convocatoria (200).

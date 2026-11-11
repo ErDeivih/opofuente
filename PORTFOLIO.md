@@ -39,9 +39,11 @@ servidor.
 - **Calidad revisada**: 40/40 fichas con «Lo que hay que memorizar» y «Errores típicos»; 5 temas
   reforzados (II.15, II.16, II.17, III.18, III.22) y letra correcta equilibrada (100 a/b/c/d).
   Detalle en [CALIDAD-TEMARIO.md](docs/CALIDAD-TEMARIO.md).
-- **Temas largos**: I.1, II.13, III.21, IV.27, V.34, V.35 y V.39 reescritos con 1.543-3.064 palabras, 101 casos
+- **Temas largos**: I.1, II.13, III.21, IV.27, V.34, V.35 y V.39 reescritos con 1.543-3.152 palabras, 101 casos
   tipo test y 4 SVG propios; fuentes citadas y páginas de estudio autosuficientes. Detalle en
   [TEMAS-LARGOS.md](docs/TEMAS-LARGOS.md).
+- **Cobertura por epígrafe**: los 40 temas con estado completo/parcial/ausente en
+  [COBERTURA-EPIGRAFES.md](docs/COBERTURA-EPIGRAFES.md).
 - **Sellos de tema**: el índice muestra «Esquema» o «Desarrollado · N palabras» sin abrir la ficha.
 - **Lector de temas**: barra fija «Índice ▾ · epígrafe actual», un solo resumen y fuentes, H2 22 px/
   cuerpo 16 px y «Continuar en …» por epígrafe. Detalle en [UX-LECTOR.md](docs/UX-LECTOR.md).
@@ -120,6 +122,7 @@ servidor.
 | Guía de estudio | — | [guia-390](docs/capturas/demo-pages/guia-390.png) |
 | Tema largo I.1 | — | [tema-completo-390](docs/capturas/demo-pages/tema-completo-390.png) |
 | Tema largo V.39 | — | [tema-v-39-390](docs/capturas/demo-pages/tema-v-39-390.png) |
+| Tema largo III.21 | — | [tema-iii-21-390](docs/capturas/demo-pages/tema-iii-21-390.png) |
 | Tema largo II.13 | — | [tema-ii-13-390](docs/capturas/demo-pages/tema-ii-13-390.png) |
 | Supuestos | — | [supuestos-390](docs/capturas/demo-pages/supuestos-390.png) |
 | Resultado de supuesto | — | [supuesto-resultado-390](docs/capturas/demo-pages/supuesto-resultado-390.png) |
@@ -136,7 +139,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **90/90** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **91/91** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -193,7 +196,7 @@ servidor.
 
 ## 9. Revisión final y qué queda
 
-- **90/90** comprobaciones, también a **390 px**; capturas nuevas en
+- **91/91** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
 - **40/40** temas completos: I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7.
@@ -201,4 +204,4 @@ servidor.
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 90/90 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 91/91 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

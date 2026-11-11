@@ -9,16 +9,16 @@ redacción propia y fuentes citadas.
 |---|---|---|---|---|---|---|
 | I.1 | La Constitución Española de 1978 | **1.543** | 10 | 15 | 1 | SVG de estructura |
 | II.13 | Arquitectura de ordenadores | **2.692** | 10 | 15 | 1 | SVG Von Neumann |
-| III.21 | Redes | **2.988** | 12 | 15 | 6 | SVG pila OSI |
+| III.21 | Redes | **3.152** | 10 | 15 | 1 | SVG pila OSI |
 | IV.27 | Bases de datos relacionales | **3.006** | 12 | 14 | 2 | — |
 | V.34 | Seguridad de la información | **3.064** | 12 | 13 | 5 | SVG triada CIA |
 | V.35 | ENS (RD 311/2022) | **2.488** | 12 | 14 | 3 | — |
 | V.39 | Administración electrónica práctica | **2.448** | 12 | 15 | 3 | — |
 
-**Media:** 2.604 palabras por tema · **101 casos tipo test** en total (10-15 por tema) · **21 tablas**
+**Media:** 2.628 palabras por tema · **101 casos tipo test** en total (10-15 por tema) · **16 tablas**
 comparativas · **4 diagramas SVG propios**.
 
-I.1 y II.13 se han reescrito con la **estructura definitiva de 10 apartados**: ficha oficial, epígrafes,
+I.1, II.13 y III.21 se han reescrito con la **estructura definitiva de 10 apartados**: ficha oficial, epígrafes,
 introducción, desarrollo por epígrafe con norma al artículo, tabla, ejemplo, trampas, resumen, test
 comentado y fuentes. Los demás temas siguen la misma idea y se irán adaptando a ese formato.
 

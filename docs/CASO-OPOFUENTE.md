@@ -18,7 +18,7 @@ casos prácticos y 40 prácticas**, publicado como demo estática, sin cuentas n
 | Prácticas | **40** (una por tema) |
 | Bloques | **5** (I-IV al 100 %; V 7/7) |
 | Convocatorias C1 | **12** (10 draft, 2 archivadas) |
-| Comprobaciones Playwright | **90/90** en la URL pública |
+| Comprobaciones Playwright | **91/91** en la URL pública |
 | Enlaces de convocatoria | **12/12** (HTTP 200) |
 | Pruebas | **517** unitarias backend · **225** web |
 | Capturas | 390 y 1280 px en `docs/capturas/demo-pages/` |
@@ -93,6 +93,7 @@ las opciones de test están equilibrados: 100 respuestas correctas por cada letr
 | Guía de estudio | [guia-390](capturas/demo-pages/guia-390.png) |
 | Supuestos | [supuestos-390](capturas/demo-pages/supuestos-390.png) |
 | Tema largo V.39 | [tema-v-39-390](capturas/demo-pages/tema-v-39-390.png) |
+| Tema largo III.21 | [tema-iii-21-390](capturas/demo-pages/tema-iii-21-390.png) |
 | Tema largo II.13 | [tema-ii-13-390](capturas/demo-pages/tema-ii-13-390.png) |
 | Índice del tema | [indice-tema-390](capturas/demo-pages/indice-tema-390.png) |
 | Simulacro | [simulacro-390](capturas/demo-pages/simulacro-390.png) |

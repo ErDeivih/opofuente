@@ -284,6 +284,13 @@ const ii13 = await page.locator('main').innerText();
 check('el tema II.13 tiene 10 apartados, tabla y 15 casos', /1\. Ficha oficial/.test(ii13) && /10\. Fuentes citadas/.test(ii13) && /15\./.test(ii13));
 await page.screenshot({ path: path.join(OUT_DIR, 'tema-ii-13-390.png'), fullPage: true });
 
+// Segundo tema técnico: III.21 con 10 apartados.
+await page.goto(`${BASE}/#/tema/III.21`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+const iii21 = await page.locator('main').innerText();
+check('III.21 tiene 10 apartados e indice/test', /1\. Ficha oficial/.test(iii21) && /10\. Fuentes citadas/.test(iii21) && /Test del tema/.test(iii21));
+await page.screenshot({ path: path.join(OUT_DIR, 'tema-iii-21-390.png'), fullPage: true });
+
 // Captura pedida de V.35 a 390 px.
 await page.goto(`${BASE}/#/tema/V.35`, { waitUntil: 'networkidle' });
 await page.waitForSelector('h1');
