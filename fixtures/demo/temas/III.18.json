@@ -225,5 +225,223 @@
     "Confundir alta disponibilidad con copia de seguridad.",
     "Usar cuentas de administrador para tareas diarias."
   ],
-  "reviewedAt": "2026-11-10"
+  "reviewedAt": "2026-11-10",
+  "longSections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema:** III.18, «Sistemas operativos de servidor», del bloque III (Sistemas, redes y comunicaciones) del temario común de informática C1. **Materias que cubre:** papel y tareas del administrador de sistemas, gestión de servicios e incidencias, instalación y configuración del servidor, actualización del sistema operativo, mantenimiento y reparación, monitorización, copias de seguridad y continuidad del servicio. **Relación con otros temas:** se apoya en III.23 (servicios de red) y en los temas de virtualización, contenedores y cloud, y sirve de base a la administración de sistemas y a la seguridad. **Fuentes:** `Tema 6.docx` y `Bloque 4 Actualizado 2026.docx`, volcados en `data/fuentes/III.18.txt`.\n\n**Limitación de la fuente:** el volcado de III.18 se centra en la administración del sistema operativo (Windows Update, WSUS, gestores de paquetes Linux, reparación, copias y continuidad) y no desarrolla los roles concretos de Windows Server (Active Directory, DNS, DHCP, GPO) ni systemd o SSH. Para no inventar, este tema no incluye apartados específicos de esas materias y se limita a los contenidos que sí documenta la fuente.",
+      "table": {
+        "columns": [
+          "Dato de la ficha",
+          "Valor"
+        ],
+        "rows": [
+          [
+            "Tema",
+            "III.18 Sistemas operativos de servidor"
+          ],
+          [
+            "Bloque",
+            "III · Sistemas, redes y comunicaciones"
+          ],
+          [
+            "Materias",
+            "Administración, actualizaciones, mantenimiento, reparación, copias y continuidad"
+          ],
+          [
+            "Temas relacionados",
+            "III.23 Servicios de red; virtualización, contenedores y cloud"
+          ],
+          [
+            "Fuente",
+            "Tema 6.docx y Bloque 4 Actualizado 2026.docx"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El desarrollo del tema se organiza en los epígrafes del apartado 4:\n\n- **4.1.** El administrador de sistemas: papel, tareas y responsabilidades.\n- **4.2.** Gestión de servicios e incidencias: SLA, SLM y prioridades.\n- **4.3.** Instalación y configuración del servidor.\n- **4.4.** Actualización del sistema operativo.\n- **4.5.** Mantenimiento y reparación del sistema.\n- **4.6.** Monitorización del servicio.\n- **4.7.** Copias de seguridad y recuperación.\n- **4.8.** Continuidad del servicio y alta disponibilidad.\n\nCompletan el tema la tabla comparativa (apartado 5), el ejemplo práctico (6), las trampas de examen (7), el resumen para memorizar (8), los quince casos tipo test (9) y las fuentes citadas (10)."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "Un sistema operativo de servidor no se juzga por su interfaz, sino por su capacidad de prestar servicio de forma continua, segura y medible. Frente a un equipo de escritorio, el servidor concentra usuarios, datos y servicios críticos: si cae, no se queda sin escribir un documento, se queda sin nóminas, sin correo o sin sede electrónica.\n\nPor eso la administración de servidores es una disciplina de procesos: instalar y configurar el sistema, actualizarlo, mantenerlo, repararlo, vigilarlo, hacer copias y preparar la continuidad. El temario agrupa esas tareas en dos bloques: el papel del administrador y la gestión de incidencias (Tema 6) y la administración concreta del sistema operativo y del software de base (Bloque 4).\n\nEste tema ordena las tareas, las herramientas y las métricas que se preguntan, y las conecta con la disponibilidad: de nada sirve tener un servidor rápido si no se puede restaurar una copia o si el CPD no permite mantenerlo sin cortar el servicio.",
+      "table": {
+        "columns": [
+          "Fuente",
+          "Qué aporta"
+        ],
+        "rows": [
+          [
+            "Tema 6.docx",
+            "Tareas y responsabilidades del administrador, SLA/SLM, prioridades y herramientas de gestión"
+          ],
+          [
+            "Bloque 4 Actualizado 2026.docx",
+            "Instalación, actualizaciones, mantenimiento, reparación, backups, CPD, virtualización, contenedores y cloud"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1. El administrador de sistemas.** En los sistemas multiusuario, el administrador es la persona o el grupo que responde del correcto funcionamiento del sistema, tanto de la red como de los sistemas operativos conectados. Debe conocer el sistema, diseñarlo de forma fiable, hacerlo fácil de usar, anticiparse a los problemas y tener un plan de contingencia. Entre sus tareas están instalar servidores (con gran capacidad de memoria, subsistemas RAID, varios procesadores y tolerancia a fallos con SAI o memoria correctora), gestionarlos y obtener estadísticas, mantener las estaciones de trabajo y la red, crear y retirar cuentas de usuario, instalar hardware y software, hacer copias, monitorizar los servicios con sus ficheros de registro, resolver problemas, mantener la documentación y ayudar a los usuarios. Sus responsabilidades se reparten entre el hardware (esquema del sistema, periféricos, red, mantenimiento preventivo), el software (sistema operativo, sistemas de archivos, recursos, copias, impresión, comunicaciones y actualizaciones), los usuarios (accesos, altas y bajas, necesidades y crecimiento) y la documentación (qué se hizo, quién, cuándo y cómo).\n\n**4.2. Gestión de servicios e incidencias.** El **SLA** es el contrato que fija los niveles de servicio con parámetros objetivos: tipo de servicio, soporte, seguridad, garantías, tiempos de respuesta, disponibilidad, conectividad, penalizaciones y especificaciones de **MTBF** y **MTTR**. El **SLM** es la metodología que asegura que los clientes reciben los niveles acordados y que los acuerdos internos y de soporte son coherentes. Las incidencias se clasifican por severidad: **urgente** (aplicación crítica, sin alternativa), **alta** (crítica pero con solución temporal), **media** (afecta a la operación normal con alternativa y sin urgencia temporal) y **baja** (documentación o procedimientos). La matriz **RACI** reparte roles: responsable de hacer el trabajo, responsable único del resultado, consultado e informado.\n\n**4.3. Instalación y configuración.** La instalación se hace desde USB, DVD o red y exige decidir el particionado, los usuarios y el software adicional. En la configuración se crean cuentas y permisos (Panel de Control y Administrador de usuarios en Windows; adduser, chmod y chown en Linux), se eligen los sistemas de archivos y se prepara el almacenamiento. El **firmware** inicia el hardware: **BIOS** usa **MBR** (hasta 2 TB y cuatro particiones primarias) y **UEFI** usa **GPT** (discos mayores, más particiones y mayor fiabilidad). En servidores con RAID conviene recordar las capacidades útiles: RAID 0 = discos × tamaño; RAID 1 = un disco; RAID 5 = (n − 1) × tamaño; RAID 6 = (n − 2) × tamaño; RAID 10 = mitad del total; JBOD = suma de discos.\n\n**4.4. Actualización del sistema.** Las actualizaciones mejoran la seguridad, corrigen errores y optimizan el rendimiento. En Windows se usa **Windows Update** (descargas automáticas o manuales); desde Windows XP existe **BITS** (Background Intelligent Transfer Service) y en 2002 aparece **WSUS** para descargar desde un servidor y administrar de forma centralizada las actualizaciones de los equipos y servidores de la red. En Linux se usan los gestores de paquetes de cada distribución: **apt** en Debian y Ubuntu (con `sudo apt-get update` se actualiza la lista de paquetes y con `apt-get upgrade` se instalan las versiones descargadas), **YUM** en sistemas basados en RPM (Red Hat, Fedora, CentOS) y también **dnf** o **pacman** según la distribución; macOS emplea la App Store y `softwareupdate`. Los tipos de actualización son parche de seguridad, actualización de software y actualización de firmware.\n\n**4.5. Mantenimiento y reparación.** El mantenimiento se clasifica según dónde esté el técnico (in site, on site o remoto) y según la acción (correctivo para corregir errores, evolutivo para cubrir nuevas necesidades, adaptativo para cambios de hardware o software de base y perfectivo para revisar y detectar focos de problemas). Incluye eliminar temporales y caché (CCleaner o bleachbit), desfragmentar HDD (no SSD) y liberar espacio (Storage Sense o `du -sh`). Para reparar, Windows ofrece el **Modo Seguro**, **bootrec.exe** (con /FixMBR para el MBR, /FixBoot para el sector de arranque, /RebuildBCD para el almacén BCD y /ScanOS), **SFC.exe** (examina archivos protegidos y recupera la versión correcta) y **DISM.exe** (`/Online /Cleanup-Image /RestoreHealth` repara archivos con Windows Update), además de **CHKDSK**; Linux aporta el modo de recuperación, **fsck** y snapshots de btrfs o zfs; los Live CD permiten recuperar archivos de sistemas corruptos.\n\n**4.6. Monitorización.** El administrador comprueba a diario que funcionan el web, el proxy, el correo y el resto de servicios, y los ficheros de registro recogen la actividad. Para supervisar CPU, RAM y disco se usan el Administrador de tareas (Windows) y Htop (Linux), y el sistema de monitorización más implantado según el temario es **Nagios**. La monitorización puede ser proactiva (detecta problemas antes de que afecten al servicio) o reactiva (actúa cuando la incidencia ya se ha producido).\n\n**4.7. Copias de seguridad.** Hay tres métodos principales: **completa** (copia todo), **diferencial** (lo cambiado desde la última completa) e **incremental** (lo cambiado desde la última copia, sea completa o incremental). Se añaden el espejo (solo la última copia), el clonado (réplica exacta) y la protección continua (CDP). La estrategia **3-2-1** pide tres copias, en dos tipos de almacenamiento y una fuera del sitio. Los objetivos se miden con **RPO** (datos que se pueden perder), **RTO** (tiempo para restaurar), **MTD** (tiempo máximo tolerable sin servicio) y **WRT** (tiempo para volver al trabajo normal). Los **snapshots** son capturas puntuales para recuperación rápida y no sustituyen a las copias. Se optimizan con deduplicación, compresión y cifrado, y se apoyan en herramientas como Historial de archivos, Time Machine, rsync o tar, con copia local o en la nube.\n\n**4.8. Continuidad del servicio.** La continuidad se apoya en el CPD y en la redundancia. El estándar ANSI/TIA-942 clasifica los CPD en cuatro **Tier**: I (básico, sin redundancia, 99,671 % y hasta 28,8 horas anuales sin servicio), II (redundancia parcial, 99,741 % y 22 horas), III (mantenimiento concurrente, 99,982 % y 1,6 horas) y IV (tolerante a fallos, 99,995 % y 26,3 minutos). La redundancia puede ser N, N+1, 2N o 2N+1. La **virtualización** permite ejecutar varios sistemas en un servidor físico con hipervisores de tipo I (sobre el hardware: ESXi, Hyper-V, XenServer) o de tipo II (sobre un sistema anfitrión: Workstation, VirtualBox); el aprovisionamiento de almacenamiento puede ser thick (reserva todo) o thin (crece con el uso), y los escritorios virtuales (VDI) pueden ser persistentes o no persistentes. Los **contenedores** (Docker, Podman, LXC) y su orquestación (Docker Swarm, Kubernetes, OpenShift) facilitan el despliegue y el escalado. La **nube** ofrece IaaS, PaaS y SaaS en modalidad pública, privada, híbrida o comunitaria. Para la alta disponibilidad se usa el **clúster** (nodos cercanos y homogéneos, administración centralizada, balanceo y alta disponibilidad), frente a la **grid** (nodos distribuidos y heterogéneos orientada al cálculo). La automatización se apoya en SaltStack, Ansible, Terraform o Puppet, y la entrega en CI/CD.",
+      "table": {
+        "columns": [
+          "Epígrafe",
+          "Datos que hay que retener"
+        ],
+        "rows": [
+          [
+            "Administrador",
+            "Instalar, gestionar, mantener, copiar, monitorizar, documentar y resolver incidencias"
+          ],
+          [
+            "Servicios",
+            "SLA y SLM; prioridades urgente, alta, media y baja; matriz RACI; MTBF y MTTR"
+          ],
+          [
+            "Instalación",
+            "BIOS/MBR y UEFI/GPT; RAID 0, 1, 5, 6 y 10; cuentas y permisos"
+          ],
+          [
+            "Actualización",
+            "Windows Update, BITS y WSUS; apt, YUM, dnf y pacman; parches, software y firmware"
+          ],
+          [
+            "Mantenimiento",
+            "In site, on site y remoto; correctivo, evolutivo, adaptativo y perfectivo"
+          ],
+          [
+            "Reparación",
+            "bootrec (/FixMBR, /FixBoot, /RebuildBCD), SFC, DISM, CHKDSK, fsck y snapshots"
+          ],
+          [
+            "Copias",
+            "Completa, diferencial e incremental; 3-2-1; RPO, RTO, MTD y WRT; snapshots"
+          ],
+          [
+            "Continuidad",
+            "Tier I-IV; N, N+1, 2N y 2N+1; virtualización, contenedores, cloud y clúster"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "5. Tabla comparativa: administración en Windows y Linux",
+      "body": "La tabla resume las herramientas que el temario asocia a cada sistema para las tareas de administración más preguntadas.",
+      "table": {
+        "columns": [
+          "Tarea",
+          "Windows",
+          "Linux"
+        ],
+        "rows": [
+          [
+            "Usuarios y permisos",
+            "Panel de Control y Administrador de usuarios",
+            "adduser, chmod y chown"
+          ],
+          [
+            "Actualizaciones",
+            "Windows Update; BITS; WSUS centralizado",
+            "apt (Debian/Ubuntu), YUM/dnf (Red Hat) y pacman (Arch)"
+          ],
+          [
+            "Monitorización",
+            "Administrador de tareas",
+            "Htop"
+          ],
+          [
+            "Reparación del arranque",
+            "bootrec.exe (/FixMBR, /FixBoot, /RebuildBCD) y SFC/DISM",
+            "Modo de recuperación y fsck"
+          ],
+          [
+            "Copias",
+            "Historial de archivos",
+            "rsync, tar y snapshots de btrfs o zfs"
+          ],
+          [
+            "Mantenimiento",
+            "Modo Seguro, CHKDSK y System Restore",
+            "Recovery Mode, fsck y Live CD"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un ayuntamiento va a montar un servidor para la aplicación de nóminas y contabilidad. Dispone de cuatro discos de 2 TB, quiere actualizaciones controladas, copias verificables y el menor corte de servicio posible.\n\n**Resolución.**\n\n- **Instalación y almacenamiento:** se instala el sistema desde USB o red, se particiona el disco y se configura un **RAID 5** con los cuatro discos: la capacidad útil es (4 − 1) × 2 TB = **6 TB**, con tolerancia al fallo de un disco. Si el equipo usa UEFI, el esquema de particionado será **GPT**.\n- **Usuarios y permisos:** se crean cuentas para el personal de nóminas y se separan los privilegios administrativos de las cuentas de trabajo; en Linux se gestionarían con adduser, chmod y chown.\n- **Actualizaciones:** en una red Windows se implanta **WSUS** para aprobar y distribuir las actualizaciones desde un servidor, ahorrando ancho de banda y evitando que cada equipo decida cuándo actualizar.\n- **Copias:** se aplica la regla **3-2-1** con una copia completa semanal, incrementales diarias y una copia externa cifrada; se define un **RPO** de 24 horas y un **RTO** de 4 horas, y se prueba la restauración trimestralmente.\n- **Monitorización:** se vigilan CPU, memoria, disco y servicio con el Administrador de tareas o Htop y con **Nagios**, revisando los registros y las alertas.\n- **Continuidad:** el CPD debe ser al menos **Tier III** para permitir mantenimiento concurrente; si se virtualiza el servidor, se usan hipervisores de tipo I y, para la alta disponibilidad, un **clúster** con balanceo; los snapshots se usan para recuperaciones rápidas, nunca como única copia.\n\n**Conclusión.** La disponibilidad no depende de un componente aislado: se construye con RAID, actualizaciones controladas, copias probadas, monitorización y un CPD con redundancia.",
+      "table": {
+        "columns": [
+          "Necesidad",
+          "Decisión",
+          "Dato clave"
+        ],
+        "rows": [
+          [
+            "Almacenamiento tolerante",
+            "RAID 5 con 4 discos de 2 TB",
+            "6 TB útiles y un fallo tolerado"
+          ],
+          [
+            "Actualizaciones controladas",
+            "WSUS",
+            "Descarga y distribución centralizada"
+          ],
+          [
+            "Copias verificables",
+            "3-2-1 con RPO 24 h y RTO 4 h",
+            "Restauración probada"
+          ],
+          [
+            "Continuidad",
+            "CPD Tier III y clúster",
+            "Mantenimiento concurrente y balanceo"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "Las confusiones más frecuentes de este tema son estas:\n\n- **Confundir Windows Update con WSUS**: Windows Update es el servicio de actualización del equipo; WSUS es el servidor que centraliza y distribuye actualizaciones en una red.\n- **Confundir BITS con un gestor de paquetes**: BITS es el servicio de transferencia en segundo plano de Windows; en Linux el gestor es apt, YUM, dnf o pacman.\n- **Confundir `apt-get update` con `apt-get upgrade`**: update actualiza la lista de paquetes; upgrade instala las versiones nuevas ya descargadas.\n- **Confundir los parámetros de bootrec**: /FixMBR repara el MBR, /FixBoot el sector de arranque, /RebuildBCD el almacén BCD y /ScanOS busca sistemas instalados.\n- **Confundir SFC, DISM y CHKDSK**: SFC verifica archivos protegidos, DISM repara la imagen del sistema y CHKDSK comprueba el disco.\n- **Confundir los tipos de mantenimiento**: correctivo corrige errores, evolutivo cubre nuevas necesidades, adaptativo responde a cambios de hardware o software de base y perfectivo revisa para detectar problemas.\n- **Confundir MTBF con MTTR**: MTBF es el tiempo medio entre fallos y MTTR el tiempo medio de reparación.\n- **Confundir copia diferencial e incremental**: la diferencial parte de la última completa; la incremental, de la última copia de cualquier tipo.\n- **Confundir RPO, RTO y MTD**: RPO mide datos que se pueden perder, RTO el tiempo de restauración y MTD el tiempo máximo tolerable sin servicio.\n- **Creer que un snapshot es una copia de seguridad**: es una captura puntual y no sustituye a la copia.\n- **Confundir hipervisor de tipo I con el de tipo II**: el tipo I se ejecuta sobre el hardware; el tipo II, sobre un sistema anfitrión.\n- **Confundir clúster con grid**: el clúster es cercano y homogéneo; la grid, distribuida y heterogénea.",
+      "table": {
+        "columns": [
+          "Confusión",
+          "Lo correcto"
+        ],
+        "rows": [
+          [
+            "Windows Update = WSUS",
+            "Windows Update actualiza el equipo; WSUS centraliza en red"
+          ],
+          [
+            "apt update = apt upgrade",
+            "update refresca la lista; upgrade instala versiones"
+          ],
+          [
+            "MTBF = MTTR",
+            "MTBF mide tiempo entre fallos; MTTR, tiempo de reparación"
+          ],
+          [
+            "Snapshot = copia",
+            "El snapshot es puntual y no sustituye a la copia"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Administrador.** Conoce y diseña el sistema, lo hace fácil de usar, se anticipa y tiene plan de contingencia; instala, configura, actualiza, mantiene, repara, monitoriza, copia y documenta.\n\n**Servicios.** SLA con niveles medibles (tipo de servicio, soporte, seguridad, disponibilidad, tiempos y penalizaciones); SLM; prioridades urgente, alta, media y baja; RACI; MTBF y MTTR.\n\n**Instalación.** BIOS/MBR (2 TB y 4 particiones primarias) y UEFI/GPT; RAID 0, 1, 5, 6, 10 y JBOD con sus fórmulas de capacidad.\n\n**Actualizaciones.** Windows Update, BITS y WSUS; apt (Debian/Ubuntu), YUM (RPM), dnf y pacman; tipos: parche de seguridad, software y firmware.\n\n**Mantenimiento y reparación.** In site, on site y remoto; correctivo, evolutivo, adaptativo y perfectivo; bootrec (/FixMBR, /FixBoot, /RebuildBCD, /ScanOS), SFC, DISM, CHKDSK, fsck, Modo Seguro, Recovery Mode y snapshots.\n\n**Monitorización.** Administrador de tareas, Htop, Nagios y registros; proactiva y reactiva.\n\n**Copias.** Completa, diferencial e incremental; espejo, clonado y CDP; 3-2-1; RPO, RTO, MTD y WRT; deduplicación, compresión y cifrado; el snapshot no sustituye a la copia.\n\n**Continuidad.** CPD Tier I a IV (III: mantenimiento concurrente, 99,982 %); N, N+1, 2N y 2N+1; virtualización tipo I/II, VDI, thick/thin; contenedores y Kubernetes; IaaS, PaaS y SaaS; clúster frente a grid; Ansible, Puppet, Terraform y CI/CD."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos siguientes reproducen el estilo de pregunta del bloque III. Cada uno incluye la respuesta correcta y una explicación que recuerda el dato del temario; la referencia indica el epígrafe y la fuente donde está el contenido. Conviene contestarlos sin mirar la solución y revisar después solo los fallos."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "El tema se ha redactado a partir de `data/fuentes/III.18.txt`, que reúne el volcado de `Tema 6.docx` (funciones y tareas del administrador, gestión de incidencias, actualizaciones, mantenimiento y reparación) y de `Bloque 4 Actualizado 2026.docx` (administración del sistema operativo, actualizaciones, backups, RAID, CPD, virtualización, contenedores, cloud, clústeres y automatización). Las citas por apartado aparecen en la lista `sources` y en la referencia de cada caso tipo test. No se han copiado párrafos literales y no se han añadido datos que no figuren en esas fuentes; en particular, el volcado no desarrolla Active Directory, DNS, DHCP, GPO, systemd ni SSH, por lo que no se incluyen contenidos de esas materias."
+    }
+  ]
 }

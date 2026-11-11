@@ -1,0 +1,250 @@
+{
+  "slug": "tai-propio-iv-web",
+  "year": 2026,
+  "conv": "Supuesto propio · OpoFuente 2026",
+  "block": "IV",
+  "title": "Integración de una sede electrónica con servicios externos",
+  "difficulty": "media",
+  "official": false,
+  "estimatedMinutes": 30,
+  "statement": "Una sede electrónica debe integrarse con un registro, una pasarela de pago y un servicio de consulta de datos. El equipo revisa el contrato de API, los formatos de intercambio, la autenticación y el tratamiento de errores antes de desplegar.",
+  "steps": [
+    "1. Identificar recursos, métodos y códigos HTTP.",
+    "2. Elegir formatos y validar el contrato.",
+    "3. Resolver autenticación y autorización.",
+    "4. Tratar errores, reintentos e idempotencia.",
+    "5. Documentar y probar la integración."
+  ],
+  "topics": [
+    "IV.31",
+    "IV.32",
+    "IV.28"
+  ],
+  "source": {
+    "label": "Elaboración propia · OpoFuente",
+    "url": "https://erdeivih.github.io/opofuente-demo/",
+    "pages": "Material propio de la demo"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué método HTTP se usa normalmente para obtener un recurso?",
+      "options": [
+        "GET",
+        "POST",
+        "DELETE",
+        "PATCH"
+      ],
+      "correct": "a",
+      "justification": "GET recupera un recurso sin modificarlo; POST crea, PUT/PATCH actualizan y DELETE elimina."
+    },
+    {
+      "stem": "¿Qué significa un código de estado 404?",
+      "options": [
+        "El servidor ha fallado",
+        "El recurso no existe o no se encuentra",
+        "La petición se ha creado",
+        "El usuario no está autenticado"
+      ],
+      "correct": "b",
+      "justification": "404 es error del cliente: el recurso solicitado no existe; 401 es no autenticado y 500 error del servidor."
+    },
+    {
+      "stem": "¿Qué lenguaje define la estructura de una página web?",
+      "options": [
+        "JavaScript",
+        "CSS",
+        "HTML",
+        "SQL"
+      ],
+      "correct": "c",
+      "justification": "HTML aporta estructura y significado; CSS la presentación y JavaScript el comportamiento."
+    },
+    {
+      "stem": "¿Qué es un diseño responsive?",
+      "options": [
+        "Un protocolo de red",
+        "Un diseño que solo funciona en escritorio",
+        "Una base de datos distribuida",
+        "Un diseño que se adapta y sigue siendo usable en distintos tamaños de pantalla"
+      ],
+      "correct": "d",
+      "justification": "El diseño responsive adapta la interfaz y la experiencia a móvil, tableta y escritorio."
+    },
+    {
+      "stem": "¿Qué formato es habitual en una API REST?",
+      "options": [
+        "JSON",
+        "PDF",
+        "DOCX",
+        "CSV siempre"
+      ],
+      "correct": "a",
+      "justification": "JSON es el formato más habitual en APIs REST, aunque también puede usarse XML."
+    },
+    {
+      "stem": "¿Qué es XSS?",
+      "options": [
+        "Un ataque de fuerza bruta al servidor",
+        "Inyección de scripts en una página que ejecuta el navegador",
+        "Un error de base de datos",
+        "Un protocolo de correo"
+      ],
+      "correct": "b",
+      "justification": "XSS (Cross-Site Scripting) inyecta código en la página; se mitiga escapando la salida y aplicando CSP."
+    },
+    {
+      "stem": "¿Cómo se evita la inyección SQL en el back-end?",
+      "options": [
+        "Desactivando HTTPS",
+        "Concatenando la entrada del usuario",
+        "Con consultas parametrizadas y validación",
+        "Ocultando los errores"
+      ],
+      "correct": "c",
+      "justification": "Las consultas parametrizadas separan datos y código; concatenar entrada permite inyección."
+    },
+    {
+      "stem": "¿Para qué sirve una cookie HttpOnly?",
+      "options": [
+        "Para bloquear el correo",
+        "Para cifrar la base de datos",
+        "Para acelerar la web",
+        "Para que JavaScript no pueda leerla y reducir el robo de sesión"
+      ],
+      "correct": "d",
+      "justification": "HttpOnly impide el acceso desde JavaScript, lo que limita el impacto de un XSS sobre la cookie de sesión."
+    },
+    {
+      "stem": "¿Qué ventaja ofrece una CDN?",
+      "options": [
+        "Serve recursos estáticos desde ubicaciones cercanas y reduce latencia",
+        "Sustituye la base de datos",
+        "Elimina la necesidad de HTTPS",
+        "Compila el back-end"
+      ],
+      "correct": "a",
+      "justification": "La CDN cachea y distribuye contenido estático geográficamente, mejorando tiempos de carga."
+    },
+    {
+      "stem": "¿Dónde debe validarse de forma obligatoria una entrada del usuario?",
+      "options": [
+        "Solo en el cliente",
+        "En el servidor, aunque también se valide en el cliente",
+        "Solo en la base de datos",
+        "En la CDN"
+      ],
+      "correct": "b",
+      "justification": "El cliente puede omitirse o manipularse; la validación definitiva debe hacerse en el servidor."
+    },
+    {
+      "stem": "¿Qué es la interoperabilidad?",
+      "options": [
+        "La velocidad de la red",
+        "La capacidad de dos sistemas de intercambiar información y usarla de forma útil",
+        "Un tipo de base de datos",
+        "Un lenguaje de programación"
+      ],
+      "correct": "b",
+      "justification": "La interoperabilidad combina acuerdo técnico, semántico y organizativo para que la información sea usable."
+    },
+    {
+      "stem": "¿Qué formato es habitual en APIs REST?",
+      "options": [
+        "DOCX",
+        "PDF",
+        "JSON",
+        "ZIP"
+      ],
+      "correct": "c",
+      "justification": "JSON es ligero y legible y se usa habitualmente en APIs REST; XML es común en SOAP."
+    },
+    {
+      "stem": "¿Qué añade un esquema como JSON Schema?",
+      "options": [
+        "Convierte el JSON en PDF",
+        "Cifra el JSON",
+        "Comprime el JSON",
+        "Valida la estructura y los tipos del JSON"
+      ],
+      "correct": "d",
+      "justification": "El esquema define campos, tipos y obligatoriedad, y permite rechazar mensajes mal formados."
+    },
+    {
+      "stem": "¿Qué es una operación idempotente?",
+      "options": [
+        "Una que puede repetirse sin producir efectos adicionales",
+        "Una que siempre falla",
+        "Una que solo se ejecuta una vez al día",
+        "Una que no necesita autenticación"
+      ],
+      "correct": "a",
+      "justification": "Repetir una operación idempotente deja el mismo estado; es clave para reintentos seguros."
+    },
+    {
+      "stem": "¿Qué método HTTP es idempotente por definición?",
+      "options": [
+        "POST",
+        "GET",
+        "CONNECT",
+        "NINGUNO"
+      ],
+      "correct": "b",
+      "justification": "GET no modifica el recurso y puede repetirse; POST no es idempotente por defecto."
+    },
+    {
+      "stem": "¿Qué hace un API gateway?",
+      "options": [
+        "Compila el front-end",
+        "Sustituye la base de datos",
+        "Centraliza el acceso a APIs con autenticación, límites y monitorización",
+        "Cifra los discos"
+      ],
+      "correct": "c",
+      "justification": "El gateway es un punto único de entrada que aplica políticas y facilita la observabilidad."
+    },
+    {
+      "stem": "¿Qué protocolo de autorización se usa habitualmente para APIs?",
+      "options": [
+        "NTP",
+        "SMTP",
+        "DHCP",
+        "OAuth 2.0"
+      ],
+      "correct": "d",
+      "justification": "OAuth 2.0 permite autorizar el acceso con alcances y tokens; no es un protocolo de correo ni de red."
+    },
+    {
+      "stem": "¿Qué es un ETL?",
+      "options": [
+        "Extraer, transformar y cargar datos entre sistemas",
+        "Un tipo de firewall",
+        "Un formato de imagen",
+        "Un protocolo de correo"
+      ],
+      "correct": "a",
+      "justification": "ETL (Extract, Transform, Load) mueve y transforma datos para sincronización o analítica."
+    },
+    {
+      "stem": "¿Qué debe incluir una respuesta de error de API?",
+      "options": [
+        "La traza completa del servidor",
+        "Código, mensaje claro y detalle útil sin exponer secretos",
+        "La contraseña de la base de datos",
+        "Solo un código 200"
+      ],
+      "correct": "b",
+      "justification": "Los errores deben ser consistentes y accionables, sin filtrar información interna."
+    },
+    {
+      "stem": "¿Para qué sirve un identificador de correlación?",
+      "options": [
+        "Para comprimir la respuesta",
+        "Para cifrar la petición",
+        "Para seguir una operación entre sistemas en los registros",
+        "Para cambiar el formato"
+      ],
+      "correct": "c",
+      "justification": "El correlation ID permite rastrear una misma operación a través de varios servicios y logs."
+    }
+  ]
+}

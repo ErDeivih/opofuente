@@ -4,8 +4,8 @@
 
 ## Qué se ha construido
 
-Diez supuestos resueltos del **Cuerpo de Técnicos Auxiliares de Informática (TAI)** del INAP, cada uno
-con **20 preguntas** y **200 preguntas en total**, resolución paso a paso, justificación de cada respuesta y referencia a la
+Once supuestos resueltos del **Cuerpo de Técnicos Auxiliares de Informática (TAI)** del INAP, cada uno
+con **20 preguntas** y **220 preguntas en total**, resolución paso a paso, justificación de cada respuesta y referencia a la
 plantilla oficial. Todos se pueden resolver en modo examen: sin corrección hasta el final.
 
 | Supuesto | Año | Bloque | Dificultad | Estado | Plantilla |
@@ -20,6 +20,7 @@ plantilla oficial. Todos se pueden resolver en modo examen: sin corrección hast
 | Renovación de aula de informática (propio II.13) | 2026 | II | media | Resuelto | Propio (20/20) |
 | Red de centro de formación (propio III.21) | 2026 | III | media | Resuelto | Propio (20/20) |
 | Auditoría y recuperación de BD (propio IV) | 2026 | IV | media | Resuelto | Propio (20/20) |
+| Integración de sede electrónica (propio IV) | 2026 | IV | media | Resuelto | Propio (20/20) |
 
 **Fuentes oficiales:**
 
@@ -68,6 +69,6 @@ cálculo de la nota excluye las anuladas.
 
 ## Verificación
 
-- **98/98** comprobaciones Playwright en la URL pública, incluidas la pestaña Supuestos, el filtro por
+- **101/101** comprobaciones Playwright en la URL pública, incluidas la pestaña Supuestos, el filtro por
   año, el enunciado/resolución y una resolución completa de 20 preguntas.
 - Build y test validan **3 supuestos × 20 preguntas** y las opciones sin prefijo duplicado.

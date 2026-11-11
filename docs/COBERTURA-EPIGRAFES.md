@@ -2,16 +2,16 @@
 
 **Fecha:** 11/11/2026 · **Referencia:** `data/sources/temario-c1.md` (40 temas, 5 bloques). Estado calculado desde `data.json`:
 
-- **completo:** desarrollo largo con 10 apartados y 15 test (13 temas).
-- **parcial:** ficha corta de 6-7 apartados y práctica de 10 preguntas (27 temas).
+- **completo:** desarrollo largo con 10 apartados y 15 test (16 temas).
+- **parcial:** ficha corta de 6-7 apartados y práctica de 10 preguntas (24 temas).
 - **ausente:** sin contenido (0 temas).
 
 ## Resumen
 
 | Estado | Temas |
 |---|---|
-| Completo | **13** |
-| Parcial | **27** |
+| Completo | **16** |
+| Parcial | **24** |
 | Ausente | **0** |
 | **Total** | **40** |
 
@@ -36,7 +36,7 @@
 | II | II.15 | Ofimática | **parcial** | 7 apartados cortos · 10 test |
 | II | II.16 | Correo electrónico y colaboración | **parcial** | 7 apartados cortos · 10 test |
 | II | II.17 | Licencias y software libre | **parcial** | 7 apartados cortos · 10 test |
-| III | III.18 | Sistemas operativos de servidor | **parcial** | 7 apartados cortos · 10 test |
+| III | III.18 | Sistemas operativos de servidor | **completo** | 10 apartados · 15 test |
 | III | III.19 | Virtualización y contenedores | **parcial** | 6 apartados cortos · 10 test |
 | III | III.20 | Almacenamiento y copias de seguridad | **parcial** | 6 apartados cortos · 10 test |
 | III | III.21 | Redes | **completo** | 10 apartados · 15 test |
@@ -49,8 +49,8 @@
 | IV | IV.28 | SQL | **completo** | 10 apartados · 15 test |
 | IV | IV.29 | Gestores de bases de datos | **completo** | 10 apartados · 15 test |
 | IV | IV.30 | Programación | **completo** | 10 apartados · 15 test |
-| IV | IV.31 | Desarrollo web | **parcial** | 7 apartados cortos · 10 test |
-| IV | IV.32 | Interoperabilidad e integración | **parcial** | 7 apartados cortos · 10 test |
+| IV | IV.31 | Desarrollo web | **completo** | 10 apartados · 15 test |
+| IV | IV.32 | Interoperabilidad e integración | **completo** | 10 apartados · 15 test |
 | IV | IV.33 | Informes y explotación de datos | **parcial** | 7 apartados cortos · 10 test |
 | V | V.34 | Seguridad de la información | **completo** | 14 apartados · 15 test |
 | V | V.35 | El Esquema Nacional de Seguridad (ENS, RD 311/2022) | **completo** | 14 apartados · 15 test |
@@ -62,6 +62,6 @@
 
 ## Qué falta
 
-Los **27 temas parciales** tienen apuntes y práctica, pero no el desarrollo de 10 apartados con 15 test. La prioridad es aplicarlos la misma plantilla que I.1, II.13 y III.21. No hay ningún tema ausente: los 40 tienen contenido publicado.
+Los **24 temas parciales** tienen apuntes y práctica, pero no el desarrollo de 10 apartados con 15 test. La prioridad es aplicarlos la misma plantilla que I.1, II.13 y III.21. No hay ningún tema ausente: los 40 tienen contenido publicado.
 
-La cobertura de los 13 completos es: I.1, II.13, II.14, III.21, III.22, III.23, IV.27, IV.28, IV.29, IV.30, V.34, V.35 y V.39.
+La cobertura de los 16 completos es: I.1, II.13, II.14, III.18, III.21, III.22, III.23, IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, V.34, V.35 y V.39.

@@ -292,7 +292,7 @@ check('III.21 tiene 10 apartados e indice/test', /1\. Ficha oficial/.test(iii21)
 await page.screenshot({ path: path.join(OUT_DIR, 'tema-iii-21-390.png'), fullPage: true });
 
 // Tres temas largos nuevos: II.14, III.22 y IV.28.
-for (const [tema, slug] of [['II.14', 'tema-ii-14-390'], ['III.22', 'tema-iii-22-390'], ['III.23', 'tema-iii-23-390'], ['IV.28', 'tema-iv-28-390'], ['IV.29', 'tema-iv-29-390'], ['IV.30', 'tema-iv-30-390']]) {
+for (const [tema, slug] of [['II.14', 'tema-ii-14-390'], ['III.18', 'tema-iii-18-390'], ['III.22', 'tema-iii-22-390'], ['III.23', 'tema-iii-23-390'], ['IV.28', 'tema-iv-28-390'], ['IV.29', 'tema-iv-29-390'], ['IV.30', 'tema-iv-30-390'], ['IV.31', 'tema-iv-31-390'], ['IV.32', 'tema-iv-32-390']]) {
   await page.goto(`${BASE}/#/tema/${tema}`, { waitUntil: 'networkidle' });
   await page.waitForSelector('h1');
   const texto = await page.locator('main').innerText();
@@ -445,7 +445,7 @@ await page.goto(`${BASE}/#/supuestos`, { waitUntil: 'networkidle' });
 await page.waitForSelector('h1');
 const supuestos = await page.locator('main').innerText();
 check('la pestaña Supuestos lista los supuestos oficiales', /Supuestos/.test(supuestos) && (await page.locator('.demo-card, section.card h2').count()) >= 3);
-check('incluye el supuesto propio de bloque IV', /Auditoría y recuperación/.test(supuestos));
+check('incluye los supuestos propios de bloque IV', /Auditoría y recuperación/.test(supuestos) && /Integración de una sede/.test(supuestos));
 check('los supuestos indican año, bloque y dificultad', /2024/.test(supuestos) && /Bloque IV/.test(supuestos) && /Dificultad media/.test(supuestos));
 await page.screenshot({ path: path.join(OUT_DIR, 'supuestos-390.png'), fullPage: true });
 await page.getByRole('button', { name: '2024', exact: true }).click();
