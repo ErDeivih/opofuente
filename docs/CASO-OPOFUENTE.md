@@ -13,12 +13,12 @@ casos prácticos y 40 prácticas**, publicado como demo estática, sin cuentas n
 | Temas con apuntes completos | **40/40 (100 %)** |
 | Preguntas razonadas | **400** (10 por tema) |
 | Casos prácticos | **5** casos · **50** preguntas |
-| Supuestos oficiales | **3** · **60** preguntas |
+| Supuestos oficiales | **5** · **100** preguntas |
 | Preguntas totales | **450** (400 de temario + 50 de casos) |
 | Prácticas | **40** (una por tema) |
 | Bloques | **5** (I-IV al 100 %; V 7/7) |
 | Convocatorias C1 | **12** (10 draft, 2 archivadas) |
-| Comprobaciones Playwright | **77/77** en la URL pública |
+| Comprobaciones Playwright | **78/78** en la URL pública |
 | Enlaces de convocatoria | **12/12** (HTTP 200) |
 | Pruebas | **517** unitarias backend · **225** web |
 | Capturas | 390 y 1280 px en `docs/capturas/demo-pages/` |
@@ -58,8 +58,8 @@ las opciones de test están equilibrados: 100 respuestas correctas por cada letr
   II.17, III.18 y III.22), con su propio runner y registro en el historial.
 - **Temas largos**: I.1, III.21, IV.27, V.34 y V.35 con 2.488-3.064 palabras, 70 test cases, tablas
   y 3 SVG propios; página autosuficiente y fuentes citadas por apartado/página.
-- **Supuestos oficiales**: 3 casos del INAP (2024-A-S1, 2023-L-S1, 2023-L-S2), 60 preguntas con
-  resolución, justificación y modo examen de 20 preguntas.
+- **Supuestos oficiales**: 5 casos del INAP (2024-A-S1, 2024-B-S1, 2024-A-S2, 2023-L-S1, 2023-L-S2),
+  100 preguntas con resolución, justificación y modo examen de 20 preguntas.
 - **Guía de estudio** con orden de bloques y temas flojos (<70 % en la última práctica).
 - **Examen por bloque** y **examen completo** que mezcla los cinco bloques, con tiempo total,
   penalización por fallo, nota y revisión de fallos. El perfil TAI usa 120 min y −1/3; las C1 locales
@@ -92,6 +92,7 @@ las opciones de test están equilibrados: 100 respuestas correctas por cada letr
 | Estadísticas e historial | [estadisticas-390](capturas/demo-pages/estadisticas-390.png) |
 | Guía de estudio | [guia-390](capturas/demo-pages/guia-390.png) |
 | Supuestos | [supuestos-390](capturas/demo-pages/supuestos-390.png) |
+| Tema largo V.39 | [tema-v-39-390](capturas/demo-pages/tema-v-39-390.png) |
 | Resultado de supuesto | [supuesto-resultado-390](capturas/demo-pages/supuesto-resultado-390.png) |
 | Caso práctico | [caso-practico-390](capturas/demo-pages/caso-practico-390.png) |
 

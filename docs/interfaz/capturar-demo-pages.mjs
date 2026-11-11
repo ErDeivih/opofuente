@@ -234,6 +234,16 @@ if (completo !== undefined) {
   );
 }
 
+// Sexto tema largo: Administración electrónica.
+await page.goto(`${BASE}/#/tema/V.39`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+const v39 = await page.locator('main').innerText();
+check(
+  'el tema V.39 tiene desarrollo largo y 15 casos',
+  /Casos tipo test/.test(v39) && /Fuentes citadas/.test(v39) && /15\./.test(v39),
+);
+await page.screenshot({ path: path.join(OUT_DIR, 'tema-v-39-390.png'), fullPage: true });
+
 if (pendiente !== undefined) {
   const texto = await captura(`tema/${pendiente.path}`, 'tema-pendiente', 1280);
   check(

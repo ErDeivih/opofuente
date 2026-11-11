@@ -1,6 +1,6 @@
 # Revisión final de la demo — 10/11/2026
 
-**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **77/77** comprobaciones con
+**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **78/78** comprobaciones con
 Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 
 ## Qué se ha revisado
@@ -36,6 +36,7 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 | Examen completo | [examen-completo-390](capturas/demo-pages/examen-completo-390.png) |
 | Resultado del examen | [examen-resultado-390](capturas/demo-pages/examen-resultado-390.png) |
 | Supuestos | [supuestos-390](capturas/demo-pages/supuestos-390.png) |
+| Tema largo V.39 | [tema-v-39-390](capturas/demo-pages/tema-v-39-390.png) |
 | Resultado de supuesto | [supuesto-resultado-390](capturas/demo-pages/supuesto-resultado-390.png) |
 | Estadísticas | [estadisticas-390](capturas/demo-pages/estadisticas-390.png) |
 | Estadísticas vacías | [estadisticas-vacia-390](capturas/demo-pages/estadisticas-vacia-390.png) |
@@ -54,7 +55,7 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
   verificados; fecha de revisión visible en la ficha.
 - **CSP y referrer** presentes; **errata descargada como JSON**; etiqueta **Simulación** en el examen.
 - **Corrección al elegir** sin «Comprobar», **estados vacíos con acción** y **resultado con revisión primero**.
-- **Temas largos** I.1/III.21/IV.27/V.34/V.35 con SVG, test cases y fuentes; 77/77 comprobaciones.
+- **Temas largos** I.1/III.21/IV.27/V.34/V.35 con SVG, test cases y fuentes; 78/78 comprobaciones.
 - Pruebas: 517 unitarias de backend, 225 de web, typecheck, eslint, ruff, mypy y build.
 
 ## Temario completo
