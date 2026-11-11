@@ -117,6 +117,8 @@ interface TopicSummary {
   readonly practicaStatus: PracticaStatus;
   readonly sectionCount: number;
   readonly questionCount: number;
+  readonly formato?: 'esquema' | 'desarrollado';
+  readonly longWords?: number;
 }
 
 interface TopicContent {
@@ -314,6 +316,17 @@ function PracticaBadge({ status }: { status: PracticaStatus }) {
   return (
     <span className={`demo-status demo-status--practica-${status}`}>{PRACTICA_LABEL[status]}</span>
   );
+}
+
+function FormatoBadge({ formato, words }: { readonly formato?: 'esquema' | 'desarrollado'; readonly words?: number }) {
+  if (formato === 'desarrollado') {
+    return (
+      <span className="demo-status demo-status--formato">
+        Desarrollado · {words ?? 0} palabras
+      </span>
+    );
+  }
+  return <span className="demo-status demo-status--apuntes-pendiente">Esquema</span>;
 }
 
 function SourceLine({ source, official = false }: { source: DemoSource; official?: boolean }) {
@@ -1547,6 +1560,7 @@ function Temario({ initialFiltro = 'todos' }: { readonly initialFiltro?: Filtro 
                   <span className="demo-topic__badges">
                     <ApuntesBadge status={topic.apuntesStatus} />
                     <PracticaBadge status={topic.practicaStatus} />
+                    <FormatoBadge formato={topic.formato ?? 'esquema'} words={topic.longWords ?? 0} />
                   </span>
                 </button>
               </li>

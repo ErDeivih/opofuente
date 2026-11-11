@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 11/11 (continuacion): inventario de 124 PDF/DOCX con SHA-256 (124 unicos, 0 duplicados) y tabla tema/ficheros/paginas; sexto tema largo V.39 Administracion electronica (2.448 palabras, 15 test cases) e I.1 reescrito con estructura definitiva de 10 apartados (1.543 palabras, 15 test cases); dos supuestos oficiales mas (2024-A-S2 y 2024-B-S1), total 5 supuestos/100 preguntas con justificacion y ficha por año/bloque. 78/78 comprobaciones.
+resumen: Sesion 11/11 (tanda larga): II.13 Arquitectura reescrito con estructura de 10 apartados, 2.692 palabras y 15 test cases; dos supuestos oficiales mas (2019-L-S1 y 2019-L-S2) hasta 7 supuestos/140 preguntas; sellos "Esquema"/"Desarrollado · N palabras" visibles en el indice. Demo 80/80 y 12/12 enlaces.
 estado: completado
-tarea: inventario, V.39 y cinco supuestos oficiales
+tarea: II.13, siete supuestos y sellos de tema
 nivel: 2
-siguiente: seguir con temas largos que tengan fuentes y anadir supuestos 2022/2019 si aparecen con plantilla
+siguiente: seguir con temas largos y supuestos oficiales; revisar reglas locales cuando se publiquen
 bloqueado: ninguno
 fecha: 2026-11-11

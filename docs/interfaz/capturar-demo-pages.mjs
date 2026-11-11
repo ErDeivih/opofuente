@@ -103,6 +103,7 @@ const temario = await captura('temario', 'temario', 1280);
 check('el temario enseña 5 bloques y 40 temas', /5 bloques/.test(temario) && /40 temas/.test(temario));
 check('hay avance por bloque con porcentaje', /I: \d+\/12 \(\d+%\) con apuntes/.test(temario));
 check('los sellos de apuntes y práctica están visibles', /Apuntes completos/.test(temario) && /Con práctica/.test(temario));
+check('el índice muestra sello desarrollado con palabras y esquema', /Desarrollado ·/.test(temario) && /Esquema/.test(temario));
 check('hay al menos 5 temas con apuntes', data.progress.apuntesCompletos >= 5, `${data.progress.apuntesCompletos}`);
 await captura('temario', 'temario', 390);
 check(
@@ -243,6 +244,13 @@ check(
   /Casos tipo test/.test(v39) && /Fuentes citadas/.test(v39) && /15\./.test(v39),
 );
 await page.screenshot({ path: path.join(OUT_DIR, 'tema-v-39-390.png'), fullPage: true });
+
+// Segundo tema largo: II.13.
+await page.goto(`${BASE}/#/tema/II.13`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+const ii13 = await page.locator('main').innerText();
+check('el tema II.13 tiene 10 apartados, tabla y 15 casos', /1\. Ficha oficial/.test(ii13) && /10\. Fuentes citadas/.test(ii13) && /15\./.test(ii13));
+await page.screenshot({ path: path.join(OUT_DIR, 'tema-ii-13-390.png'), fullPage: true });
 
 if (pendiente !== undefined) {
   const texto = await captura(`tema/${pendiente.path}`, 'tema-pendiente', 1280);

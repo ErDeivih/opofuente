@@ -151,6 +151,10 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
                 solo_resumen += 1
             else:
                 pendientes += 1
+            long_sections = completo.get("longSections", []) if completo else []
+            long_words = sum(
+                len(str(seccion.get("body", "")).split()) for seccion in long_sections
+            )
             topics.append(
                 {
                     "path": path,
@@ -159,6 +163,8 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
                     "practicaStatus": practica,
                     "sectionCount": secciones,
                     "questionCount": preguntas,
+                    "formato": "desarrollado" if long_sections else "esquema",
+                    "longWords": long_words,
                 }
             )
         bloques.append(

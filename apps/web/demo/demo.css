@@ -198,6 +198,12 @@
   border: 1px solid #9aa0a6;
 }
 
+.demo-status--formato {
+  background: #f3e8fd;
+  color: #5b1d91;
+  border: 1px solid #8430ce;
+}
+
 .demo-status--practica-con_practica {
   background: #e8f0fe;
   color: #174ea6;

@@ -39,10 +39,11 @@ servidor.
 - **Calidad revisada**: 40/40 fichas con «Lo que hay que memorizar» y «Errores típicos»; 5 temas
   reforzados (II.15, II.16, II.17, III.18, III.22) y letra correcta equilibrada (100 a/b/c/d).
   Detalle en [CALIDAD-TEMARIO.md](docs/CALIDAD-TEMARIO.md).
-- **Temas largos**: I.1, III.21, IV.27, V.34, V.35 y V.39 reescritos con 1.543-3.064 palabras, 86 casos
-  tipo test y 3 SVG propios; fuentes citadas y páginas de estudio autosuficientes. Detalle en
+- **Temas largos**: I.1, II.13, III.21, IV.27, V.34, V.35 y V.39 reescritos con 1.543-3.064 palabras, 101 casos
+  tipo test y 4 SVG propios; fuentes citadas y páginas de estudio autosuficientes. Detalle en
   [TEMAS-LARGOS.md](docs/TEMAS-LARGOS.md).
-- **Supuestos oficiales**: 5 supuestos del INAP (2024-A-S1, 2024-B-S1, 2024-A-S2, 2023-L-S1 y 2023-L-S2), **100 preguntas**, resolución paso a paso, justificaciones y modo examen de 20 preguntas. Detalle en
+- **Sellos de tema**: el índice muestra «Esquema» o «Desarrollado · N palabras» sin abrir la ficha.
+- **Supuestos oficiales**: 7 supuestos del INAP (2024-A-S1, 2024-B-S1, 2024-A-S2, 2023-L-S1, 2023-L-S2, 2019-L-S1 y 2019-L-S2), **140 preguntas**, resolución paso a paso, justificaciones y modo examen de 20 preguntas. Detalle en
   [SUPUESTOS.md](docs/SUPUESTOS.md).
 - **Inventario de fuentes**: 124 PDF/DOCX con SHA-256, páginas y tabla tema → ficheros en [INVENTARIO-FUENTES-124.md](docs/INVENTARIO-FUENTES-124.md).
 - Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14,
@@ -116,6 +117,7 @@ servidor.
 | Guía de estudio | — | [guia-390](docs/capturas/demo-pages/guia-390.png) |
 | Tema largo I.1 | — | [tema-completo-390](docs/capturas/demo-pages/tema-completo-390.png) |
 | Tema largo V.39 | — | [tema-v-39-390](docs/capturas/demo-pages/tema-v-39-390.png) |
+| Tema largo II.13 | — | [tema-ii-13-390](docs/capturas/demo-pages/tema-ii-13-390.png) |
 | Supuestos | — | [supuestos-390](docs/capturas/demo-pages/supuestos-390.png) |
 | Resultado de supuesto | — | [supuesto-resultado-390](docs/capturas/demo-pages/supuesto-resultado-390.png) |
 | Examen | — | [examen-390](docs/capturas/demo-pages/examen-390.png) |
@@ -131,7 +133,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **78/78** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **80/80** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -188,7 +190,7 @@ servidor.
 
 ## 9. Revisión final y qué queda
 
-- **78/78** comprobaciones, también a **390 px**; capturas nuevas en
+- **80/80** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
 - **40/40** temas completos: I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7.
@@ -196,4 +198,4 @@ servidor.
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 78/78 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 80/80 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
