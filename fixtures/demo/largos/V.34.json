@@ -1,0 +1,460 @@
+{
+  "tema": "V.34",
+  "title": "Seguridad de la información",
+  "sections": [
+    {
+      "heading": "1. Introducción y contexto",
+      "body": "La seguridad de los sistemas de información (SSI) debe cubrir la confidencialidad, la integridad y la disponibilidad frente a tres riesgos de una protección incorrecta: que la información se revele a personas no autorizadas, que los datos sean inexactos y que no se pueda acceder a ellos cuando se necesitan.\n\nNo se limita al programa del ordenador: abarca la protección física del equipo y de su entorno, la información que contiene y las redes que lo comunican con el exterior. Se define como un conjunto de reglas, planes y acciones que permiten asegurar la información de un sistema computacional, «un conjunto de soluciones técnicas a problemas no técnicos»; por eso hacen falta medidas en el nivel físico, humano, lógico y logístico, y un responsable que las mantenga.\n\nEste tema resume el material consolidado de *Tema 10.docx*, *Tema 14.docx* y *Bloque 4 Actualizado 2026.docx*. Los PDF de CCN-CERT están escaneados y sin texto extraíble: no se han usado ni se citan como leídos.\n\n*(Fuentes: Tema 10.docx, apartados 1 y 1.1; temario-c1.md, BLOQUE V, tema 34.)*"
+    },
+    {
+      "heading": "2. Confidencialidad, integridad y disponibilidad: la tríada CIA",
+      "body": "**Confidencialidad.** Asegura que la información no pueda estar disponible ni ser descubierta por personas, entidades o procesos no autorizados. No es solo impedir el acceso: garantiza que cada usuario llegue a la información que le corresponde según su grado o nivel de autoridad y que se respeten las disposiciones legales o los criterios estratégicos sobre información privada. Sus mecanismos típicos son el control de acceso y el cifrado.\n\n**Integridad.** Garantiza que la información solo la modifica —incluida su creación y su borrado— el personal autorizado, y que el sistema no la corrompe ni permite que otro lo haga; cubre la manipulación intencionada y los cambios accidentales. La autenticidad es un aspecto variante de la integridad: verifica el origen de los datos mediante códigos o firmas que se añaden en el origen y se recalculan en el destino.\n\n**Disponibilidad.** Es el grado en que un dato está en el lugar, momento y forma en que lo requiere el usuario autorizado, y el sistema sigue funcionando y puede recuperarse de un fallo. Su opuesto es la denegación de servicio: el sistema operativo se cae, falta memoria, los discos o impresoras no están disponibles o no se accede a la información.\n\nA la tríada se añaden la **autenticidad**, el **no repudio** (no poder negar ante terceros un envío o una recepción), la **consistencia**, el **aislamiento** y la **auditoría**.\n\n*(Fuente: Tema 10.docx, apartados 1 y 1.1.)*"
+    },
+    {
+      "heading": "3. Activos, amenazas y vulnerabilidades",
+      "body": "Un **activo** es un recurso del sistema de información necesario para la organización. Una **amenaza** es un evento que puede desencadenar un incidente y producir daños materiales o pérdidas inmateriales; una **vulnerabilidad**, la probabilidad de sufrir un ataque en un plazo o, según Magerit, la potencialidad de que una amenaza se materialice sobre un activo; el **impacto** es su consecuencia y el **riesgo**, la posibilidad de que se produzca ese impacto. El bloque 4 añade el **riesgo inherente**, propio de la actividad sin controles, y el **residual**, el que queda tras tratarlos.\n\nLas vulnerabilidades se repiten: instalaciones por defecto, cuentas sin contraseña o débiles, copias incompletas o inexistentes, exceso de puertos abiertos, filtrado insuficiente de paquetes, registros incompletos y programas CGI vulnerables. Los catálogos específicos incluyen el salto Unicode, ISAPI y RDS, SMB/NetBIOS, las sesiones nulas y el hash débil de SAM en Windows; RPC, sendmail, BIND, los comandos «r», LPD, sadmind, mountd y las comunidades SNMP por omisión en UNIX; y, en la web, la falta de validación de parámetros, el control de acceso violado, las sesiones, los desbordamientos, la inyección de comandos, los errores que revelan trazas, el mal uso de criptografía y la configuración incorrecta.\n\n*(Fuentes: Tema 10.docx, apartados 1.1 y 4; Tema 14.docx, apartado 1.2; Bloque 4 Actualizado 2026.docx, Tema 5.)*",
+      "table": {
+        "columns": [
+          "Vulnerabilidad",
+          "Por qué aparece",
+          "Efecto principal"
+        ],
+        "rows": [
+          [
+            "Instalación por defecto",
+            "El instalador deja componentes y demostraciones que no se usan",
+            "Aumenta la superficie de ataque (confidencialidad e integridad)"
+          ],
+          [
+            "Cuentas sin contraseña o débiles",
+            "El nombre de usuario es fácil de obtener y toda la seguridad recae en la clave",
+            "Suplantación de identidad (confidencialidad)"
+          ],
+          [
+            "Copias de seguridad incompletas",
+            "No se verifica la restauración ni la frecuencia de las copias",
+            "Pérdida de datos y de servicio (integridad y disponibilidad)"
+          ],
+          [
+            "Exceso de puertos abiertos",
+            "Se abre lo que no se necesita y cada puerto es una vía de conexión",
+            "Acceso no autorizado y denegación de servicio"
+          ],
+          [
+            "Filtrado de paquetes insuficiente",
+            "No se comprueba el origen y el destino ni se filtra la entrada y la salida",
+            "Suplantación de IP y tráfico no deseado"
+          ],
+          [
+            "Registro de eventos incompleto",
+            "Los registros no se activan o no se conservan",
+            "Incidentes indetectables y auditoría inservible"
+          ],
+          [
+            "Programas CGI y configuración web laxa",
+            "El servidor web queda unido directamente al sistema operativo",
+            "Ejecución remota de código y fuga de información"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "4. Análisis y gestión de riesgos (MAGERIT)",
+      "body": "La gestión de riesgos une la política con las medidas concretas. Se empieza valorando lo que se protege: determinar los recursos y su valor, considerando el valor intrínseco del producto y los costes derivados de su pérdida, y buscar que atacar nuestros bienes sea más costoso que su valor, invirtiendo menos de lo que vale el activo. Después se analizan las vulnerabilidades y amenazas con su probabilidad y su coste, se definen las medidas en todos los niveles y se monitoriza el cumplimiento, revisando y mejorando cada vez que se detecte un problema.\n\nDos ideas resumen el método: la seguridad debe cubrir todos los posibles métodos de ataque y la máxima seguridad obtenible es la del elemento más débil. El riesgo es la probabilidad de que ocurra una amenaza ponderada por la magnitud del daño, y cada riesgo debe reducirse mitigando su probabilidad, reduciendo el perjuicio, diseñando métodos de recuperación rápida y corrigiendo las medidas.\n\nEl enunciado oficial cita a **MAGERIT** como marco de análisis y gestión de riesgos, y el material recoge de él las definiciones de vulnerabilidad, impacto y riesgo. El ciclo es continuo y el riesgo nunca se elimina del todo: el residual permanece tras aplicar los controles y debe aceptarse de forma consciente.\n\n*(Fuentes: Tema 10.docx, apartados 2 y 4; Tema 14.docx, apartado 1.2; Bloque 4 Actualizado 2026.docx, Tema 5; temario-c1.md, tema 34.)*"
+    },
+    {
+      "heading": "5. Tipos de medidas de seguridad",
+      "body": "Diseñar sistemas con criterios de seguridad es más complejo que asegurar cualquier otra función: las amenazas son poco cuantificables y variadas, toda medida tiene un coste y, a mayores y más restrictivas medidas, menos amigable resulta el sistema. El material clasifica las medidas en cinco grupos.\n\nLas **físicas** impiden el acceso directo no autorizado y protegen de desastres naturales: controles de acceso, protección contra incendios, resistencia de elementos constructivos, instalaciones auxiliares, grupos electrógenos, control medioambiental, vigilancia y sistemas de contingencia y recuperación (SAI, redundancia). Incluyen la protección de las líneas de telecomunicaciones, la ubicación de equipos y copias en áreas seguras y distintos sitios y el control de entrada y salida de personas con registro.\n\nLas **lógicas** abarcan el control de acceso a los recursos, el reparto de responsabilidades y la protección de la información: control de accesos, instalación y copia de software, criptografía, copias de seguridad y monitorización y auditoría. Las **humanas** definen funciones y responsabilidades de administradores y usuarios. Las **administrativas** documentan y publican la política y establecen un plan de formación. Las **legales** disuaden al atacante o permiten castigarlo.\n\n*(Fuente: Tema 10.docx, apartados 2 y 2.1.)*",
+      "table": {
+        "columns": [
+          "Tipo de medida",
+          "Qué protege",
+          "Ejemplos citados por la fuente"
+        ],
+        "rows": [
+          [
+            "Física",
+            "El acceso directo, las instalaciones y el entorno",
+            "Control de accesos, protección contra incendios, SAI, vigilancia, control ambiental"
+          ],
+          [
+            "Lógica",
+            "El acceso a recursos y la información almacenada",
+            "Control de accesos, criptografía, copias de seguridad, monitorización y auditoría"
+          ],
+          [
+            "Humana",
+            "Las funciones y responsabilidades de las personas",
+            "Administrador de sistema, administrador de seguridad, usuarios y terceros"
+          ],
+          [
+            "Administrativa",
+            "La organización y la formación",
+            "Documentación y publicación de la política, plan de formación"
+          ],
+          [
+            "Legal",
+            "La disuasión y el castigo del atacante",
+            "Normas fijadas por instituciones, como la protección de datos"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "6. Seguridad física: el CPD, TIA-942 y los niveles Tier",
+      "body": "Un **centro de proceso de datos (CPD)** concentra los recursos de almacenamiento, proceso y transmisión de la información para garantizar la continuidad y disponibilidad de los servicios; sus dos características clave son la confiabilidad o disponibilidad y la flexibilidad o escalabilidad. La norma **TIA-942** define directrices de planificación y construcción: arquitectura de red, diseño eléctrico, almacenamiento, backup y archivo, redundancia, gestión de bases de datos, control ambiental y protección contra riesgos físicos. Distingue áreas funcionales —entrada, distribución principal (MDA), horizontal (HDA), de zona (ZDA) y de equipos— con cableado EIA/TIA-568 y racks al 70 % de capacidad.\n\nEl calor y el consumo energético son el gran problema: la climatización se mantiene en torno a 16-24 ºC y 40-55 % de humedad y refrigeración por salas, filas, pasillos o racks. En energía se separan los circuitos, se usan dos o más acometidas y alimentación de emergencia con SAI y grupos electrógenos; los **SAI** pueden ser offline (equipos no críticos), inline (con estabilizador) u online (siempre generan tensión y protegen sistemas críticos).\n\nLa protección contra incendios reduce la probabilidad de que empiece el fuego, de que se propague y el daño causado: paredes con resistencia mínima de una hora, puertas con cierre propio, materiales incombustibles, cableado LSZH bajo el suelo, aspersión activada por dos detectores y mecanismos de dióxido de carbono que desplazan el oxígeno sin dañar los equipos. Se añaden armarios ignífugos, detectores de inundación y copias en ubicaciones distintas; la redundancia se mide en niveles **N**, **N+1** y **2N**, y ANSI/TIA-942 clasifica la fiabilidad en cuatro **Tier**.\n\n*(Fuentes: Tema 10.docx, apartado 9; Bloque 4 Actualizado 2026.docx, Tema 5.)*",
+      "table": {
+        "columns": [
+          "Tier",
+          "Redundancia y mantenimiento",
+          "Disponibilidad aproximada",
+          "Indisponibilidad anual"
+        ],
+        "rows": [
+          [
+            "Tier I (básico)",
+            "Sin redundancia; una única línea de alimentación y refrigeración",
+            "99,671 %",
+            "Hasta 28,8 horas"
+          ],
+          [
+            "Tier II (redundancia parcial)",
+            "Redundancia limitada y generadores de respaldo",
+            "99,741 %",
+            "Hasta 22 horas"
+          ],
+          [
+            "Tier III (mantenimiento concurrente)",
+            "Mantenimiento sin interrumpir el servicio; alimentación y refrigeración redundantes",
+            "99,982 %",
+            "Hasta 1,6 horas"
+          ],
+          [
+            "Tier IV (tolerante a fallos)",
+            "Redundancia total, doble fuente de energía activa y distribución independiente",
+            "99,995 %",
+            "Hasta 26,3 minutos"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "7. Seguridad lógica: identificación, control de acceso y criptografía",
+      "body": "Antes de dejar entrar a alguien hay que saber quién es, si está autorizado y qué puede hacer: son la **identificación**, la **autenticación o verificación** y la **autorización**. Las claves se descubren por fuerza bruta, no siempre se sabe si un intruso ha entrado y es difícil conseguir buenas prácticas; se reducen limitando los intentos y exigiendo longitud y variedad. El **modelo AAA** resume el ciclo: autenticación, autorización y auditoría.\n\nLa **criptografía** transforma un mensaje mediante una clave. En la **simétrica** la misma clave cifra y descifra (DES: bloques de 64 bits y clave efectiva de 56; 3DES: tres ejecuciones y 168 bits; AES: claves de 128, 192 o 256 bits y bloque de 128). En la **asimétrica** cada usuario tiene clave pública y privada: lo cifrado con una se descifra con la otra, lo que resuelve el intercambio de claves y permite firmar; se apoyan en la factorización de enteros (RSA) o en el logaritmo discreto (Diffie-Hellman) y son entre 100 y 1000 veces más lentas. Las **funciones hash** obtienen una huella de longitud fija (MD5, 128 bits; SHA-1, 160 bits) y dan integridad.\n\nLa **firma digital** aplica un hash al documento y cifra el resumen con la clave privada del autor: cualquiera con la clave pública comprueba autoría e integridad, y aporta identificación, integridad y no repudio. La **PKI** garantiza que una clave pública pertenece a quien dice: autoridades de certificación (CA), de registro (RA) y de fechado (TSA), repositorios y listas de revocación (CRL), con certificados X.509. En el puesto de trabajo, la seguridad lógica empieza por un sistema operativo actualizado: los parches corrigen vulnerabilidades críticas y el firmware (BIOS o UEFI) inicia el equipo con particionado MBR (2 TB y cuatro particiones primarias) o GPT.\n\n*(Fuentes: Tema 10.docx, apartados 3, 7 y 8; Tema 14.docx, apartado 1.5; Bloque 4 Actualizado 2026.docx, Tema 1.)*"
+    },
+    {
+      "heading": "8. Seguridad perimetral y en redes",
+      "body": "La **seguridad perimetral** reúne las técnicas, elementos y sistemas que protegen la frontera entre la red local y las externas. Los segmentos se organizan en zonas: **interna**, **externa** y **DMZ**, zona intermedia donde se sitúan los servidores que prestan servicio hacia fuera y que queda protegida por las reglas del firewall. El **host bastión** es un sistema especialmente asegurado y expuesto, punto de contacto entre la red interna y el exterior.\n\nUn **firewall** hace cumplir una política de control de acceso entre redes. Los de **filtrado de paquetes** deciden con información de las capas 2, 3 y 4 —direcciones de origen y destino, protocolo, tipo de tráfico, puertos e interfaz— y pueden descartar silenciosamente un paquete; son rápidos y baratos, pero no ven las capas altas y son vulnerables al spoofing. Los de **inspección de estado (SPI)** añaden una tabla de conexiones y protegen el tráfico UDP, aunque se limitan al análisis de TCP. Los de **nivel de aplicación** evalúan la capa 7, con registros detallados y autenticación, pero rinden menos y necesitan un servicio por protocolo.\n\nLos **IDS** complementan al firewall con monitorización, detección y respuesta, y vigilan una máquina (verificadores de integridad, monitores de registros, honeypots) o una red (con el puerto del switch en *port mirroring*), detectando por anomalías o por firmas. Los **IPS** añaden el bloqueo en tiempo real. Los **proxies** actúan de intermediario, cachean y filtran contenido.\n\nLa **VPN** crea una red privada sobre una infraestructura pública con túneles cifrados que garantizan autenticación, confidencialidad e integridad; puede ser *overlay* o *peer-to-peer* y, por topología, de acceso remoto, sitio a sitio o extranet. **IPSec** usa AH (integridad y autenticación) y ESP (confidencialidad y, opcionalmente, autenticación), con asociaciones de seguridad y modos transporte o túnel; **OpenVPN** es una alternativa libre con claves precompartidas o SSL/TLS. En el **puesto de usuario** se exige sistema operativo actualizado, cliente VPN y antivirus, y los dispositivos que no cumplen la política no acceden a la red, con NAC y segmentación lógica.\n\n*(Fuentes: Tema 14.docx, apartados 2, 3 y 4; Bloque 4 Actualizado 2026.docx, Tema 5.)*",
+      "table": {
+        "columns": [
+          "Tipo de firewall",
+          "Capas del modelo OSI",
+          "Ventaja principal",
+          "Limitación principal"
+        ],
+        "rows": [
+          [
+            "Filtrado de paquetes",
+            "2, 3 y 4",
+            "Rapidez, transparencia y bajo coste",
+            "No inspecciona las capas altas y es vulnerable al spoofing"
+          ],
+          [
+            "Inspección de estado (SPI)",
+            "3 y 4, con tabla de conexiones",
+            "Sigue las conexiones establecidas y protege el tráfico UDP",
+            "Se limita al análisis del protocolo TCP y no ve los protocolos de nivel alto"
+          ],
+          [
+            "Nivel de aplicación",
+            "5, 6 y 7",
+            "Registros detallados, autenticación y aislamiento de la red interna",
+            "Menor rendimiento y necesita un servicio específico por protocolo"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "9. Gestión de incidentes de seguridad",
+      "body": "Un **incidente de seguridad** es cualquier evento que puede provocar una interrupción o degradación de los servicios o afectar a la confidencialidad o a la integridad de la información. Para responder hace falta un **plan de respuesta a incidentes** que contemple equipo, procedimientos y actuaciones: un **CSIRT** (*Computer Security Incident Response Team*) reúne a las personas con experiencia y formación para gestionar incidencias y desastres, y sus procedimientos deben permitir restaurar la capacidad de proceso y comunicaciones y recuperar los datos dañados.\n\nLa **detección** se apoya en indicadores: escaneos de puertos o de vulnerabilidades, alarmas de IDS o antivirus, incrementos anormales en los registros, ficheros con nombres extraños, modificaciones en ficheros del sistema, caídas o reinicios inesperados, aumento de la carga, tráfico inusual, cambios de configuración, tarjetas en modo promiscuo, herramientas no autorizadas, cuentas nuevas y conexiones en horarios extraños. El **análisis** determina el alcance, si se ha comprometido información confidencial, el tipo de ataque y su método, y valora los daños.\n\nDespués llega la **contención**: actuar rápido (apagar equipos, desconectarlos, desactivar servicios), cuando peligran servicios críticos, o retrasarla para estudiar el incidente y reunir evidencias. La **erradicación** elimina los agentes causantes y sus secuelas (puertas traseras, rootkits). La **recuperación** reinstala el sistema desde una copia segura, cambia contraseñas comprometidas, desactiva cuentas y prueba el sistema. Por último, se documenta el incidente —tipo, hechos, daños, decisiones, comunicaciones, evidencias y recomendaciones— y, si se puede, se identifica al atacante mediante ping, traceroute o whois, sabiendo que el spoofing, los equipos de terceros, las IP dinámicas o los proxies con NAT pueden impedirlo.\n\n*(Fuente: Tema 10.docx, apartado 10.)*"
+    },
+    {
+      "heading": "10. Marco de gestión y normas: MAGERIT, ISO/IEC 27001 y 27002",
+      "body": "La seguridad no es solo una colección de herramientas: la **política de seguridad** es una declaración de alto nivel que cubre la seguridad y sirve de base para delimitar responsabilidades, y se despliega en normas, reglamentos y protocolos que definen las medidas y los mecanismos de control. Una política debe cubrir todos los aspectos del sistema, protegerlo en los niveles físico, humano, lógico y logístico, tener en cuenta los componentes y su interacción, adaptarse al tipo de organización y ajustarse a sus necesidades, recursos y al valor de lo que se protege. Después, el ciclo continúa con la monitorización del cumplimiento, la revisión y la mejora.\n\nEl enunciado oficial del tema incluye expresamente, dentro de la seguridad de la información, los riesgos y su análisis y gestión (**MAGERIT**) y las normas **ISO/IEC 27001 y 27002**. Conviene precisar el alcance: el material consolidado recoge las definiciones de Magerit y el método de valoración de activos, amenazas y riesgos, pero **no desarrolla el contenido normativo de ISO/IEC 27001 y 27002**. Aquí solo se deja constancia de su presencia en el programa: ISO/IEC 27001 se ocupa de los requisitos del sistema de gestión de la seguridad de la información e ISO/IEC 27002 del catálogo de controles, sin entrar en cláusulas, números de control ni plazos concretos. Los PDF de CCN-CERT que podrían completar esa parte están escaneados y sin texto extraíble: no se han leído ni se citan.\n\n*(Fuentes: Tema 10.docx, apartados 2 y 4; temario-c1.md, BLOQUE V, tema 34.)*"
+    },
+    {
+      "heading": "11. Caso práctico: de la política al control en una administración local",
+      "body": "Supongamos una administración local con un CPD pequeño, dos sedes y personal que teletrabaja. El activo más valioso no es el servidor, sino el expediente electrónico y los datos personales de los empleados: la confidencialidad protege que no se revelen, la integridad que no se alteren y la disponibilidad que se puedan consultar cuando toca. Las amenazas probables son el robo de credenciales por suplantación (phishing), el cifrado de datos por un código malicioso, la denegación de servicio y el error humano; las vulnerabilidades, una instalación por defecto, contraseñas débiles, copias sin verificar y exceso de puertos abiertos.\n\nEl análisis de riesgos valora cada pareja activo-amenaza y decide medidas en los cinco niveles: control de acceso físico al CPD con registro de entradas, protección contra incendios y SAI; control lógico de accesos, contraseñas robustas, cifrado de las comunicaciones y firma de los documentos; formación del personal frente al phishing; política documentada y publicada con un responsable de seguridad; y el marco legal de protección de datos. En el perímetro se separa la DMZ de la red interna, se filtran puertos y se mantiene un IDS; el acceso remoto se hace por VPN.\n\nPara la disponibilidad se combinan copias 3-2-1 —tres copias, en dos tipos de almacenamiento y una fuera del sitio— con objetivos medibles: el **RPO** marca cuántos datos se puede permitir perder (si es de una hora, hay que copiar al menos cada hora), el **RTO** el tiempo máximo de restauración y el **MTD** el tiempo máximo que el servicio puede estar caído sin consecuencias catastróficas. Y se prepara el plan de incidentes: equipo, indicadores, contención, erradicación, recuperación y documentación.\n\n*(Fuentes: Tema 10.docx, apartados 2.1, 9 y 10; Tema 14.docx, apartados 2 y 4; Bloque 4 Actualizado 2026.docx, Temas 2 y 5.)*",
+      "table": {
+        "columns": [
+          "Capa",
+          "Activo en riesgo",
+          "Control propuesto"
+        ],
+        "rows": [
+          [
+            "Física",
+            "Servidores y copias",
+            "Control de acceso con registro, protección contra incendios, SAI y copias fuera del sitio"
+          ],
+          [
+            "Lógica",
+            "Expedientes y datos personales",
+            "Control de acceso, contraseñas robustas, cifrado y firma digital"
+          ],
+          [
+            "Humana y administrativa",
+            "Personal y procedimientos",
+            "Formación frente al phishing, política publicada y responsable de seguridad"
+          ],
+          [
+            "Perímetro",
+            "Red interna",
+            "DMZ, filtrado de puertos, IDS y VPN para el acceso remoto"
+          ],
+          [
+            "Continuidad",
+            "Servicio y datos",
+            "Copias 3-2-1 con RPO, RTO y MTD definidos, y plan de respuesta a incidentes"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "12. Resumen: lo que hay que memorizar",
+      "body": "- **Tríada CIA**: confidencialidad (solo accede quien está autorizado), integridad (solo la modifica el personal autorizado) y disponibilidad (el dato está cuando se necesita). Se añaden autenticidad, no repudio, consistencia, aislamiento y auditoría.\n- **Términos**: activo; amenaza (evento que puede desencadenar un incidente); vulnerabilidad (potencialidad de que la amenaza se materialice); impacto (consecuencia). Riesgo = probabilidad de la amenaza ponderada por el daño; **inherente** sin controles y **residual** después de aplicarlos.\n- **Método**: valorar activos, analizar vulnerabilidades y amenazas con su probabilidad y coste, definir medidas en todos los niveles y monitorizar, revisar y mejorar. La seguridad es la del elemento más débil.\n- **Medidas**: físicas, lógicas, humanas, administrativas y legales.\n- **CPD**: TIA-942, climatización 16-24 ºC y 40-55 % de humedad, SAI offline/inline/online, Tier I-IV y redundancia N, N+1 y 2N.\n- **Criptografía**: simétrica (DES, 3DES, AES), asimétrica (RSA, Diffie-Hellman), hash (MD5, SHA), firma digital y PKI.\n- **Perímetro**: zonas interna, externa y DMZ; firewall de paquetes, SPI y de aplicación; IDS/IPS; proxys; VPN con IPSec u OpenVPN.\n- **Incidentes**: detección, análisis, contención, erradicación, recuperación, documentación e identificación del atacante; el CSIRT ejecuta el plan.\n- **Continuidad**: copias 3-2-1, RPO, RTO y MTD; copia completa, diferencial e incremental.\n- **Normas**: MAGERIT en el análisis y gestión de riesgos; ISO/IEC 27001 y 27002 figuran en el programa, pero el material no desarrolla su contenido normativo.\n\n*(Fuentes: Tema 10.docx; Tema 14.docx; Bloque 4 Actualizado 2026.docx; temario-c1.md, tema 34.)*"
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Cuál de estas propiedades NO forma parte de la tríada clásica de la seguridad de la información (CIA)?",
+      "options": [
+        "a) Confidencialidad",
+        "b) Integridad",
+        "c) Disponibilidad",
+        "d) Autenticidad"
+      ],
+      "answer": "d",
+      "explanation": "La tríada CIA son confidencialidad, integridad y disponibilidad. La autenticidad es una propiedad complementaria, considerada un aspecto variante de la integridad que verifica que el origen de los datos es correcto."
+    },
+    {
+      "question": "Según la definición que recoge el material, ¿qué es una amenaza?",
+      "options": [
+        "a) La consecuencia de que un riesgo se materialice sobre un activo",
+        "b) Un evento que puede desencadenar un incidente y producir daños materiales o pérdidas inmateriales en los activos",
+        "c) Un defecto o debilidad en el diseño o la implementación del sistema",
+        "d) La probabilidad de sufrir un ataque en un plazo de tiempo dado"
+      ],
+      "answer": "b",
+      "explanation": "La amenaza es el evento o causa potencial que puede desencadenar un incidente. La opción a es el impacto, la c la vulnerabilidad como defecto y la d suele confundirse con la vulnerabilidad, que el material define como la potencialidad de que la amenaza se materialice sobre el activo."
+    },
+    {
+      "question": "¿Cómo se define el riesgo en el tema?",
+      "options": [
+        "a) La probabilidad de que ocurra una amenaza ponderada por la magnitud del daño que puede ocasionar",
+        "b) El daño material producido en un activo cuando se materializa una amenaza",
+        "c) La capacidad del sistema de recuperarse tras un fallo",
+        "d) El conjunto de medidas físicas y lógicas que protegen el sistema"
+      ],
+      "answer": "a",
+      "explanation": "El riesgo es la probabilidad de que ocurra una amenaza ponderada por la magnitud del daño; puede provenir de actos naturales, errores u omisiones humanas o actos intencionados. La opción b describe el impacto y la c la disponibilidad."
+    },
+    {
+      "question": "El riesgo residual es...",
+      "options": [
+        "a) El riesgo que existe antes de aplicar cualquier control",
+        "b) La probabilidad de que un atacante descubra una vulnerabilidad nueva",
+        "c) El riesgo que permanece tras el tratamiento del riesgo",
+        "d) El daño máximo tolerable por la organización"
+      ],
+      "answer": "c",
+      "explanation": "El riesgo inherente es el propio de la actividad sin ejecutar ningún control; el residual es el que permanece tras ese tratamiento. Es la razón por la que la gestión de riesgos es un ciclo continuo y no un trámite único."
+    },
+    {
+      "question": "¿Cuál de las siguientes es una medida lógica y no física?",
+      "options": [
+        "a) La protección contra incendios de la sala de servidores",
+        "b) El cifrado de la información y de las comunicaciones",
+        "c) El control de entrada y salida de personas con registro",
+        "d) La instalación de grupos electrógenos"
+      ],
+      "answer": "b",
+      "explanation": "Las medidas lógicas incluyen el control de accesos, la política de instalación y copia de software, la criptografía, las copias de seguridad y la monitorización. Las otras tres opciones son medidas físicas del apartado 2.1."
+    },
+    {
+      "question": "Un CPD que puede realizar mantenimiento sin interrumpir el servicio y que tiene alimentación y refrigeración redundantes se corresponde con el Tier...",
+      "options": [
+        "a) Tier I",
+        "b) Tier II",
+        "c) Tier III",
+        "d) Tier IV"
+      ],
+      "answer": "c",
+      "explanation": "ANSI/TIA-942 define el Tier III como mantenimiento concurrente: permite cualquier actividad planeada sin interrupción, con redundancia de los sistemas críticos y una disponibilidad aproximada del 99,982 %. El Tier IV añade tolerancia a fallos con redundancia total."
+    },
+    {
+      "question": "¿Qué caracteriza a un SAI online frente a los modelos offline e inline?",
+      "options": [
+        "a) Solo genera tensión cuando se produce un corte",
+        "b) Es el más económico y se usa en equipos no críticos",
+        "c) No incorpora estabilizador de corriente",
+        "d) Genera siempre tensión eléctrica, independientemente de la entrada, y protege sistemas críticos"
+      ],
+      "answer": "d",
+      "explanation": "El SAI offline es económico y solo genera tensión en caso de corte; el inline incorpora estabilizador y tampoco genera tensión de forma permanente; el online está diseñado para sistemas críticos y siempre genera tensión."
+    },
+    {
+      "question": "En relación con el cifrado simétrico, ¿qué afirmación es correcta?",
+      "options": [
+        "a) DES usa bloques de 64 bits y una clave efectiva de 56 bits, y AES admite claves de 128, 192 y 256 bits",
+        "b) DES y AES usan la misma clave para cifrar y descifrar, pero AES tiene bloques de 256 bits",
+        "c) 3DES aplica AES tres veces consecutivas",
+        "d) La criptografía simétrica usa un par de claves, una pública y otra privada"
+      ],
+      "answer": "a",
+      "explanation": "DES es el prototipo de cifrado por bloques: bloque de 64 bits y 56 bits efectivos de clave. AES usa bloques de 128 bits y claves de 128, 192 o 256 bits. 3DES aplica DES tres veces, y el par de claves corresponde a la criptografía asimétrica."
+    },
+    {
+      "question": "¿Qué aporta la firma digital de un documento?",
+      "options": [
+        "a) Confidencialidad del documento frente a terceros",
+        "b) Identificación del firmante, integridad del contenido y no repudio",
+        "c) Disponibilidad del documento en cualquier dispositivo",
+        "d) Compresión del documento para enviarlo por correo"
+      ],
+      "answer": "b",
+      "explanation": "La firma digital identifica al firmante, permite comprobar que el documento no se ha alterado y da no repudio. No cifra el documento para ocultarlo: eso lo hace el cifrado, no la firma."
+    },
+    {
+      "question": "¿Cuál de estos elementos NO se usa para decidir si un firewall de filtrado de paquetes acepta o descarta un paquete?",
+      "options": [
+        "a) La dirección IP de origen y de destino",
+        "b) El protocolo y el tipo de tráfico (TCP, UDP o ICMP)",
+        "c) Los puertos de origen y destino",
+        "d) El contenido de la aplicación, como el cuerpo de una petición HTTP"
+      ],
+      "answer": "d",
+      "explanation": "El filtrado de paquetes decide con información de las capas 2, 3 y 4: direcciones, protocolo, tipo de tráfico, puertos e interfaz. El contenido de la aplicación lo examina un firewall de nivel de aplicación, no uno de filtrado de paquetes."
+    },
+    {
+      "question": "Un IDS basado en red que debe analizar todo el tráfico de un segmento conectado a un switch necesita que...",
+      "options": [
+        "a) el puerto del switch al que se conecta esté configurado con port mirroring",
+        "b) se instale un antivirus en cada equipo del segmento",
+        "c) se desactive la tabla de estados del firewall",
+        "d) el segmento se convierta en una DMZ"
+      ],
+      "answer": "a",
+      "explanation": "El IDS de red monitoriza el tráfico de un segmento; si se conecta a un switch, el puerto debe configurarse con port mirroring para recibir ese tráfico. Los honeypots, los verificadores de integridad y los monitores de registros son IDS basados en máquina."
+    },
+    {
+      "question": "En el plan de respuesta a incidentes, ¿en qué etapa se eliminan las puertas traseras y rootkits dejados por el atacante?",
+      "options": [
+        "a) En la contención",
+        "b) En la detección",
+        "c) En la erradicación",
+        "d) En la recuperación"
+      ],
+      "answer": "c",
+      "explanation": "La contención evita que el incidente se extienda; la erradicación elimina los agentes causantes y sus secuelas (backdoors, rootkits) y revisa los sistemas comprometidos; la recuperación devuelve los sistemas a su funcionamiento normal."
+    },
+    {
+      "question": "Si el RPO de un servicio es de una hora, ¿qué implica para las copias de seguridad?",
+      "options": [
+        "a) Que la copia debe restaurarse en menos de una hora",
+        "b) Que debe hacerse una copia al menos cada hora",
+        "c) Que el servicio puede estar caído una hora sin consecuencias",
+        "d) Que basta con una copia completa al mes"
+      ],
+      "answer": "b",
+      "explanation": "El RPO es la cantidad de datos que se permite perder; si es de una hora, hay que copiar al menos cada hora. El tiempo de restauración es el RTO y el tiempo máximo de caída tolerable es el MTD."
+    }
+  ],
+  "sources": [
+    {
+      "file": "Tema 10.docx",
+      "page": "DOCX, apartados 1 y 1.1",
+      "use": "Definición de seguridad de los sistemas de información, riesgos de una mala protección, tríada CIA y propiedades complementarias (autenticidad, no repudio, consistencia, aislamiento, auditoría)."
+    },
+    {
+      "file": "Tema 10.docx",
+      "page": "DOCX, apartados 2 y 2.1",
+      "use": "Política de seguridad, reglas básicas, método de análisis de riesgos y clasificación de las medidas en físicas, lógicas, humanas, administrativas y legales."
+    },
+    {
+      "file": "Tema 10.docx",
+      "page": "DOCX, apartado 3",
+      "use": "Identificación, autenticación y autorización; problemas de las claves y control de acceso en el servidor o en la red."
+    },
+    {
+      "file": "Tema 10.docx",
+      "page": "DOCX, apartado 4",
+      "use": "Definiciones de amenaza, activo y vulnerabilidad; definiciones de Magerit (vulnerabilidad, impacto y riesgo) y catálogo de vulnerabilidades de sistemas, Windows, UNIX y servidores web."
+    },
+    {
+      "file": "Tema 10.docx",
+      "page": "DOCX, apartados 5 y 6",
+      "use": "Clasificación de los ataques (interrupción, intercepción, modificación y fabricación; activos y pasivos), modus operandi, DoS y conceptos de virus y troyanos."
+    },
+    {
+      "file": "Tema 10.docx",
+      "page": "DOCX, apartado 7",
+      "use": "Criptografía simétrica y asimétrica, funciones hash, modos de operación y autoridades de certificación."
+    },
+    {
+      "file": "Tema 10.docx",
+      "page": "DOCX, apartado 8",
+      "use": "Funcionamiento de la firma digital y las garantías que aporta (identificación, integridad y no repudio)."
+    },
+    {
+      "file": "Tema 10.docx",
+      "page": "DOCX, apartado 9",
+      "use": "CPD, norma TIA-942, áreas funcionales, cableado, climatización, refrigeración, energía, SAI, incendios, inundaciones y copias fuera del sitio."
+    },
+    {
+      "file": "Tema 10.docx",
+      "page": "DOCX, apartado 10",
+      "use": "Incidentes de seguridad, CSIRT, detección, análisis, contención, erradicación, recuperación, identificación del atacante y documentación."
+    },
+    {
+      "file": "Tema 14.docx",
+      "page": "DOCX, apartados 1.2, 1.3 y 1.4",
+      "use": "Estándar X.800, definiciones de amenaza, vulnerabilidad y riesgo, clasificación de ataques, servicios y mecanismos de seguridad y medidas de prevención, detección y recuperación."
+    },
+    {
+      "file": "Tema 14.docx",
+      "page": "DOCX, apartado 1.5",
+      "use": "Firma digital, certificados digitales X.509, actores de la PKI, obtención, revocación y validación de certificados."
+    },
+    {
+      "file": "Tema 14.docx",
+      "page": "DOCX, apartados 2, 3 y 4",
+      "use": "Seguridad perimetral y zonas, firewalls y sus tipos, IDS/IPS, proxys, VPN (IPSec y OpenVPN) y seguridad en el puesto del usuario."
+    },
+    {
+      "file": "Bloque 4 Actualizado 2026.docx",
+      "page": "DOCX, Tema 1, apartados 1-5",
+      "use": "Gestión y actualización del sistema operativo, tipos de actualización (parche de seguridad, software y firmware), mantenimiento, reparación y firmware BIOS/UEFI con MBR y GPT."
+    },
+    {
+      "file": "Bloque 4 Actualizado 2026.docx",
+      "page": "DOCX, Tema 2",
+      "use": "Copias de seguridad: RPO, RTO, MTD y WRT, tipos de copia (completa, diferencial e incremental), regla 3-2-1 y snapshots."
+    },
+    {
+      "file": "Bloque 4 Actualizado 2026.docx",
+      "page": "DOCX, Tema 5",
+      "use": "Activos, amenaza, vulnerabilidad, riesgo, impacto y desastre; riesgo inherente y residual; modelo AAA; tipos de atacante; Tier y redundancia de CPD; NAC, monitorización y auditoría de red."
+    },
+    {
+      "file": "data/fuentes/temario-c1.md",
+      "page": "BLOQUE V, tema 34",
+      "use": "Enunciado oficial del tema: confidencialidad, integridad y disponibilidad; riesgos, análisis y gestión (MAGERIT); ISO 27001/27002."
+    },
+    {
+      "file": "data/fuentes/V.34.txt",
+      "page": "Consolidado de Tema 10.docx, Tema 14.docx y Bloque 4 Actualizado 2026.docx",
+      "use": "Texto consolidado empleado para redactar el tema; los dos PDF de CCN-CERT figuran en él como escaneados sin texto extraíble y no se han usado."
+    }
+  ]
+}
