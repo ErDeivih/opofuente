@@ -1,0 +1,221 @@
+{
+  "slug": "tai-2024-a-s2",
+  "year": 2024,
+  "conv": "TAI-L 2024 · modelo A",
+  "block": "III",
+  "title": "El organismo OEOF: red, servicios y seguridad del CPD",
+  "difficulty": "alta",
+  "official": true,
+  "estimatedMinutes": 30,
+  "statement": "El Ministerio de Educación, Formación Profesional y Deportes tiene asignada la red 10.9.0.0/16. Dentro de ella se ha creado el organismo OEOF, dedicado a la enseñanza online de formadores, que recibe la última de las dieciséis subredes iguales en que se ha dividido la red ministerial.\n\nEl sistema de enseñanza se apoya en un servidor accesible desde Internet en la dirección https://www.profesores.es. Los servidores web, HTTP, DNS, DHCP y LDAP utilizan Ubuntu Linux; el portal se publica con Apache Tomcat y su certificado SSL corresponde al dominio profesores.es. El correo de los profesores se gestiona con Postfix, el DNS con BIND y las direcciones IP se asignan por DHCP. Un servidor llamado BIBLIOTECA guarda documentación de utilidad para los profesores y solo admite acceso remoto por RDP a los usuarios del grupo Profesores del Directorio Activo, sin que existan elementos de red que impidan esa conexión dentro de su VLAN. La base de datos de la biblioteca es MySQL.\n\nSobre servidores Ubuntu se han instalado Tenable Nessus y Nmap para detectar vulnerabilidades, y Nagios para monitorizar sistemas y aplicaciones web. Los profesores trabajan con escritorios virtuales y los switches que configuran las VLAN son Cisco con Cisco IOS. El CPD principal es TIER III, tiene redundancia de componentes, energía y red, y cuenta con un CPD secundario que no está configurado en activo-activo: los cambios de servicio se trasladan a mano.\n\nLas preguntas recorren direccionamiento y conmutación, administración de servidores Linux, servicios de red y correo, seguridad de la información y del CPD, virtualización y movilidad. Una de ellas fue anulada por el tribunal y se conserva marcada como tal.",
+  "steps": [
+    "Leer el caso y anotar los datos de red: red 10.9.0.0/16, 16 subredes iguales y la última asignada al organismo.",
+    "Calcular el prefijo de cada subred y el número de direcciones utilizables antes de mirar las opciones de la primera pregunta.",
+    "Separar los ámbitos del temario: redes y conmutación (III.21), comunicaciones (III.22), servidores Linux (III.18), contenedores y Kubernetes (III.19), CPD (III.25), soporte y movilidad (III.26), correo (II.16), MySQL (IV.29) y seguridad (V.34, V.36 y V.38).",
+    "En cada pregunta, fijarse en la palabra clave del enunciado (comando, protocolo, dimensión de seguridad, dispositivo) y descartar opciones por un detalle técnico concreto.",
+    "Tener presente que la pregunta 15 está anulada: no puntúa. Corregir el resto con la plantilla oficial del modelo A."
+  ],
+  "topics": ["II.16", "III.18", "III.19", "III.21", "III.22", "III.25", "III.26", "IV.29", "V.34", "V.36", "V.38"],
+  "source": {
+    "label": "INAP — Cuestionario TAI-L 2024, modelo A (Supuesto II)",
+    "url": "https://sede.inap.gob.es/documents/59312/2364268/Cuestionario_TAI_LI_2024_A_M8L91VL1CL_154AB89SD658.pdf/43a5d8c6-3f74-dbca-8452-c00408125ff8",
+    "pages": "pp. 11-14"
+  },
+  "questions": [
+    {
+      "stem": "La red 10.9.0.0/16 se divide en 16 subredes iguales y el organismo recibe la última. ¿Cuántas direcciones de host utilizables tiene esa subred?",
+      "options": ["4094", "65534", "4096", "65536"],
+      "correct": "a",
+      "justification": "Para obtener 16 subredes se toman 4 bits del campo de host, así que el prefijo pasa de /16 a /20 y quedan 12 bits para hosts. Son 2^12 = 4096 direcciones, de las que se descuentan la de red y la de broadcast: 4094 utilizables."
+    },
+    {
+      "stem": "Al arrancar el servidor web aparece un error en la partición sda8, que no se ha podido montar. ¿Qué comando repara automáticamente los errores del sistema de ficheros?",
+      "options": ["mount -T /dev/sda8", "fsck -y /dev/sda8", "fsck -m /dev/sda8", "checkdisk /dev/sda8"],
+      "correct": "b",
+      "justification": "fsck comprueba y repara el sistema de ficheros, y la opción -y responde afirmativamente a las reparaciones sin preguntar. mount no repara nada, checkdisk no existe en Linux y fsck -m no aplica la reparación automática."
+    },
+    {
+      "stem": "Un servidor web publica el sitio por HTTPS. ¿Qué recomienda el Centro Criptológico Nacional respecto al puerto 80?",
+      "options": [
+        "Mostrar una web estática que avise de que ese no es el sitio actual",
+        "Cambiar el puerto de HTTPS al 8892",
+        "Analizar las cabeceras HTTP que llegan al puerto 80",
+        "Mantener el puerto TCP/80 con una redirección automática de HTTP a HTTPS"
+      ],
+      "correct": "d",
+      "justification": "La recomendación es dejar el puerto 80 a la escucha para redirigir de forma automática cada petición HTTP hacia HTTPS, de modo que el usuario acabe siempre en la conexión cifrada. Las otras opciones no evitan que el tráfico inicial viaje sin cifrar ni ofrecen una redirección correcta."
+    },
+    {
+      "stem": "Una persona no autorizada entra en el CPD siguiendo de cerca a un operador con tarjeta y PIN, sin que este advierta su presencia. ¿Cómo se denomina este incidente de ingeniería social física?",
+      "options": ["Tailgating o piggybacking", "Quid pro quo", "Pretexto", "Disrupción"],
+      "correct": "a",
+      "justification": "El tailgating o piggybacking consiste en aprovechar el acceso legítimo de otra persona para colarse detrás de ella sin acreditarse. El quid pro quo y el pretexto son técnicas de ingeniería social no presenciales, y la disrupción es una interrupción del servicio."
+    },
+    {
+      "stem": "El circuito cerrado de televisión del CPD usa una red coaxial y hay que conectarlo a la red local Ethernet para monitorizar las cámaras. ¿Qué dispositivo de red se emplea?",
+      "options": ["Un cortafuegos (firewall)", "Una pasarela (gateway)", "Un conmutador (switch)", "Un repetidor (repeater)"],
+      "correct": "b",
+      "justification": "La pasarela interconecta redes de tecnologías distintas y se encarga de la conversión necesaria entre ellas. Un switch o un repetidor trabajan en el ámbito Ethernet y no traducen el medio coaxial, y el cortafuegos filtra tráfico pero no hace de puente entre medios."
+    },
+    {
+      "stem": "En el sistema conviven DNS y FTP seguro. Según el modelo TCP/IP, ¿en qué se diferencian?",
+      "options": [
+        "DNS es un protocolo de usuario y FTP es un protocolo de soporte",
+        "DNS siempre está orientado a conexión y FTP no",
+        "No hay diferencia: ambos son protocolos de soporte",
+        "FTP es un protocolo de usuario y DNS es un protocolo de soporte"
+      ],
+      "correct": "d",
+      "justification": "En la clasificación del modelo TCP/IP, FTP es un protocolo de usuario porque presta servicio directo a la aplicación del usuario, mientras que DNS se considera un protocolo de soporte que resuelve nombres para el resto. DNS puede usar UDP o TCP, así que la opción que lo hace siempre orientado a conexión es falsa."
+    },
+    {
+      "stem": "En un switch Cisco IOS se ejecuta el comando «switchport access vlan 1». ¿Qué consigue?",
+      "options": [
+        "Asignar un puerto a la VLAN 1",
+        "Asignar el puerto 1 del switch a la VLAN en la que estamos situados",
+        "Mostrar todos los hosts asignados a la VLAN 1",
+        "Asignar todos los hosts del switch a la VLAN 1"
+      ],
+      "correct": "a",
+      "justification": "El comando se ejecuta dentro de la configuración de una interfaz y declara ese puerto como puerto de acceso de la VLAN indicada, en este caso la 1. No lista hosts ni afecta a todos los puertos del switch: solo al puerto en el que se aplica."
+    },
+    {
+      "stem": "La base de datos de la biblioteca se corrompe y los usuarios dejan de poder consultarla. ¿Qué dimensiones de la seguridad se ven afectadas?",
+      "options": [
+        "Disponibilidad e integridad",
+        "Solo confidencialidad",
+        "Solo disponibilidad",
+        "Solo trazabilidad"
+      ],
+      "correct": "a",
+      "justification": "El servicio no está accesible, lo que afecta a la disponibilidad, y el fichero de la base de datos está corrupto, lo que afecta a la integridad. No hay indicios de que los datos se hayan expuesto a personas no autorizadas, por lo que no puede afirmarse una pérdida de confidencialidad."
+    },
+    {
+      "stem": "La red local es Gigabit Ethernet. Al conectar un dispositivo nuevo, en su tarjeta de red parpadea una luz naranja. ¿A qué se debe?",
+      "options": [
+        "A que la VLAN del dispositivo está mal configurada",
+        "A que la tarjeta transmite a una velocidad menor que la que permite la red",
+        "A que la tarjeta está estropeada y no hay conexión",
+        "A que el cable es coaxial en vez de Ethernet"
+      ],
+      "correct": "b",
+      "justification": "En muchos adaptadores Ethernet, el led naranja indica un enlace a 100 Mbps y el verde un enlace a 1 Gbps, de modo que el dispositivo está conectado pero negocia a menor velocidad. Si la tarjeta estuviera estropeada no habría enlace, y una VLAN mal configurada no se deduce del color del led."
+    },
+    {
+      "stem": "Hay una vulnerabilidad que afecta a una versión del kernel de Ubuntu. ¿Con qué comando se consulta la versión del kernel instalada?",
+      "options": ["sudo dpkg -i linux*.deb", "uname -r", "uname -o", "kexec -l"],
+      "correct": "b",
+      "justification": "uname -r muestra la versión del kernel en ejecución. La opción -o informa del sistema operativo, dpkg -i instala un paquete y kexec carga un nuevo kernel, pero ninguno de ellos consulta la versión instalada."
+    },
+    {
+      "stem": "Sobre SFTP y FTPS, ¿cuál de estas afirmaciones es INCORRECTA?",
+      "options": [
+        "SFTP usa típicamente el puerto 22 de SSH, mientras que FTPS emplea el puerto en el que se haya definido SSL/TLS",
+        "SFTP usa autenticación con certificado de clave pública, mientras que FTPS usa usuario y contraseña",
+        "FTPS usa dos puertos, uno para comandos y otro para datos, mientras que SFTP usa el mismo puerto para ambas tareas",
+        "FTPS no tiene comandos estandarizados para manipular directorios o listar atributos, mientras que SFTP sí"
+      ],
+      "correct": "b",
+      "justification": "La afirmación incorrecta es la b: ni SFTP se limita a la autenticación con clave pública ni FTPS se limita a usuario y contraseña, ya que ambos pueden combinarse con certificados. Las otras tres describen correctamente el uso de puertos y las capacidades de cada protocolo."
+    },
+    {
+      "stem": "El CCN ha instalado CLAUDIA para detectar malware complejo y movimiento lateral de APT. ¿Cómo define el Centro Criptológico Nacional una APT?",
+      "options": [
+        "Un ransomware como WannaCry que cifra archivos y pide un rescate",
+        "Una suplantación de un usuario corriente con escalada de privilegios hasta un alto cargo",
+        "Un ataque selectivo de ciberespionaje o cibersabotaje dirigido por un país u organización adversaria, con fines que van más allá de lo económico o delictivo",
+        "Un ataque masivo aprovechando un fallo desconocido para el que no existe parche"
+      ],
+      "correct": "c",
+      "justification": "La definición de APT destaca su carácter selectivo, persistente y patrocinado por un Estado u organización adversaria, con objetivos de espionaje o sabotaje que superan el beneficio económico o la protesta. El ransomware, la suplantación de identidad y el ataque masivo por vulnerabilidad desconocida describen otras categorías de amenaza."
+    },
+    {
+      "stem": "Para mejorar la escalabilidad se plantea una arquitectura de microservicios con Kubernetes. ¿Qué protocolos de servicio admite Kubernetes?",
+      "options": [
+        "SCTP, TCP (por defecto) y UDP",
+        "HTTP (por defecto), HTTPS y FTP",
+        "SSH, SFTP (por defecto) y UDP",
+        "UDP (por defecto) y TCP"
+      ],
+      "correct": "a",
+      "justification": "Los servicios de Kubernetes admiten SCTP, TCP y UDP, y el protocolo por defecto es TCP. HTTP, HTTPS, FTP, SSH y SFTP son protocolos de aplicación que viajan sobre esos transportes, no protocolos de servicio de Kubernetes."
+    },
+    {
+      "stem": "El responsable pide enrolar veinte móviles nuevos en la solución MDM de la organización. ¿En qué consiste esa tarea?",
+      "options": [
+        "Emparejar en el MDM a cada usuario con su móvil",
+        "Dar de alta en una base de datos administrativa todos los dispositivos",
+        "Insertar la tarjeta SIM correspondiente a cada móvil",
+        "Formatear a fábrica todos los dispositivos"
+      ],
+      "correct": "a",
+      "justification": "Enrolar un dispositivo en un MDM es registrarlo en la plataforma y asociarlo a su usuario, para poder aplicar políticas, distribuir aplicaciones y gestionarlo. La SIM es un elemento de conectividad y el formateo es una acción previa o posterior, no el enrolamiento."
+    },
+    {
+      "stem": "Se valora alimentar la climatización del CPD desde la toma de climatización del resto del edificio. ¿Por qué no se aconseja?",
+      "options": [
+        "Porque la humedad recomendada para un CPD es mucho menor que la de las personas",
+        "Porque la temperatura recomendada para un CPD es mucho mayor que la de las personas",
+        "Porque el filtro de impurezas para las personas es más sensible que el de un CPD",
+        "Porque el aire acondicionado de un CPD debe venir siempre del techo y el de las personas puede ser lateral"
+      ],
+      "correct": "ANULADA",
+      "justification": "Pregunta anulada por la plantilla oficial: no puntúa ni suma ni resta. Se conserva en el simulacro para que el examen sea fiel al original, pero no debe usarse como referencia de estudio."
+    },
+    {
+      "stem": "Se descarga una herramienta antimalware del sitio del CCN-CERT y justo debajo aparece un hash de comprobación. ¿Qué medida de seguridad representa ese hash?",
+      "options": [
+        "Una medida antimalware que sanea el fichero y lo deja libre de malware",
+        "Una medida para asegurar la integridad de la descarga: si el hash calculado no coincide, el fichero no es válido",
+        "La firma del CCN como autoridad de certificación que garantiza que el software es apto para sistemas de nivel ALTO",
+        "La firma de la página web para evitar que se sustituya el fichero por otro"
+      ],
+      "correct": "b",
+      "justification": "El hash publicado permite comprobar que el fichero descargado es exactamente el que ofrece el CCN, es decir, protege su integridad frente a modificaciones o descargas corruptas. Un hash no limpia el fichero, no certifica su aptitud y no es la firma de la página."
+    },
+    {
+      "stem": "La VoIP usa SIP y las llamadas con usuarios externos se cortan o congelan y después se restablecen; entre usuarios internos funciona bien. ¿Cuál es la causa probable?",
+      "options": [
+        "Se están usando mal los códecs",
+        "La salida a Internet emplea NAT",
+        "El cortafuegos de Internet intercepta el tráfico",
+        "La CPU del ordenador es insuficiente"
+      ],
+      "correct": "b",
+      "justification": "NAT traduce direcciones y puertos y puede romper la señalización SIP y las direcciones anunciadas en el SDP cuando el tráfico cruza a Internet. En las llamadas internas no hay NAT de por medio, por eso funcionan; la solución habitual pasa por un SBC o por mecanismos de traversal como STUN y TURN."
+    },
+    {
+      "stem": "El servidor de correo Postfix está instalado y se decide entre POP3 e IMAP para los clientes. ¿Qué afirmación es INCORRECTA?",
+      "options": [
+        "Con IMAP los mensajes quedan en el servidor y varios clientes pueden leer los mismos",
+        "POP3 solo permite una sincronización unidireccional: descargar correos del servidor al cliente",
+        "Con IMAP el correo enviado y recibido se guarda en el servidor hasta que el usuario lo borra",
+        "Con POP3, si el usuario organiza las carpetas en un dispositivo, esa organización se replica en los demás"
+      ],
+      "correct": "d",
+      "justification": "POP3 no replica carpetas ni el estado del buzón entre dispositivos: cada cliente descarga los mensajes y la organización local no se propaga. IMAP sí mantiene el buzón y sus carpetas en el servidor, que es lo que describen las opciones a) y c)."
+    },
+    {
+      "stem": "Hay que averiguar qué usuarios acceden a la base de datos MySQL de la biblioteca y desde qué host o IP. ¿Qué comando se ejecuta?",
+      "options": [
+        "SELECT * FROM all_users",
+        "SELECT user FROM mysql.user",
+        "SELECT user,host FROM mysql.user",
+        "sudo mysql -u root -p"
+      ],
+      "correct": "c",
+      "justification": "La tabla mysql.user guarda las cuentas y el host desde el que se conectan, por lo que hay que seleccionar las columnas user y host. all_users pertenece a Oracle, la consulta que solo pide user deja fuera el host y el último comando abre una sesión, pero no muestra la información."
+    },
+    {
+      "stem": "Para aplicar políticas de seguridad al grupo Profesores con Active Directory y GPO, ¿qué conviene definir primero?",
+      "options": [
+        "Una unidad organizativa (OU) para el grupo Profesores",
+        "Las ACL que tendrán las GPO del grupo Profesores",
+        "Un nuevo bosque de Active Directory",
+        "Relaciones de confianza entre el dominio actual y el del grupo Profesores"
+      ],
+      "correct": "a",
+      "justification": "Las GPO se enlazan a contenedores del directorio, y la buena práctica es agrupar a los usuarios en una unidad organizativa para aplicarles la política de forma ordenada y heredable. Crear un bosque o relaciones de confianza es desproporcionado, y las ACL se definen después de tener la estructura."
+    }
+  ]
+}
