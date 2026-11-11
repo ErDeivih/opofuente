@@ -202,6 +202,14 @@ if (completo !== undefined) {
     /Última actualización: 10\/11\/2026/.test(texto),
   );
   check(
+    `el tema ${completo.path} tiene desarrollo largo, tests y fuentes`,
+    /Casos tipo test/.test(texto) && /Fuentes citadas/.test(texto) && texto.split(/\s+/).length >= 1500,
+  );
+  check(
+    `el tema ${completo.path} incluye un diagrama SVG propio`,
+    (await page.locator('.demo-diagram svg').count()) > 0,
+  );
+  check(
     `el tema ${completo.path} enlaza a las convocatorias`,
     /Forma parte del temario común/.test(texto) && /Ver convocatorias/.test(texto),
   );

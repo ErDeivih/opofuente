@@ -89,6 +89,20 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
             assert pregunta["explanation"].strip() != ""
             assert pregunta["source"]["label"].strip() != ""
 
+    # Temas largos: cinco temas con desarrollo extenso y diagramas propios.
+    largos = ["I.1", "III.21", "IV.27", "V.34", "V.35"]
+    for path in largos:
+        contenido = data["topics"][path]
+        assert "longSections" in contenido, f"{path}: falta longSections"
+        assert len(contenido["longSections"]) >= 12, f"{path}: pocos apartados largos"
+        palabras = len(
+            " ".join(seccion.get("body", "") for seccion in contenido["longSections"]).split()
+        )
+        assert palabras >= 1500, f"{path}: tema largo demasiado corto ({palabras})"
+        assert any("table" in seccion for seccion in contenido["longSections"]), (
+            f"{path}: el tema largo debe incluir tabla"
+        )
+
     # Sin material restringido: la demo se publica en un repositorio público.
     texto = salida.read_text(encoding="utf-8").lower()
     assert "guardia civil" not in texto

@@ -207,6 +207,8 @@ def build_static_demo(*, out: Path, root: Path | None = None) -> dict[str, int]:
             "errores": tema["errores"],
             "reviewedAt": tema["reviewedAt"],
         }
+        if isinstance(tema.get("longSections"), list) and tema["longSections"]:
+            contenido[path]["longSections"] = tema["longSections"]
         if practica_estado == "con_practica":
             slug = _slug(path)
             contenido[path]["practiceSlug"] = slug

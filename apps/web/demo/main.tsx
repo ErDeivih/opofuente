@@ -83,6 +83,7 @@ interface DemoSection {
   readonly heading: string;
   readonly body?: string;
   readonly table?: DemoTable;
+  readonly svg?: string;
 }
 
 interface TopicSummary {
@@ -102,6 +103,7 @@ interface TopicContent {
   readonly source: DemoSource;
   readonly sections: readonly DemoSection[];
   readonly reviewedAt: string;
+  readonly longSections?: readonly DemoSection[];
   readonly memorizar: readonly string[];
   readonly errores: readonly string[];
   readonly practiceSlug?: string;
@@ -1370,10 +1372,13 @@ function Tema({ path }: { path: string }) {
           </button>
         </p>
       </section>
-      {topic.sections.map((section) => (
+      {(topic.longSections ?? topic.sections).map((section) => (
         <section className="card" key={section.heading}>
           <h2>{section.heading}</h2>
           {section.body !== undefined && <RichText text={section.body} />}
+          {section.svg !== undefined && (
+            <div className="demo-diagram" dangerouslySetInnerHTML={{ __html: section.svg }} />
+          )}
           {section.table !== undefined && (
             <div className="table-wrap">
               <table className="table">

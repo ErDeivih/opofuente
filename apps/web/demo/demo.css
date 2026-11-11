@@ -461,3 +461,14 @@
   padding-top: 1rem;
   border-top: 1px solid var(--color-borde);
 }
+
+.demo-diagram {
+  margin: 0.75rem 0;
+  overflow-x: auto;
+}
+
+.demo-diagram svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
