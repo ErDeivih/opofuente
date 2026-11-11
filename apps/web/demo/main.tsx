@@ -16,6 +16,8 @@ import {
   loadAttempts,
   loadErratas,
   loadProgress,
+  loadReadingPosition,
+  saveReadingPosition,
   saveErrata,
   saveAttempt,
   loadResume,
@@ -455,6 +457,9 @@ function Header() {
         </button>
         <button className="button" type="button" onClick={() => { go('supuestos'); }}>
           Supuestos
+        </button>
+        <button className="button" type="button" onClick={() => { go('simulacro'); }}>
+          Simulacro
         </button>
       </nav>
     </header>
@@ -1127,7 +1132,7 @@ function Estadisticas() {
               <tbody>
                 {attempts.map((attempt) => (
                   <tr key={attempt.id}>
-                    <td data-label="Tipo">{attempt.type === 'exam' ? 'Examen' : attempt.type === 'case' ? 'Caso' : attempt.type === 'supuesto' ? 'Supuesto' : 'Práctica'}</td>
+                    <td data-label="Tipo">{attempt.type === 'exam' ? 'Examen' : attempt.type === 'case' ? 'Caso' : attempt.type === 'supuesto' ? 'Supuesto' : attempt.type === 'simulacro' ? 'Simulacro' : 'Práctica'}</td>
                     <td data-label="Bloque">{attempt.block === 'TODOS' ? 'Todos' : attempt.block}</td>
                     <td data-label="Detalle">{attempt.convocatoria ?? attempt.topic}</td>
                     <td data-label="Fecha">{fechaCorta(attempt.date)}</td>
@@ -1401,6 +1406,213 @@ function SupuestoRunner({ slug }: { readonly slug: string }) {
   );
 }
 
+function Simulacro() {
+  const [phase, setPhase] = useState<'setup' | 'running' | 'result'>('setup');
+  const [questions, setQuestions] = useState<ExamQuestion[]>([]);
+  const [index, setIndex] = useState(0);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [timeLeft, setTimeLeft] = useState(120 * 60);
+  const saved = useRef(false);
+
+  useEffect(() => {
+    if (phase !== 'running') {
+      return;
+    }
+    if (timeLeft <= 0) {
+      const fin = window.setTimeout(() => { setPhase('result'); }, 0);
+      return () => { window.clearTimeout(fin); };
+    }
+    const temporizador = window.setTimeout(() => { setTimeLeft((segundos) => segundos - 1); }, 1000);
+    return () => { window.clearTimeout(temporizador); };
+  }, [phase, timeLeft]);
+
+  useEffect(() => {
+    if (phase !== 'result' || saved.current) {
+      return;
+    }
+    saved.current = true;
+    const parte1 = questions.slice(0, 80);
+    const parte2 = questions.slice(80);
+    const aciertos = questions.filter((item, posicion) => answers[posicion] === item.correct).length;
+    saveAttempt({
+      type: 'simulacro',
+      block: 'TAI',
+      topic: 'simulacro',
+      label: 'Simulacro TAI 80+20',
+      correct: aciertos,
+      total: questions.length,
+      percent: questions.length === 0 ? 0 : Math.round((aciertos / questions.length) * 100),
+    });
+    void parte1;
+    void parte2;
+  }, [answers, phase, questions]);
+
+  function empezar(): void {
+    const todos = data.practices.flatMap((practice) =>
+      practice.questions.map((question) => ({ ...question, topic: practice.tema_path })),
+    );
+    const barajadas = shuffle(todos);
+    const primera = barajadas.slice(0, 80);
+    const usadas = new Set(primera.map((item) => item.stem));
+    const segunda = shuffle(
+      todos.filter(
+        (question) =>
+          !usadas.has(question.stem) &&
+          ['III', 'IV'].includes(blockForTopic(question.topic)?.path ?? ''),
+      ),
+    ).slice(0, 20);
+    setQuestions([...primera, ...segunda]);
+    setAnswers({});
+    setIndex(0);
+    setSelected(null);
+    setTimeLeft(120 * 60);
+    saved.current = false;
+    setPhase('running');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  if (phase === 'running') {
+    const question = questions[index];
+    if (question === undefined) {
+      return <p className="hint">El simulacro no tiene preguntas.</p>;
+    }
+    return (
+      <>
+        <section className="page__header">
+          <h1>Simulacro TAI</h1>
+          <p className="page__lead">
+            {index < 80 ? 'Parte 1 · cuestionario' : 'Parte 2 · supuesto'} · pregunta {index + 1} de 100
+          </p>
+          <p className="demo-exam-clock" aria-live="polite">
+            Tiempo restante: <strong>{formatoTiempo(timeLeft)}</strong> · error −1/3 · mínimo 25/50 por parte
+          </p>
+        </section>
+        <section className="card">
+          <h2>{question.stem}</h2>
+          <ul className="demo-options">
+            {question.options.map((option) => (
+              <li key={option.key}>
+                <label className="demo-option">
+                  <input
+                    type="radio"
+                    name="simulacro"
+                    value={option.key}
+                    checked={selected === option.key}
+                    onChange={() => {
+                      setSelected(option.key);
+                      setAnswers((previous) => ({ ...previous, [index]: option.key }));
+                    }}
+                  />{' '}
+                  <span className="demo-option__key">{option.key})</span> {option.text}
+                </label>
+              </li>
+            ))}
+          </ul>
+          <p className="hint">Sin corrección hasta el final. Puedes abandonar y volver a empezar.</p>
+          <div className="demo-actions">
+            <button
+              className="button"
+              type="button"
+              disabled={selected === null}
+              onClick={() => {
+                if (index + 1 === questions.length) {
+                  setPhase('result');
+                  return;
+                }
+                setIndex(index + 1);
+                setSelected(answers[index + 1] ?? null);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              {index + 1 === questions.length ? 'Terminar y ver nota' : 'Siguiente pregunta'}
+            </button>
+            <button className="button button--link" type="button" onClick={() => { setPhase('setup'); }}>
+              Abandonar
+            </button>
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  if (phase === 'result') {
+    const partes = [questions.slice(0, 80), questions.slice(80)];
+    const notas = partes.map((parte, posicion) => {
+      const inicio = posicion === 0 ? 0 : 80;
+      const aciertos = parte.filter((item, i) => answers[inicio + i] === item.correct).length;
+      const fallos = parte.filter((item, i) => {
+        const respuesta = answers[inicio + i];
+        return respuesta !== undefined && respuesta !== item.correct;
+      }).length;
+      const bruto = aciertos - fallos / 3;
+      return {
+        aciertos,
+        fallos,
+        nota: Math.max(0, Number(((bruto / parte.length) * 50).toFixed(2))),
+      };
+    });
+    const n1 = notas[0] ?? { aciertos: 0, fallos: 0, nota: 0 };
+    const n2 = notas[1] ?? { aciertos: 0, fallos: 0, nota: 0 };
+    const apto = notas.every((parte) => parte.nota >= 25);
+    return (
+      <>
+        <section className="page__header">
+          <h1>Resultado del simulacro TAI</h1>
+          <p className="page__lead">
+            {apto ? 'Apto' : 'No apto'} · Parte 1: {n1.nota}/50 · Parte 2: {n2.nota}/50
+          </p>
+        </section>
+        <section className="card">
+          <h2>Nota con penalización</h2>
+          <ul className="demo-result-stats">
+            <li><span>Parte 1</span><strong>{n1.nota}/50</strong></li>
+            <li><span>Parte 2</span><strong>{n2.nota}/50</strong></li>
+            <li><span>Aciertos</span><strong>{n1.aciertos + n2.aciertos}</strong></li>
+            <li><span>Fallos</span><strong>{n1.fallos + n2.fallos}</strong></li>
+          </ul>
+          <p className="hint">
+            Regla: 80 + 20 preguntas, 120 minutos, cada error resta 1/3; mínimo 25/50 en cada parte.
+            Tiempo: {formatoTiempo(120 * 60 - timeLeft)}.
+          </p>
+          <div className="demo-actions">
+            <button className="button" type="button" onClick={empezar}>Repetir simulacro</button>
+            <button className="button button--link" type="button" onClick={() => { setPhase('setup'); }}>
+              Volver a las reglas
+            </button>
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <section className="page__header">
+        <h1>Simulacro TAI <span className="demo-status demo-status--apuntes-pendiente">Simulación</span></h1>
+        <p className="page__lead">
+          80 preguntas de cuestionario + 20 de supuesto, 120 minutos, penalización −1/3 y mínimo 25/50 en
+          cada parte.
+        </p>
+      </section>
+      <section className="card">
+        <h2>Reglas del simulacro</h2>
+        <ul className="demo-memorizar">
+          <li><strong>Parte 1:</strong> 80 preguntas de todos los bloques. Máximo 50 puntos; mínimo 25.</li>
+          <li><strong>Parte 2:</strong> 20 preguntas de los bloques III y IV. Máximo 50 puntos; mínimo 25.</li>
+          <li><strong>Tiempo:</strong> 120 minutos para las dos partes.</li>
+          <li><strong>Penalización:</strong> cada error resta 1/3 de una correcta; en blanco no resta.</li>
+          <li><strong>Sin corrección</strong> hasta el final.</li>
+        </ul>
+        <div className="demo-actions">
+          <button className="button" type="button" onClick={empezar}>Empezar simulacro TAI</button>
+        </div>
+        <p className="hint">Es una simulación de la demo, no un examen oficial.</p>
+      </section>
+    </>
+  );
+}
+
 function Cobertura() {
   return (
     <>
@@ -1628,16 +1840,76 @@ function PendingTopic({ topic, summary }: { topic: TopicContent; summary: TopicS
   );
 }
 
+function TopicIndexBar({
+  sections,
+  active,
+  onActive,
+}: {
+  readonly sections: readonly DemoSection[];
+  readonly active: number;
+  readonly onActive: (index: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const nodes = Array.from(document.querySelectorAll('.demo-seccion'));
+      let current = 0;
+      for (let i = 0; i < nodes.length; i += 1) {
+        const top = nodes[i]?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY;
+        if (top <= 140) {
+          current = i;
+        }
+      }
+      onActive(current);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    const frame = window.requestAnimationFrame(onScroll);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [onActive, sections.length]);
+  const actual = sections[active]?.heading ?? '';
+  return (
+    <div className="demo-indexbar">
+      <button
+        className="demo-indexbar__toggle"
+        type="button"
+        aria-expanded={open}
+        onClick={() => { setOpen((value) => !value); }}
+      >
+        <strong>Índice ▾</strong> <span>· {actual}</span>
+      </button>
+      {open && (
+        <nav className="demo-indexbar__menu" aria-label="Índice del tema">
+          {sections.map((section, index) => (
+            <button
+              key={section.heading}
+              type="button"
+              className={index === active ? 'demo-indexbar__item demo-indexbar__item--active' : 'demo-indexbar__item'}
+              onClick={() => {
+                setOpen(false);
+                document.getElementById(`demo-seccion-${index}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            >
+              {section.heading}
+            </button>
+          ))}
+        </nav>
+      )}
+    </div>
+  );
+}
+
 function Tema({ path }: { path: string }) {
   const [comentario, setComentario] = useState('');
   const [aviso, setAviso] = useState('');
+  const [active, setActive] = useState(0);
+  const [resume] = useState(() => loadReadingPosition(path));
   const summary = TOPIC_BY_PATH.get(path);
-  if (summary === undefined) {
-    return <p className="hint">Ese tema no existe en la demo.</p>;
-  }
   const topic: TopicContent = data.topics[path] ?? {
     path,
-    title: summary.title,
+    title: summary?.title ?? path,
     apuntesStatus: 'pendiente',
     practicaStatus: 'pendiente',
     source: { label: '', url: '' },
@@ -1646,6 +1918,17 @@ function Tema({ path }: { path: string }) {
     memorizar: [],
     errores: [],
   };
+  const secciones = topic.longSections ?? topic.sections;
+  const tieneResumen = secciones.some((section) => /resumen/i.test(section.heading));
+  const tieneFuentes = secciones.some((section) => /fuentes/i.test(section.heading));
+  useEffect(() => {
+    if (secciones[active] !== undefined) {
+      saveReadingPosition(path, active, secciones[active].heading);
+    }
+  }, [active, path, secciones]);
+  if (summary === undefined) {
+    return <p className="hint">Ese tema no existe en la demo.</p>;
+  }
   if (topic.apuntesStatus === 'pendiente') {
     return <PendingTopic topic={topic} summary={summary} />;
   }
@@ -1657,8 +1940,10 @@ function Tema({ path }: { path: string }) {
         <h1>{topic.title}</h1>
         <p className="page__lead demo-topic__badges">
           Tema {topic.path} · <ApuntesBadge status={topic.apuntesStatus} />{' '}
-          <PracticaBadge status={topic.practicaStatus} />
+          <PracticaBadge status={topic.practicaStatus} />{' '}
+          <FormatoBadge formato={topic.longSections !== undefined ? 'desarrollado' : 'esquema'} words={topic.longSections?.reduce((total, section) => total + (section.body ?? '').split(/\s+/).length, 0) ?? 0} />
         </p>
+        <p className="hint demo-vigencia">Vigente a 11/2026</p>
         <p className="hint">
           Forma parte del temario común de las {data.convocatorias.total} convocatorias C1.{' '}
           <button
@@ -1672,8 +1957,15 @@ function Tema({ path }: { path: string }) {
           </button>
         </p>
       </section>
-      {(topic.longSections ?? topic.sections).map((section) => (
-        <section className="card" key={section.heading}>
+      <TopicIndexBar sections={secciones} active={active} onActive={setActive} />
+      {resume !== null && resume.index > 0 && (
+        <div className="demo-read-resume">
+          <p>Continuar en <strong>{resume.heading}</strong></p>
+          <button className="button" type="button" onClick={() => { document.getElementById(`demo-seccion-${resume.index}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setActive(resume.index); }}>Continuar leyendo</button>
+        </div>
+      )}
+      {secciones.map((section, sectionIndex) => (
+        <section className="card demo-seccion" id={`demo-seccion-${sectionIndex}`} key={section.heading}>
           <h2>{section.heading}</h2>
           {section.body !== undefined && <RichText text={section.body} />}
           {section.svg !== undefined && (
@@ -1703,6 +1995,7 @@ function Tema({ path }: { path: string }) {
           )}
         </section>
       ))}
+      {!tieneFuentes && (
       <section className="card">
         <h2>Revisión y fuente</h2>
         <p className="hint">
@@ -1713,6 +2006,7 @@ function Tema({ path }: { path: string }) {
           Contenido propio de la demo a partir de la norma citada; no reproduce texto de academias.
         </p>
       </section>
+      )}
       <section className="card demo-errata">
         <h2>¿Has visto una errata?</h2>
         <label className="demo-search">
@@ -1759,6 +2053,7 @@ function Tema({ path }: { path: string }) {
           para que puedas enviarla. No se publica nada automáticamente.
         </p>
       </section>
+      {!tieneResumen && (
       <section className="card">
         <h2>Lo que hay que memorizar</h2>
         <ul className="demo-memorizar">
@@ -1767,6 +2062,7 @@ function Tema({ path }: { path: string }) {
           ))}
         </ul>
       </section>
+      )}
       <section className="card">
         <h2>Errores típicos</h2>
         <ul className="demo-memorizar">
@@ -2169,9 +2465,11 @@ function App() {
   } else if (parts[0] === 'cobertura') {
     content = <Cobertura />;
   } else if (parts[0] === 'tema' && parts[1] !== undefined) {
-    content = <Tema path={parts[1]} />;
+    content = <Tema path={parts[1]} key={parts[1]} />;
   } else if (parts[0] === 'practicas') {
     content = <Practicas />;
+  } else if (parts[0] === 'simulacro') {
+    content = <Simulacro />;
   } else if (parts[0] === 'supuestos') {
     content = <Supuestos />;
   } else if (parts[0] === 'supuesto' && parts[1] !== undefined) {

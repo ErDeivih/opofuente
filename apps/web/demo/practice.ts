@@ -20,6 +20,44 @@ const STORAGE_KEY = 'opofuente-demo-progress-v1';
 const RESUME_KEY = 'opofuente-demo-resume-v1';
 const ATTEMPTS_KEY = 'opofuente-demo-attempts-v1';
 const ERRATA_KEY = 'opofuente-demo-erratas-v1';
+const READING_KEY = 'opofuente-demo-reading-v1';
+
+export interface ReadingPosition {
+  readonly index: number;
+  readonly heading: string;
+}
+
+export function loadReadingPosition(path: string): ReadingPosition | null {
+  const store = storage();
+  if (store === null) {
+    return null;
+  }
+  try {
+    const raw = store.getItem(READING_KEY);
+    if (raw === null) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as Record<string, ReadingPosition>;
+    return parsed[path] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveReadingPosition(path: string, index: number, heading: string): void {
+  const store = storage();
+  if (store === null) {
+    return;
+  }
+  try {
+    const raw = store.getItem(READING_KEY);
+    const parsed = raw === null ? {} : (JSON.parse(raw) as Record<string, ReadingPosition>);
+    parsed[path] = { index, heading };
+    store.setItem(READING_KEY, JSON.stringify(parsed));
+  } catch {
+    // Sin almacenamiento no se guarda la posición.
+  }
+}
 
 export interface Errata {
   readonly id: string;
@@ -67,7 +105,7 @@ export function saveErrata(errata: Omit<Errata, 'id' | 'createdAt'>): Errata {
 
 export interface Attempt {
   readonly id: string;
-  readonly type: 'practice' | 'exam' | 'case' | 'supuesto';
+  readonly type: 'practice' | 'exam' | 'case' | 'supuesto' | 'simulacro';
   readonly block: string;
   readonly topic: string;
   readonly label: string;

@@ -108,7 +108,7 @@ check('hay al menos 5 temas con apuntes', data.progress.apuntesCompletos >= 5, `
 await captura('temario', 'temario', 390);
 check(
   'las pestañas se ven a 390 px y miden 44 px',
-  (await page.locator('.demo-nav .button').count()) === 7 &&
+  (await page.locator('.demo-nav .button').count()) === 8 &&
     (await page.locator('.demo-nav .button').evaluateAll((botones) =>
       botones.every((boton) => boton.getBoundingClientRect().height >= 44),
     )),
@@ -192,15 +192,18 @@ await page.locator('input[type=search]').fill('');
 
 if (completo !== undefined) {
   const texto = await captura(`tema/${completo.path}`, 'tema-completo', 1280);
-  check(`el tema ${completo.path} tiene apuntes completos y fuente`, /Apuntes completos/.test(texto) && /Revisión y fuente/.test(texto) && /Fuente:/.test(texto));
+  check(`el tema ${completo.path} tiene apuntes completos y fuente`, /Apuntes completos/.test(texto) && /Fuentes citadas/.test(texto) && /Vigente a 11\/2026/.test(texto));
   check(`el tema ${completo.path} tiene su práctica`, /Práctica de este tema/.test(texto));
   check(
-    `el tema ${completo.path} muestra memorizar y errores típicos`,
-    /Lo que hay que memorizar/.test(texto) && /Errores típicos/.test(texto),
+    `el tema ${completo.path} muestra errores típicos y vigencia`,
+    /Errores típicos/.test(texto) && /Vigente a 11\/2026/.test(texto),
   );
   check(
-    `el tema ${completo.path} muestra la fecha de revisión`,
-    /Última actualización: 10\/11\/2026/.test(texto),
+    `el tema ${completo.path} tiene una sola entrada de resumen y fuentes`,
+    (texto.match(/Resumen para memorizar/g) ?? []).length === 1 &&
+      (texto.match(/Fuentes citadas/g) ?? []).length === 1 &&
+      !/Lo que hay que memorizar/.test(texto) &&
+      !/Revisión y fuente/.test(texto),
   );
   check(
     `el tema ${completo.path} tiene desarrollo largo, tests y fuentes`,
@@ -219,6 +222,29 @@ if (completo !== undefined) {
     (await page.locator('.demo-breadcrumbs').innerText()).includes('Temario') &&
       (await page.locator('.demo-breadcrumbs').innerText()).includes(completo.path),
   );
+  await page.setViewportSize({ width: 390, height: 844 });
+  const indiceBoton = page.getByRole('button', { name: /Índice/ }).first();
+  check('el tema tiene barra de índice', (await indiceBoton.count()) > 0);
+  await indiceBoton.click();
+  check('el índice despliega los epígrafes', (await page.locator('.demo-indexbar__item').count()) >= 5);
+  await page.getByRole('button', { name: /8\. Resumen/ }).click();
+  await page.waitForTimeout(300);
+  const tipografia = await page.evaluate(() => {
+    const h2 = document.querySelector('main h2');
+    const p = document.querySelector('main .card p');
+    return {
+      h2: h2 ? parseFloat(getComputedStyle(h2).fontSize) : 0,
+      h2Margin: h2 ? parseFloat(getComputedStyle(h2).marginTop) : 0,
+      body: p ? parseFloat(getComputedStyle(p).fontSize) : 0,
+      lineHeight: p ? getComputedStyle(p).lineHeight : '',
+      scrollWidth: document.documentElement.scrollWidth,
+    };
+  });
+  check('H2 a 22 px, cuerpo 16 px e interlineado 1,6', tipografia.h2 >= 22 && tipografia.body >= 16 && tipografia.lineHeight === '25.6px');
+  check('sin scroll horizontal a 390 px', tipografia.scrollWidth <= 390);
+  await page.screenshot({ path: path.join(OUT_DIR, 'indice-tema-390.png'), fullPage: false });
+  await page.goto(`${BASE}/#/tema/${completo.path}`, { waitUntil: 'networkidle' });
+
   await captura(`tema/${completo.path}`, 'tema-completo', 390);
 
   // Reporte de errata: descarga un JSON con la constancia.
@@ -251,6 +277,41 @@ await page.waitForSelector('h1');
 const ii13 = await page.locator('main').innerText();
 check('el tema II.13 tiene 10 apartados, tabla y 15 casos', /1\. Ficha oficial/.test(ii13) && /10\. Fuentes citadas/.test(ii13) && /15\./.test(ii13));
 await page.screenshot({ path: path.join(OUT_DIR, 'tema-ii-13-390.png'), fullPage: true });
+
+// Captura pedida de V.35 a 390 px.
+await page.goto(`${BASE}/#/tema/V.35`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+const v35 = await page.locator('main').innerText();
+check('V.35 muestra indice, vigencia y fuentes', /Índice/.test(v35) && /Vigente a 11\/2026/.test(v35) && /Fuentes citadas/.test(v35));
+await page.screenshot({ path: path.join(OUT_DIR, 'tema-v-35-390.png'), fullPage: true });
+
+// OP-U3: continuar leyendo por epígrafe.
+await page.goto(`${BASE}/#/tema/II.13`, { waitUntil: 'networkidle' });
+await page.evaluate(() => {
+  window.localStorage.setItem('opofuente-demo-reading-v1', JSON.stringify({ 'II.13': { index: 3, heading: '4. Desarrollo por epígrafe' } }));
+});
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+const continuar = await page.locator('main').innerText();
+check('el tema ofrece continuar en el epígrafe guardado', /Continuar en/.test(continuar) && /4\. Desarrollo/.test(continuar));
+await page.getByRole('button', { name: 'Continuar leyendo' }).click();
+await page.waitForTimeout(300);
+
+// OP-F2: simulacro TAI 80+20.
+await page.goto(`${BASE}/#/simulacro`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+const simulacro = await page.locator('main').innerText();
+check('el simulacro TAI muestra 80+20, 120 min y mínimo 25', /80 preguntas/.test(simulacro) && /20 preguntas/.test(simulacro) && /120 minutos/.test(simulacro) && /mínimo 25/.test(simulacro));
+await page.screenshot({ path: path.join(OUT_DIR, 'simulacro-390.png'), fullPage: true });
+await page.getByRole('button', { name: 'Empezar simulacro TAI' }).click();
+await page.waitForSelector('input[type=radio]');
+for (let i = 0; i < 100; i += 1) {
+  await page.locator('input[type=radio]').first().check();
+  await page.getByRole('button', { name: i === 99 ? 'Terminar y ver nota' : 'Siguiente pregunta' }).click();
+}
+const resultadoSimulacro = await page.locator('main').innerText();
+check('el simulacro da nota por partes con penalización', /Resultado del simulacro TAI/.test(resultadoSimulacro) && /Parte 1/.test(resultadoSimulacro) && /Parte 2/.test(resultadoSimulacro) && /50/.test(resultadoSimulacro));
+await page.screenshot({ path: path.join(OUT_DIR, 'simulacro-resultado-390.png'), fullPage: true });
 
 if (pendiente !== undefined) {
   const texto = await captura(`tema/${pendiente.path}`, 'tema-pendiente', 1280);

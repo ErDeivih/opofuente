@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **80/80**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **88/88**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -74,7 +74,7 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **80/80** y capturas.
+   → **88/88** y capturas.
 
 ## Verificación y capturas
 
@@ -111,6 +111,10 @@ Revisión final móvil en [`REVISION-FINAL-2026-11-10.md`](REVISION-FINAL-2026-1
 | Supuestos | — | `supuestos-390.png` |
 | Tema largo V.39 | — | `tema-v-39-390.png` |
 | Tema largo II.13 | — | `tema-ii-13-390.png` |
+| Índice del tema | — | `indice-tema-390.png` |
+| Simulacro | — | `simulacro-390.png` |
+| Resultado simulacro | — | `simulacro-resultado-390.png` |
+| Tema V.35 | — | `tema-v-35-390.png` |
 | Resultado de supuesto | — | `supuesto-resultado-390.png` |
 | Estadísticas | — | `estadisticas-390.png` |
 | Estadísticas vacías | — | `estadisticas-vacia-390.png` |

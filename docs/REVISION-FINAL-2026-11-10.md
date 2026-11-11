@@ -1,6 +1,6 @@
 # Revisión final de la demo — 10/11/2026
 
-**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **80/80** comprobaciones con
+**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **88/88** comprobaciones con
 Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 
 ## Qué se ha revisado
@@ -38,6 +38,9 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 | Supuestos | [supuestos-390](capturas/demo-pages/supuestos-390.png) |
 | Tema largo V.39 | [tema-v-39-390](capturas/demo-pages/tema-v-39-390.png) |
 | Tema largo II.13 | [tema-ii-13-390](capturas/demo-pages/tema-ii-13-390.png) |
+| Índice del tema | [indice-tema-390](capturas/demo-pages/indice-tema-390.png) |
+| Simulacro | [simulacro-390](capturas/demo-pages/simulacro-390.png) |
+| Resultado simulacro | [simulacro-resultado-390](capturas/demo-pages/simulacro-resultado-390.png) |
 | Resultado de supuesto | [supuesto-resultado-390](capturas/demo-pages/supuesto-resultado-390.png) |
 | Estadísticas | [estadisticas-390](capturas/demo-pages/estadisticas-390.png) |
 | Estadísticas vacías | [estadisticas-vacia-390](capturas/demo-pages/estadisticas-vacia-390.png) |
@@ -56,7 +59,9 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
   verificados; fecha de revisión visible en la ficha.
 - **CSP y referrer** presentes; **errata descargada como JSON**; etiqueta **Simulación** en el examen.
 - **Corrección al elegir** sin «Comprobar», **estados vacíos con acción** y **resultado con revisión primero**.
-- **Temas largos** I.1/III.21/IV.27/V.34/V.35 con SVG, test cases y fuentes; 80/80 comprobaciones.
+- **Lector**: índice fijo, resumen/fuentes únicos, tipografía 22/16 px, continuar por epígrafe y vigencia.
+- **Simulacro TAI** 80+20 con 120 min, −1/3 y mínimo 25/50 por parte.
+- **Temas largos** I.1/III.21/IV.27/V.34/V.35 con SVG, test cases y fuentes; 88/88 comprobaciones.
 - Pruebas: 517 unitarias de backend, 225 de web, typecheck, eslint, ruff, mypy y build.
 
 ## Temario completo

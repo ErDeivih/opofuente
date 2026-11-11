@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 11/11 (tanda larga): II.13 Arquitectura reescrito con estructura de 10 apartados, 2.692 palabras y 15 test cases; dos supuestos oficiales mas (2019-L-S1 y 2019-L-S2) hasta 7 supuestos/140 preguntas; sellos "Esquema"/"Desarrollado · N palabras" visibles en el indice. Demo 80/80 y 12/12 enlaces.
+resumen: Sesion 11/11: lector de temas con indice fijo, un solo resumen/fuentes, tipografia 22/18/16 px, continuar por epigrafe y vigencia 11/2026; simulacro TAI 80+20, 120 min, -1/3 y minimo 25/50 por parte; II.13 largo, 7 supuestos/140 preguntas; 88/88 comprobaciones.
 estado: completado
-tarea: II.13, siete supuestos y sellos de tema
+tarea: lector, simulacro TAI y tanda de contenido
 nivel: 2
-siguiente: seguir con temas largos y supuestos oficiales; revisar reglas locales cuando se publiquen
+siguiente: seguir con temas largos y supuestos; mantener criterios de lectura y medir capturas 390
 bloqueado: ninguno
 fecha: 2026-11-11
