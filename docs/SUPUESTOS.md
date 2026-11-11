@@ -67,6 +67,6 @@ cálculo de la nota excluye las anuladas.
 
 ## Verificación
 
-- **91/91** comprobaciones Playwright en la URL pública, incluidas la pestaña Supuestos, el filtro por
+- **94/94** comprobaciones Playwright en la URL pública, incluidas la pestaña Supuestos, el filtro por
   año, el enunciado/resolución y una resolución completa de 20 preguntas.
 - Build y test validan **3 supuestos × 20 preguntas** y las opciones sin prefijo duplicado.

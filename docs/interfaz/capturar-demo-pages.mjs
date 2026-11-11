@@ -291,6 +291,15 @@ const iii21 = await page.locator('main').innerText();
 check('III.21 tiene 10 apartados e indice/test', /1\. Ficha oficial/.test(iii21) && /10\. Fuentes citadas/.test(iii21) && /Test del tema/.test(iii21));
 await page.screenshot({ path: path.join(OUT_DIR, 'tema-iii-21-390.png'), fullPage: true });
 
+// Tres temas largos nuevos: II.14, III.22 y IV.28.
+for (const [tema, slug] of [['II.14', 'tema-ii-14-390'], ['III.22', 'tema-iii-22-390'], ['IV.28', 'tema-iv-28-390']]) {
+  await page.goto(`${BASE}/#/tema/${tema}`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('h1');
+  const texto = await page.locator('main').innerText();
+  check(`${tema} tiene 10 apartados, índice y test`, /1\. Ficha oficial/.test(texto) && /10\. Fuentes citadas/.test(texto) && /Test del tema/.test(texto));
+  await page.screenshot({ path: path.join(OUT_DIR, `${slug}.png`), fullPage: true });
+}
+
 // Captura pedida de V.35 a 390 px.
 await page.goto(`${BASE}/#/tema/V.35`, { waitUntil: 'networkidle' });
 await page.waitForSelector('h1');

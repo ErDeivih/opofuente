@@ -2,16 +2,16 @@
 
 **Fecha:** 11/11/2026 · **Referencia:** `data/sources/temario-c1.md` (40 temas, 5 bloques). Estado calculado desde `data.json`:
 
-- **completo:** desarrollo largo con 10 apartados y 15 test (7 temas).
-- **parcial:** ficha corta de 6-7 apartados y práctica de 10 preguntas (33 temas).
+- **completo:** desarrollo largo con 10 apartados y 15 test (10 temas).
+- **parcial:** ficha corta de 6-7 apartados y práctica de 10 preguntas (30 temas).
 - **ausente:** sin contenido (0 temas).
 
 ## Resumen
 
 | Estado | Temas |
 |---|---|
-| Completo | **7** |
-| Parcial | **33** |
+| Completo | **10** |
+| Parcial | **30** |
 | Ausente | **0** |
 | **Total** | **40** |
 
@@ -32,7 +32,7 @@
 | I | I.11 | Igualdad y violencia de género | **parcial** | 6 apartados cortos · 10 test |
 | I | I.12 | Transparencia y protección de datos en la Administración | **parcial** | 6 apartados cortos · 10 test |
 | II | II.13 | Arquitectura de ordenadores | **completo** | 10 apartados · 15 test |
-| II | II.14 | Sistemas operativos de usuario | **parcial** | 6 apartados cortos · 10 test |
+| II | II.14 | Sistemas operativos de usuario | **completo** | 10 apartados · 15 test |
 | II | II.15 | Ofimática | **parcial** | 7 apartados cortos · 10 test |
 | II | II.16 | Correo electrónico y colaboración | **parcial** | 7 apartados cortos · 10 test |
 | II | II.17 | Licencias y software libre | **parcial** | 7 apartados cortos · 10 test |
@@ -40,13 +40,13 @@
 | III | III.19 | Virtualización y contenedores | **parcial** | 6 apartados cortos · 10 test |
 | III | III.20 | Almacenamiento y copias de seguridad | **parcial** | 6 apartados cortos · 10 test |
 | III | III.21 | Redes | **completo** | 10 apartados · 15 test |
-| III | III.22 | Comunicaciones | **parcial** | 7 apartados cortos · 10 test |
+| III | III.22 | Comunicaciones | **completo** | 10 apartados · 15 test |
 | III | III.23 | Servicios de red | **parcial** | 6 apartados cortos · 10 test |
 | III | III.24 | Monitorización y gestión de incidencias | **parcial** | 6 apartados cortos · 10 test |
 | III | III.25 | Cloud y centros de datos | **parcial** | 7 apartados cortos · 10 test |
 | III | III.26 | Soporte al puesto de trabajo | **parcial** | 6 apartados cortos · 10 test |
 | IV | IV.27 | Bases de datos relacionales | **completo** | 14 apartados · 15 test |
-| IV | IV.28 | SQL | **parcial** | 7 apartados cortos · 10 test |
+| IV | IV.28 | SQL | **completo** | 10 apartados · 15 test |
 | IV | IV.29 | Gestores de bases de datos | **parcial** | 6 apartados cortos · 10 test |
 | IV | IV.30 | Programación | **parcial** | 7 apartados cortos · 10 test |
 | IV | IV.31 | Desarrollo web | **parcial** | 7 apartados cortos · 10 test |
@@ -62,6 +62,6 @@
 
 ## Qué falta
 
-Los **33 temas parciales** tienen apuntes y práctica, pero no el desarrollo de 10 apartados con 15 test. La prioridad es aplicarlos la misma plantilla que I.1, II.13 y III.21. No hay ningún tema ausente: los 40 tienen contenido publicado.
+Los **30 temas parciales** tienen apuntes y práctica, pero no el desarrollo de 10 apartados con 15 test. La prioridad es aplicarlos la misma plantilla que I.1, II.13 y III.21. No hay ningún tema ausente: los 40 tienen contenido publicado.
 
-La cobertura de los 7 completos es: I.1, II.13, III.21, IV.27, V.34, V.35 y V.39.
+La cobertura de los 10 completos es: I.1, II.13, II.14, III.21, III.22, IV.27, IV.28, V.34, V.35 y V.39.

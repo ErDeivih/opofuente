@@ -101,7 +101,7 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
             assert pregunta["source"]["label"].strip() != ""
 
     # Temas largos: cinco temas con desarrollo extenso y diagramas propios.
-    largos = ["I.1", "II.13", "III.21", "IV.27", "V.34", "V.35", "V.39"]
+    largos = ["I.1", "II.13", "II.14", "III.21", "III.22", "IV.27", "IV.28", "V.34", "V.35", "V.39"]
     for path in largos:
         contenido = data["topics"][path]
         assert "longSections" in contenido, f"{path}: falta longSections"

@@ -1,0 +1,282 @@
+{
+  "tema": "III.22",
+  "title": "Comunicaciones",
+  "difficulty": "media",
+  "topics": [
+    "III.22",
+    "III.21"
+  ],
+  "steps": [
+    "Leer la ficha oficial y situar el tema en el bloque III (sistemas y comunicaciones), relacionándolo con el tema III.21 de redes.",
+    "Recorrer los epígrafes en orden: modelo de comunicación, medios guiados y no guiados, perturbaciones y pruebas del cableado, equipos de interconexión, conmutación, Wi-Fi, móviles, VoIP, VPN y MPLS.",
+    "Dibujar de memoria el esquema de un sistema de comunicación y clasificar cada medio por su soporte físico.",
+    "Explicar las diferencias entre CSMA/CD y CSMA/CA, entre los tipos de conmutación y entre repetidor, puente, switch y router.",
+    "Construir una tabla propia de los estándares Wi-Fi y otra de los medios de transmisión hasta poder rellenarlas sin dudar.",
+    "Hacer los 15 testCases y anotar las trampas en las que se falla para el repaso final."
+  ],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema III.22 — Comunicaciones.** Bloque III (sistemas y comunicaciones) del temario común C1. Se estudia con tres fuentes del bloque: **Tema 11** (comunicaciones, medios, equipos, conmutación, WLAN y telefonía móvil), **Bloque 4 Actualizado 2026** (estándares Wi-Fi actuales, FTTH, 5G, VoIP, VPN y MPLS) y **IEEE.802.11.y.Wifi.Estandares.docx** (evolución del estándar Wi-Fi). Su núcleo es: modelo de comunicación, **medios de transmisión** guiados (par trenzado, coaxial y fibra) y no guiados, perturbaciones de la señal y pruebas del cableado, **equipos de interconexión** por capa (repetidor y hub, puente y switch, router, pasarela y proxy), **redes y conmutación** (circuitos, paquetes, tramas y celdas), **redes inalámbricas** (Wi-Fi 802.11, seguridad y arquitectura), telefonía móvil, **VoIP**, **VPN** y **MPLS**. Conecta con el tema **III.21** (redes), que estudia direccionamiento, protocolos y servicios. Es un tema de conceptos y comparaciones: definiciones, dispositivo por capa y diferencias entre tecnologías."
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El tema se estudia en este orden: (1) modelo de un sistema de comunicación (fuente, transmisor, medio, receptor y destino); (2) medios guiados: par trenzado UTP/STP, cable coaxial y fibra óptica; (3) medios no guiados: radiofrecuencia, microondas e infrarrojos; (4) perturbaciones de la señal (atenuación, interferencia, diafonía, ruido y desfase) y pruebas del cableado; (5) equipos de interconexión por capa del modelo OSI; (6) tipos de redes y de conmutación (circuitos, paquetes, tramas y celdas); (7) redes inalámbricas: Wi-Fi 802.11, capa física, acceso al medio y seguridad; (8) telefonía móvil: celdas, hand-over, roaming y generaciones; (9) VoIP y calidad de servicio; (10) VPN, MPLS y acceso de banda ancha (FTTH). Para el test pesan los medios de transmisión, CSMA/CD frente a CSMA/CA, los estándares Wi-Fi, los tipos de conmutación y la diferencia entre VPN, proxy y MPLS."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "Las comunicaciones explican cómo viaja la información de un dispositivo a otro: qué elementos intervienen, por qué medio se transmite, qué la degrada, qué equipos la encaminan y qué tecnologías la soportan. Sin ese mapa, siglas como CSMA/CA, WPA2, Frame Relay o MPLS se memorizan sueltas y se confunden en cuanto el examen cambia una frase.\n\nEl tema se ordena por **niveles y por capas**. Primero, el modelo básico de comunicación (fuente, transmisor, sistema de transmisión, receptor y destino) y los medios físicos. Después, los equipos que interconectan redes, clasificados por la capa en la que trabajan (capa 1, 2, 3 o 7). Y por encima, las tecnologías de red: conmutación, Wi-Fi, móviles, VoIP, VPN y MPLS.\n\nComplementa al tema III.21: aquí se estudia cómo se transmite y con qué equipos; allí, el direccionamiento, los protocolos y los servicios de red."
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1 Modelo de comunicación y medios de transmisión.** Un sistema de comunicación se representa con cinco elementos (Tema 11, 1): **fuente** (genera los datos), **transmisor** (los transforma y codifica para el medio; por ejemplo, el módem modula en señal analógica), **sistema de transmisión** (el medio), **receptor** (acepta la señal y la adapta) y **destino** (equipo que procesa los datos). El modelo exige interfaces, generación de señales, sincronización, control de errores y de flujo, direccionamiento y enrutamiento.\n\nLos medios pueden ser **guiados** (la señal viaja confinada: par trenzado, coaxial y fibra) o **no guiados** (la señal se propaga por el espacio: radiofrecuencia, microondas e infrarrojos). Entre los guiados, el **par trenzado** es el más usado por coste y facilidad de instalación: **UTP** (cuatro pares de hilos de cobre, mejor relación calidad/precio) y **STP** (blindado, más caro y menos susceptible a interferencias). El **cable coaxial** tiene núcleo de cobre, aislamiento, malla de blindaje y revestimiento: el **RG-58** es de 50 ohmios y se usó en 10-BASE-2; el **RG-59** y el **RG-6U** son de 75 ohmios (TV por cable y viviendas). La **fibra óptica** usa dos hebras de vidrio o plástico; destaca por distancias y ancho de banda muy superiores al cobre y por no ser susceptible a interferencias electromagnéticas ni a diafonía. Hay **multimodo** (el haz rebota en el revestimiento, longitudes típicas de 850 a 1.300 nm y uso en FDDI, Gigabit y 10 Gigabit Ethernet dentro de edificios) y **monomodo** (el haz no rebota, longitudes típicas de 1.310 y 1.550 nm, usada en enlaces de proveedor y de campus). Entre los no guiados, la **radiofrecuencia** cubre de 3 kHz a 300 GHz; las **microondas** (300 MHz a 300 GHz) exigen línea de visión directa; los **infrarrojos** (IrDA) sirven para corto alcance y no atraviesan paredes.\n\n**4.2 Perturbaciones de la señal y pruebas del cableado.** Al transmitir se producen efectos negativos (Tema 11, 2): **atenuación** (pérdida de potencia con la distancia; en cobre por resistencia y calor, en fibra por absorción de luz), **interferencia** (la **diafonía** es la interferencia entre señales que discurren por medios paralelos), **ruido** (térmico por agitación de los conductores, de intermodulación por compartir frecuencias, impulsivo por rayos o cortocircuitos) y **desfase** (la onda no viaja a la misma velocidad en todas las frecuencias). En el cableado de cobre se comprueba la continuidad con **reflectometría en el dominio del tiempo** (TDR), el **mapeo de hilos** y, para certificar, impedancia, pérdida de retorno, **atenuación**, **NEXT**, **FEXT** y **ACR**. En fibra se miden la **potencia óptica** y la **atenuación** con un OLTS y se localizan problemas con un **OTDR**; en multimodo se prueba a 850 y 1.300 nm y en monomodo a 1.300 nm.\n\n**4.3 Equipos de interconexión por capa.** Los dispositivos finales (hosts) generan o consumen información; los intermedios la acercan al destino. Por capa del modelo OSI (Tema 11, 4): en **capa 1** están el **repetidor** y el **hub**, que regeneran la señal y **amplían el dominio de colisión** compartiendo el ancho de banda. En **capa 2** están el **puente** y el **conmutador**: aprenden direcciones **MAC**, consultan una tabla de conmutación, reenvían la trama por el puerto correcto (o por todos si la MAC no se conoce) y **dividen dominios de colisión**; el switch lo hace por hardware, es full-duplex y puede usar **store-and-forward** (comprueba la trama y descarta las erróneas, con más latencia) o **conmutación rápida** (reenvía tras leer la MAC de destino, con menos latencia pero sin filtrar errores). El **STP (802.1D)** evita bucles en topologías redundantes y **802.1Q** etiqueta tramas para separar **VLAN** (añade un campo de 4 bytes a la cabecera Ethernet). En **capa 3** está el **router**, que decide la ruta por la dirección IP de destino con su tabla de enrutamiento (rutas estáticas o protocolos como RIP, OSPF, EIGRP, IS-IS o BGP) y **separa dominios de difusión**.\n\n**4.4 Redes y tipos de conmutación.** Según la tecnología de transmisión, hay redes de **difusión** (un canal compartido: el origen envía y todos reciben) y **punto a punto** (múltiples enlaces entre pares). Por su ámbito: **LAN** (edificio, privada, 10 Mbps a 100 Gbps con Ethernet o anillo Token Ring), **MAN** (ciudad; WiMAX, IEEE 802.16) y **WAN** (áreas extensas con proveedor de servicios). Las WAN se clasifican por cómo conmutan (Tema 11, 5): **circuitos** (camino dedicado previo; RTB y RDSI), **paquetes** (datagramas sin recursos reservados; X.25), **tramas** (decisiones por cabeceras y direcciones de **capa 2**; Frame Relay) y **celdas** (tramas de tamaño fijo y pequeño; ATM). Las topologías típicas son bus, anillo, estrella, estrella extendida, árbol, malla parcial y malla completa.\n\n**4.5 Redes inalámbricas y Wi-Fi.** Según el alcance: **WPAN** (Bluetooth 802.15.1, Zigbee 802.15.4), **WLAN** (Wi-Fi 802.11, HiperLAN), **WMAN** (WiMAX 802.16) y **WWAN** (LTE, UMTS, GPRS). Wi-Fi usa las bandas de **2,4 GHz y 5 GHz**; en 2,4 GHz hay canales del 1 al 13 separados 5 MHz con un ancho de 22 MHz, por lo que se solapan, y el material del bloque señala como canales recomendados para puntos de acceso adyacentes el 1, el 7 y el 13. En la capa física destacan el **espectro ensanchado** (**FHSS**, que cambia periódicamente la portadora, y **DSSS**, que usa todo el ancho de banda con una secuencia de bits) y **OFDM** (divide el ancho de banda en subportadoras). En la subcapa MAC no se puede detectar la colisión mientras se transmite: se usa **CSMA/CA con ACK** y, para el **nodo oculto**, **RTS/CTS**; el control puede ser distribuido (**DCF**) o centralizado (**PCF**). La arquitectura puede ser **ad-hoc** (sin punto de acceso) o **infraestructura** (clientes, **AP** y controlador **AC**). Por estándares: **802.11b** (DSSS, 11 Mbps, 2,4 GHz, unos 100 m), **802.11a** (OFDM, 54 Mbps, 5 GHz), **802.11g** (54 Mbps, 2,4 GHz, OFDM o DSSS para interoperar), **802.11n** (2,4 y 5 GHz, hasta 600 Mbps, MIMO) y **802.11ac** (5 GHz, hasta 1,3 Gbps, WPA2 con AES). El **Bloque 4** amplía el cuadro con **Wi-Fi 6/6E** (802.11ax), **Wi-Fi 7** (802.11be), **WiGig** (802.11ad, 60 GHz), **Wi-Fi HaLow** (802.11ah, sub-1 GHz, IoT) y **White-Fi** (802.11af, bandas de TV). En seguridad, **WEP** cifra con **RC4** (claves de 40, 128 o 256 bits) y resultó vulnerable; **WPA2** (IEEE 802.11i) usa **AES (Rijndael)**; **802.1X con EAP y RADIUS** controla el acceso por puertos.\n\n**4.6 Telefonía móvil.** Los sistemas celulares dividen la cobertura en **células** con un transceptor y un conjunto limitado de frecuencias; las frecuencias se reutilizan en células no contiguas y un **clúster** agrupa células adyacentes con casi todas las frecuencias. El **hand-over** mantiene la llamada al cambiar de celda dentro de la misma central, y el **roaming** la mantiene al pasar a una celda de otra central. Por generaciones: **1G** analógica (AMPS, NMT-450, NMT-900, TACS), **2G** digital (TDMA y CDMA; GSM y DCS-1800), **2.5G** (GPRS y EDGE), **3G** (UMTS, con servicios multimedia), **3.5G** (HSDPA hasta 14,4 Mbps y LTE con OFDM y MIMO), **4G** (todo IP, más de 100 Mbps en movimiento y 1 Gbps en reposo, con LTE Advanced y WiMax2 como auténticos 4G) y **5G**, con modos **NSA** (apoyado en 4G) y **SA** (menor latencia) y latencias de 1-2 ms en SA frente a 5-10 ms en NSA.\n\n**4.7 VoIP, VPN, MPLS y acceso de banda ancha.** La **VoIP** convierte la voz analógica en paquetes IP; es sensible a **latencia, jitter y pérdida de paquetes**. Usa **SIP** para establecer, modificar y finalizar sesiones, **RTP** para transportar voz y vídeo en tiempo real, **SRTP** cifrado, **H.323** (más antiguo), **MGCP** para conectar con la red telefónica tradicional y **WebRTC** para comunicación desde el navegador. Los equipos son softphones, teléfonos IP, gateways VoIP y centrales **PBX IP**; la **QoS** prioriza el tráfico de voz. La **VPN** permite enviar y recibir datos sobre redes públicas como si fuera una red privada y debe aportar **confidencialidad, integridad y autenticación**: puede ser de **acceso remoto** o **sitio a sitio**, usa **tunelización** y a menudo **IPsec**; con **split tunneling** se decide qué tráfico va por la VPN. Implementaciones: PPP, PPTP (antiguo y poco seguro), SSTP, L2F, L2TP (sin cifrado propio, se combina con IPsec), OpenVPN (SSL/TLS) e IPsec. Un **proxy** es un intermediario que no cifra el tráfico y solo oculta la IP en tráfico HTTP/S, a diferencia de la VPN. **MPLS** opera entre la capa de enlace y la de red y enruta por **etiquetas**: **LER** inicia o termina el túnel y añade o quita etiquetas, **LSR** encamina por etiquetas, **FEC** agrupa paquetes con características similares, **LSP** es el camino y **LDP** distribuye las etiquetas. En el acceso de banda ancha, **FTTH** lleva fibra hasta el hogar, sustituye a **ADSL** y a **HFC** (coaxial) y aporta estabilidad, inmunidad a interferencias y latencias más bajas."
+    },
+    {
+      "heading": "5. Tabla comparativa: medios de transmisión guiados",
+      "body": "Los medios guiados se diferencian por su soporte físico, su inmunidad a las interferencias y su uso típico. Esta tabla resume los datos que se preguntan.",
+      "table": {
+        "columns": [
+          "Medio",
+          "Características",
+          "Datos del material",
+          "Uso típico"
+        ],
+        "rows": [
+          [
+            "Par trenzado UTP/STP",
+            "Cuatro pares de hilos de cobre trenzados; UTP sin blindaje y STP blindado",
+            "UTP: mejor relación calidad/precio; STP: más caro y menos susceptible a interferencias",
+            "Cableado de LAN y telefonía"
+          ],
+          [
+            "Cable coaxial",
+            "Núcleo de cobre, aislamiento, malla de blindaje y revestimiento",
+            "RG-58: 50 ohmios (10-BASE-2); RG-59 y RG-6U: 75 ohmios (TV y viviendas)",
+            "Redes antiguas, TV por cable y cable-módem"
+          ],
+          [
+            "Fibra óptica multimodo",
+            "El haz rebota en el revestimiento; permite más de un nodo de luz",
+            "Longitudes típicas de 850 a 1.300 nm",
+            "FDDI, Gigabit y 10 Gigabit Ethernet dentro de edificios"
+          ],
+          [
+            "Fibra óptica monomodo",
+            "El haz no rebota en el revestimiento",
+            "Longitudes típicas de 1.310 y 1.550 nm",
+            "Enlaces de proveedor, intercontinentales y de campus"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un ayuntamiento quiere conectar dos sedes separadas por varios kilómetros, dar Wi-Fi a los usuarios de la sede principal y migrar su telefonía a VoIP. Elabora una solución razonada indicando medio, equipos y tecnologías de cada tramo.\n\n**Resolución.** (1) Entre sedes, la distancia y el ancho de banda exigen **fibra óptica monomodo** (longitudes de 1.310/1.550 nm) o un enlace WAN contratado al operador; si se contrata, puede usarse **MPLS** para transportar varios tipos de tráfico con etiquetas y garantías. (2) En cada sede, un **switch** de capa 2 con **VLAN** por departamento separa el tráfico; el enlace entre switches se configura como **troncal 802.1Q** para transportar varias VLAN. (3) Un **router** de capa 3 conecta las redes lógicas y separa los dominios de difusión. (4) El Wi-Fi se despliega en modo **infraestructura** con puntos de acceso y controlador; en 2,4 GHz se reparten los canales 1, 7 y 13 para evitar solapamientos, se usa **WPA2 con AES** y, si hay equipos antiguos, se aísla la red. (5) Para el teletrabajo se configura una **VPN de acceso remoto** con IPsec o SSL/TLS, y para unir las dos sedes una **VPN sitio a sitio** si no se contrata MPLS. (6) La telefonía pasa a **VoIP** con **SIP** para la señalización y **RTP** para la voz; se crea una VLAN de voz y se aplica **QoS** para reducir latencia y jitter.\n\n**Conclusión.** Cada decisión se justifica por una característica técnica: el medio por la distancia, el switch por la segmentación, el router por el enrutamiento, el Wi-Fi por la movilidad y la QoS por la sensibilidad de la voz."
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "- Confundir **CSMA/CD** (redes cableadas: detecta la colisión mientras transmite) con **CSMA/CA** (Wi-Fi: evita la colisión y exige ACK).\n- Olvidar que **RTS/CTS** sirve para el problema del **nodo oculto**, no para cifrar.\n- Confundir **WEP** (RC4, claves de 40, 128 o 256 bits, vulnerable) con **WPA2** (AES/Rijndael, IEEE 802.11i).\n- Mezclar bandas y velocidades de Wi-Fi: **802.11b** (2,4 GHz, 11 Mbps), **802.11a** (5 GHz, 54 Mbps), **802.11g** (2,4 GHz, 54 Mbps), **802.11n** (2,4 y 5 GHz, 600 Mbps, MIMO) y **802.11ac** (5 GHz).\n- Confundir los tipos de conmutación: **circuitos** (RTB y RDSI), **paquetes** (X.25), **tramas** (Frame Relay, capa 2) y **celdas** (ATM, tamaño fijo).\n- Confundir **repetidor y hub** (capa 1, amplían el dominio de colisión) con **puente y switch** (capa 2, lo dividen) y con **router** (capa 3, separa dominios de difusión).\n- Confundir en MPLS **LER** (añade o quita etiquetas al inicio y fin) con **LSR** (encamina por etiquetas) y con **LDP** (distribuye etiquetas).\n- Creer que un **proxy** cifra el tráfico: el proxy no cifra; la **VPN** cifra todo el tráfico de red.\n- Confundir en VoIP **SIP** (señalización de sesiones) con **RTP** (transporte de voz y vídeo en tiempo real).\n- Confundir en fibra **multimodo** (850-1.300 nm, edificios) con **monomodo** (1.310/1.550 nm, larga distancia) y el coaxial **RG-58** (50 ohmios) con **RG-59** (75 ohmios)."
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Lo que hay que memorizar.**\n\n1. **Modelo**: fuente, transmisor, sistema de transmisión, receptor y destino; el módem modula la señal.\n2. **Medios guiados**: UTP/STP, coaxial (RG-58 50 ohmios; RG-59/RG-6U 75 ohmios) y fibra (multimodo 850-1.300 nm; monomodo 1.310/1.550 nm).\n3. **No guiados**: radiofrecuencia (3 kHz-300 GHz), microondas (300 MHz-300 GHz, línea de visión) e infrarrojos (IrDA).\n4. **Perturbaciones**: atenuación, interferencia y diafonía, ruido (térmico, intermodulación, impulsivo) y desfase.\n5. **Equipos por capa**: capa 1 repetidor y hub; capa 2 puente y switch; capa 3 router; capa 7 ALG y proxy.\n6. **Conmutación**: circuitos (RTB/RDSI), paquetes (X.25), tramas (Frame Relay) y celdas (ATM).\n7. **Wi-Fi**: CSMA/CA con ACK, RTS/CTS para nodo oculto, DCF y PCF; 802.11b 11 Mbps, a/g 54 Mbps, n 600 Mbps (MIMO), ac 5 GHz; WPA2 con AES.\n8. **Móviles**: células, clúster, hand-over y roaming; 1G analógica, 2G digital, 2.5G GPRS/EDGE, 3G UMTS, 4G todo IP, 5G NSA/SA.\n9. **VoIP**: SIP (señalización), RTP (voz y vídeo), SRTP (cifrado), H.323, MGCP y WebRTC; QoS para latencia y jitter.\n10. **VPN y MPLS**: VPN con tunelización e IPsec, de acceso remoto o sitio a sitio; proxy sin cifrado; MPLS con LER, LSR, FEC, LSP y LDP."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "**1.** ¿Qué elemento del sistema de comunicación transforma y codifica los datos para el medio? **Respuesta: b)** El transmisor (Tema 11, 1).\n\n**2.** ¿Cómo se llama la pérdida de potencia de la señal con la distancia? **Respuesta: a)** Atenuación (Tema 11, 2).\n\n**3.** ¿Qué es la diafonía? **Respuesta: c)** La interferencia entre señales que discurren por medios paralelos (Tema 11, 2).\n\n**4.** ¿Qué caracteriza a la fibra monomodo? **Respuesta: d)** Longitudes típicas de 1.310 y 1.550 nm, sin rebote del haz en el revestimiento (Tema 11, 2).\n\n**5.** En Wi-Fi, ¿qué variante de CSMA se usa en la subcapa MAC? **Respuesta: b)** CSMA/CA con ACK (Tema 11, 6.1.2).\n\n**6.** ¿Qué algoritmo simétrico usa WPA2? **Respuesta: c)** AES (Rijndael), según IEEE 802.11i (Tema 11, 6.4).\n\n**7.** ¿En qué banda opera 802.11ac? **Respuesta: d)** Solo en 5 GHz (Tema 11, 6.3).\n\n**8.** ¿Qué tecnología usa conmutación de celdas de tamaño fijo? **Respuesta: a)** ATM (Tema 11, 5).\n\n**9.** La conmutación de tramas toma decisiones según direcciones de… **Respuesta: b)** Capa 2 (Frame Relay) (Tema 11, 5).\n\n**10.** ¿Qué estándar etiqueta las tramas Ethernet para identificar la VLAN? **Respuesta: c)** IEEE 802.1Q (Tema 11, 4).\n\n**11.** ¿Qué dispositivos amplían el dominio de colisión? **Respuesta: d)** Repetidores y hubs (Tema 11, 4).\n\n**12.** ¿Qué protocolo establece, modifica y finaliza sesiones en VoIP? **Respuesta: a)** SIP (Bloque 4, TEMA 6).\n\n**13.** ¿Cuál es la diferencia clave entre proxy y VPN? **Respuesta: b)** La VPN cifra todo el tráfico y el proxy no cifra (Bloque 4, TEMA 9).\n\n**14.** En MPLS, ¿qué elemento añade o quita etiquetas al inicio y fin del túnel? **Respuesta: d)** El LER (Bloque 4, TEMA 10).\n\n**15.** ¿Qué estándar ofrece hasta 600 Mbps con MIMO en 2,4 y 5 GHz? **Respuesta: d)** 802.11n (Tema 11, 6.3)."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "- **Tema 11.docx**, apartados 1 a 7: modelo de comunicación, medios guiados y no guiados, perturbaciones y pruebas, equipos de interconexión, redes y conmutación, WLAN/Wi-Fi y telefonía móvil (DOCX, sin paginación fija).\n- **Bloque 4 Actualizado 2026.docx**, TEMA 6 (comunicaciones: estándares Wi-Fi, FTTH, 5G y VoIP), TEMA 9 (VPN y proxy) y TEMA 10 (MPLS y topologías de red local).\n- **IEEE.802.11.y.Wifi.Estandares.docx**, evolución y características de los estándares IEEE 802.11.\n- **III.22.txt**, texto consolidado de las fuentes anteriores (uso interno de trabajo).\n\nNo se copian párrafos literales; se sintetiza y se ordena el contenido, y las cifras citadas son las que aparecen en estas fuentes."
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Qué elemento del sistema de comunicación transforma y codifica los datos para enviarlos por el medio?",
+      "options": [
+        "La fuente",
+        "El transmisor",
+        "El receptor",
+        "El destino"
+      ],
+      "answer": "b",
+      "explanation": "La fuente genera los datos; el transmisor los transforma y codifica (por ejemplo, el módem modula en analógico); el receptor los adapta y el destino los procesa. Ref.: Tema 11, apartado 1."
+    },
+    {
+      "question": "¿Cómo se denomina la pérdida de potencia que sufre una señal al propagarse por el medio de transmisión?",
+      "options": [
+        "Atenuación",
+        "Diafonía",
+        "Ruido impulsivo",
+        "Desfase"
+      ],
+      "answer": "a",
+      "explanation": "La atenuación es la pérdida de potencia con la distancia: en cobre por la resistencia y en fibra por absorción de la luz. Ref.: Tema 11, apartado 2."
+    },
+    {
+      "question": "¿Qué es la diafonía (crosstalk)?",
+      "options": [
+        "La pérdida de potencia que sufre la señal con la distancia",
+        "Una perturbación provocada por rayos o cortocircuitos",
+        "La interferencia entre señales que discurren por medios paralelos",
+        "La diferencia de velocidad de propagación entre frecuencias"
+      ],
+      "answer": "c",
+      "explanation": "La diafonía es un tipo particular de interferencia que se produce entre señales que van por medios paralelos, como los pares de un cable de par trenzado. Ref.: Tema 11, apartado 2."
+    },
+    {
+      "question": "¿Qué caracteriza a la fibra óptica monomodo?",
+      "options": [
+        "El haz rebota en el revestimiento y usa longitudes de 850 a 1.300 nm",
+        "Se emplea en 10-BASE-FL y 100-BASE-F dentro de edificios",
+        "Usa cable de 50 ohmios y redes 10-BASE-2",
+        "El haz no rebota en el revestimiento y sus longitudes típicas son 1.310 y 1.550 nm"
+      ],
+      "answer": "d",
+      "explanation": "En la monomodo el haz no rebota en el cladding y las longitudes típicas son 1.310 y 1.550 nm; la multimodo rebota y usa 850-1.300 nm. Ref.: Tema 11, apartado 2."
+    },
+    {
+      "question": "En Wi-Fi, ¿qué variante de CSMA se utiliza en la subcapa de acceso al medio?",
+      "options": [
+        "CSMA/CD",
+        "CSMA/CA con ACK",
+        "Token Ring",
+        "CSMA/BA"
+      ],
+      "answer": "b",
+      "explanation": "En el aire no se puede detectar la colisión mientras se transmite, por lo que IEEE 802.11 usa CSMA/CA (evitación) con confirmación ACK; el CSMA/CD es de las redes cableadas. Ref.: Tema 11, apartado 6.1.2."
+    },
+    {
+      "question": "¿Qué algoritmo simétrico utiliza WPA2?",
+      "options": [
+        "RC4",
+        "DES",
+        "AES (Rijndael)",
+        "MD5"
+      ],
+      "answer": "c",
+      "explanation": "WPA2 (IEEE 802.11i) usa AES/Rijndael con claves temporales; WEP usaba RC4 con claves de 40, 128 o 256 bits. Ref.: Tema 11, apartado 6.4."
+    },
+    {
+      "question": "¿En qué banda de frecuencias opera el estándar IEEE 802.11ac?",
+      "options": [
+        "Solo en 2,4 GHz",
+        "En 2,4 y 5 GHz",
+        "En 60 GHz",
+        "Solo en 5 GHz"
+      ],
+      "answer": "d",
+      "explanation": "El material sitúa 802.11ac en la banda de 5 GHz, con canales de 80-160 MHz y hasta 1,3 Gbps; 802.11n usa 2,4 y 5 GHz. Ref.: Tema 11, apartado 6.3."
+    },
+    {
+      "question": "¿Qué tecnología de red utiliza conmutación de celdas de tamaño fijo y pequeño?",
+      "options": [
+        "ATM",
+        "Frame Relay",
+        "X.25",
+        "RDSI"
+      ],
+      "answer": "a",
+      "explanation": "ATM (Asynchronous Transfer Mode) usa celdas de tamaño fijo; Frame Relay es conmutación de tramas, X.25 de paquetes y RDSI de circuitos. Ref.: Tema 11, apartado 5."
+    },
+    {
+      "question": "La conmutación de tramas toma las decisiones de envío en función de direcciones y cabeceras de…",
+      "options": [
+        "Capa 3",
+        "Capa 2",
+        "Capa 4",
+        "Capa 7"
+      ],
+      "answer": "b",
+      "explanation": "La conmutación de tramas usa direcciones de capa 2 (Frame Relay); la de paquetes usa direcciones de capa 3 (X.25). Ref.: Tema 11, apartado 5."
+    },
+    {
+      "question": "¿Qué estándar permite etiquetar tramas Ethernet para identificar la VLAN a la que pertenecen?",
+      "options": [
+        "IEEE 802.1D",
+        "IEEE 802.3",
+        "IEEE 802.1Q",
+        "IEEE 802.11"
+      ],
+      "answer": "c",
+      "explanation": "IEEE 802.1Q añade un campo de 4 bytes a la cabecera Ethernet para identificar la VLAN; 802.1D define el STP. Ref.: Tema 11, apartado 4."
+    },
+    {
+      "question": "¿Qué dispositivos amplían el dominio de colisión de una red?",
+      "options": [
+        "Los routers",
+        "Los switches",
+        "Los puentes",
+        "Los repetidores y los hubs"
+      ],
+      "answer": "d",
+      "explanation": "Repetidores y hubs trabajan en capa 1, regeneran la señal y amplían el dominio de colisión; puentes y switches lo dividen y el router separa dominios de difusión. Ref.: Tema 11, apartado 4."
+    },
+    {
+      "question": "En VoIP, ¿qué protocolo se encarga del establecimiento, modificación y finalización de las sesiones de comunicación?",
+      "options": [
+        "SIP",
+        "RTP",
+        "SRTP",
+        "RTP/RTCP"
+      ],
+      "answer": "a",
+      "explanation": "SIP gestiona la señalización de las sesiones; RTP transporta voz y vídeo en tiempo real y SRTP es su variante cifrada. Ref.: Bloque 4, TEMA 6."
+    },
+    {
+      "question": "¿Cuál es la diferencia principal entre un proxy y una VPN?",
+      "options": [
+        "El proxy cifra todo el tráfico y la VPN no",
+        "La VPN cifra todo el tráfico de red y el proxy no cifra",
+        "Son sinónimos y hacen lo mismo",
+        "El proxy solo funciona en redes móviles"
+      ],
+      "answer": "b",
+      "explanation": "El proxy actúa de intermediario y oculta la IP en tráfico HTTP/S sin cifrar; la VPN cifra todo el tráfico y aporta confidencialidad, integridad y autenticación. Ref.: Bloque 4, TEMA 9."
+    },
+    {
+      "question": "En MPLS, ¿qué elemento inicia o termina el túnel y añade o quita las etiquetas?",
+      "options": [
+        "El LSR",
+        "El LDP",
+        "El FEC",
+        "El LER"
+      ],
+      "answer": "d",
+      "explanation": "El LER (Label Edge Router) añade o quita etiquetas al inicio y al final del túnel; el LSR encamina por etiquetas, el LDP las distribuye y el FEC agrupa paquetes equivalentes. Ref.: Bloque 4, TEMA 10."
+    },
+    {
+      "question": "¿Qué estándar de Wi-Fi alcanza hasta 600 Mbps usando tecnología MIMO en las bandas de 2,4 y 5 GHz?",
+      "options": [
+        "IEEE 802.11b",
+        "IEEE 802.11g",
+        "IEEE 802.11ac",
+        "IEEE 802.11n"
+      ],
+      "answer": "d",
+      "explanation": "802.11n opera en 2,4 y 5 GHz, usa MIMO y llega a 600 Mbps; 802.11b, 802.11g y 802.11ac tienen otras bandas y velocidades. Ref.: Tema 11, apartado 6.3."
+    }
+  ],
+  "sources": [
+    {
+      "file": "Tema 11.docx",
+      "page": "apartados 1 a 7 (modelo de comunicación, medios, pruebas del cableado, equipos, redes y conmutación, WLAN y telefonía móvil)",
+      "use": "medios guiados y no guiados, perturbaciones, equipos por capa, tipos de conmutación, Wi-Fi y generaciones móviles"
+    },
+    {
+      "file": "Bloque 4 Actualizado 2026.docx",
+      "page": "TEMA 6 (comunicaciones), TEMA 9 (VPN) y TEMA 10 (MPLS y topologías)",
+      "use": "estándares Wi-Fi actuales, FTTH, 5G, VoIP, VPN, proxy, MPLS y topologías de red local"
+    },
+    {
+      "file": "IEEE.802.11.y.Wifi.Estandares.docx",
+      "page": "evolución de los estándares IEEE 802.11",
+      "use": "características de los estándares Wi-Fi y sus versiones"
+    },
+    {
+      "file": "III.22.txt",
+      "page": "texto consolidado de las fuentes anteriores",
+      "use": "trabajo interno y contraste de datos"
+    }
+  ]
+}

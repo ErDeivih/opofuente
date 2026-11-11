@@ -188,5 +188,210 @@
     "Creer que UAC solo actúa cuando la sesión no es de administrador: también avisa al administrador.",
     "Confundir los gestores de paquetes: apt es de Debian/Ubuntu, dnf de Fedora y pacman de Arch."
   ],
-  "reviewedAt": "2026-11-10"
+  "reviewedAt": "2026-11-10",
+  "longSections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema:** II.14, «Sistemas operativos de usuario», del bloque II (Informática básica y ofimática) del temario común de informática C1. **Materias que cubre:** concepto y tipos de sistema operativo, componentes y arquitectura, procesos y planificación, gestión de memoria y de ficheros, Linux de escritorio (distribuciones, jerarquía de directorios, usuarios, permisos y procesos), Windows (características, herramientas, ejecutables y comandos), actualizaciones de software, resolución de problemas y sistemas operativos móviles y macOS. **Relación con otros temas:** se apoya en II.13 (arquitectura de ordenadores) y sirve de base a III.18 (sistemas operativos de servidor). **Fuentes:** `Tema 4.docx` y `Bloque 2 Actualizado 2026.docx`, volcados en `data/fuentes/II.14.txt`.",
+      "table": {
+        "columns": [
+          "Dato de la ficha",
+          "Valor"
+        ],
+        "rows": [
+          [
+            "Tema",
+            "II.14 Sistemas operativos de usuario"
+          ],
+          [
+            "Bloque",
+            "II · Informática básica y ofimática"
+          ],
+          [
+            "Materias",
+            "Windows, Linux, permisos, procesos, ficheros, actualizaciones, diagnóstico y móviles"
+          ],
+          [
+            "Temas relacionados",
+            "II.13 Arquitectura de ordenadores; III.18 Sistemas operativos de servidor"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El desarrollo del tema se organiza en los siguientes epígrafes, que se corresponden con el apartado 4:\n\n- **4.1.** Qué es un sistema operativo y qué tipos existen.\n- **4.2.** Componentes y arquitectura por capas.\n- **4.3.** Procesos, estados y planificación.\n- **4.4.** Gestión de memoria y de ficheros.\n- **4.5.** Linux de escritorio: distribuciones, jerarquía, usuarios, permisos y procesos.\n- **4.6.** Windows: características, herramientas, ejecutables y comandos.\n- **4.7.** Actualizaciones, diagnóstico y otros sistemas operativos de usuario.\n\nCompletan el tema la tabla comparativa (apartado 5), el ejemplo práctico (6), las trampas de examen (7), el resumen para memorizar (8), los quince casos tipo test (9) y las fuentes citadas (10)."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "El sistema operativo es el software básico del ordenador: el conjunto de programas y funciones que gestionan el hardware y el software, el primer programa que se carga en memoria al encender el equipo y el principal administrador de recursos. Sin él, el resto de programas no podría usar el procesador, la memoria ni los dispositivos.\n\nEn la oposición se pregunta por dos perspectivas complementarias. La primera es **teórica**: qué tipos de sistema operativo existen, cómo se organiza su núcleo, qué es un proceso, cómo se planifica y cómo se administran la memoria y los ficheros. La segunda es **práctica y comparada**: cómo se trabaja en un escritorio Linux y en uno Windows, qué permisos hay, qué comandos y herramientas de administración se usan y cómo se actualiza y se diagnostica un equipo.\n\nEl temario insiste en las clasificaciones y en los nombres exactos (kernel, PID, PPID, NTFS, UAC, FHS, eventvwr.msc, ipconfig), porque muchas preguntas se responden recordando un dato concreto. Este tema ordena esos datos y los relaciona con la práctica diaria del puesto de trabajo.",
+      "table": {
+        "columns": [
+          "Fuente",
+          "Qué aporta"
+        ],
+        "rows": [
+          [
+            "Tema 4.docx",
+            "Teoría general del sistema operativo: tipos, componentes, procesos, memoria, ficheros y E/S"
+          ],
+          [
+            "Bloque 2 Actualizado 2026.docx",
+            "Linux y Windows de usuario, sistemas móviles y macOS"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1. Qué es un sistema operativo y qué tipos existen.** El sistema operativo gestiona los recursos y ofrece la interfaz de uso. Se clasifica por el número de usuarios (monousuario, como MS-DOS o Windows 95, y multiusuario, como UNIX, Linux, macOS y Windows 2000 y superiores); por el número de procesos (monotarea o multitarea, en la que la CPU reparte su tiempo entre procesos); por el número de procesadores (monoprocesador o multiprocesador, con variante simétrica si cada procesador ejecuta una copia idéntica del sistema, y asimétrica si hay un procesador maestro que reparte tareas); por el tiempo de respuesta (tiempo real por hardware o por software, y tiempo compartido) y por la interfaz de gestión (línea de comandos o interfaz gráfica).\n\n**4.2. Componentes y arquitectura por capas.** El **kernel** es el componente principal: traslada el control entre programas, programa la entrada/salida, atiende interrupciones, gestiona la memoria y la comunicación entre procesos. A su alrededor están los programas de control (procesador, memoria y periféricos), los programas de proceso (traductores como ensambladores, compiladores e intérpretes) y los programas de servicio o utilidades. La arquitectura se organiza por capas: kernel (control general y procesos), ejecutivo (memoria), supervisor (comunicación y entrada/salida) y usuario (procesos del usuario).\n\n**4.3. Procesos, estados y planificación.** Un **proceso** es un programa en ejecución, con una parte fija (el programa) y otra variable (su estado). Sus estados son **activo**, **bloqueado**, **preparado** y **muerto**; las operaciones básicas son crear, destruir, cambiar prioridad, bloquear, activar y despachar. La planificación busca justicia en el reparto de la CPU y evitar demoras indefinidas, y usa algoritmos como FCFS (por orden de llegada), SJF (primero el trabajo más corto, con versión preemptiva y no preemptiva), prioridad (con envejecimiento de cola) y Round Robin (lista circular basada en FCFS). La comunicación entre procesos exige proteger las secciones críticas para que dos procesos no las ejecuten a la vez.\n\n**4.4. Gestión de memoria y de ficheros.** La memoria se administra en modo real (particiones fijas o variables, con Best Fit, First Fit y Worst Fit) o con **memoria virtual**, que permite direcciones virtuales y se apoya en el disco: paginación con tablas de páginas y TLB, fallos de página, swapping y algoritmos de sustitución como FIFO, LRU, segunda oportunidad, LFU o MFU. Cuando un proceso pasa más tiempo paginando que ejecutando se produce **thrashing**. El sistema de ficheros define atributos, operaciones (crear, escribir, leer, borrar), estructuras de directorios (un nivel, dos niveles, árbol, grafo acíclico) y métodos de asignación (contigua, encadenada e indexada).\n\n**4.5. Linux de escritorio.** Linux es el kernel, monolítico y modular, y GNU/Linux el sistema completo con las herramientas GNU; es multiusuario y multitarea. Las distribuciones se agrupan por familia de paquetes: Debian (Debian, Ubuntu con versiones LTS y Linux Mint), Red Hat (RHEL, Fedora, CentOS sustituida por AlmaLinux y Rocky Linux), rolling release (Arch Linux y Manjaro) y especializadas (Kali, Parrot, Tails, OpenSUSE). Los gestores de paquetes instalan, actualizan y eliminan software y resuelven dependencias. La **jerarquía FHS** fija el papel de cada directorio: /bin (binarios de arranque), /sbin (administración), /boot (arranque), /dev (dispositivos), /etc (configuración), /media (montajes), /opt (aplicaciones de terceros), /proc (ficheros virtuales de procesos y núcleo), /tmp (temporales) y /usr (aplicaciones y bibliotecas compartidas). Hay dos tipos de usuario, **root** (acceso total) y usuarios estándar, y los permisos son **r** (lectura), **w** (escritura) y **x** (ejecución) para tres grupos de usuarios; se cambian con **chmod** y los valores por defecto con **umask** (por ejemplo, umask 022 impide la escritura del grupo y de otros). Los procesos se identifican con **PID**, **PPID**, **UID** y **GID**, usan llamadas como **fork()**, **exec()** y **wait()**, y se consultan con **ps**, **top** y **kill**.\n\n**4.6. Windows.** Windows incorpora seguridad con Windows Defender, el Firewall de Windows y el Control de cuentas de usuario (**UAC**), un kernel que gestiona los recursos, interfaz gráfica, sistemas de archivos **NTFS, FAT32, exFAT y ReFS**, virtualización con Hyper-V y paginación de memoria. Para administrarlo dispone de herramientas como certmgr.msc (certificados), control (panel de control), gpedit.msc (directivas de grupo local), services.msc (servicios), eventvwr.msc (Visor de sucesos), msconfig (configuración de inicio y servicios), regedit (registro), winver (versión del sistema) y msinfo32 (información del sistema). Los ejecutables habituales son .exe, .bat, .cmd y .msi (paquete de Windows Installer), y entre los comandos más usados están dir, cd, cls, xcopy, del, type, ping, ipconfig y netstat. Windows 11 añade mejoras táctiles y para dispositivos 2 en 1, integración con Teams, aplicaciones Android a través de Microsoft Store y **TPM 2.0** para reforzar la seguridad.\n\n**4.7. Actualizaciones, diagnóstico y otros sistemas operativos.** En Linux las actualizaciones y la instalación de software se hacen con el gestor de paquetes de la distribución, que resuelve dependencias; las distribuciones LTS priorizan estabilidad y las rolling release reciben cambios continuos. En Windows los paquetes .msi y la Microsoft Store son las vías de instalación que recoge el temario. Para diagnosticar, Windows ofrece el Visor de sucesos (eventvwr.msc), Servicios (services.msc), Configuración del sistema (msconfig), el Editor del Registro (regedit) y msinfo32; Linux aporta ps, top y kill para procesos, y ping, ipconfig y netstat para red en Windows. En movilidad, los sistemas principales son Android (kernel Linux modificado, capas kernel/HAL/bibliotecas/ART/aplicaciones, Android Studio, sandbox y Play Store; Java, Kotlin, C/C++, JavaScript y Dart) e iOS, con HarmonyOS como alternativa y Windows Phone, BlackBerry OS y Symbian en desuso. macOS sigue su propia línea, con macOS 15 Sequoia y macOS 26 Tahoe como referencia en el temario.",
+      "table": {
+        "columns": [
+          "Epígrafe",
+          "Ideas que hay que retener"
+        ],
+        "rows": [
+          [
+            "4.1 Tipos de SO",
+            "Monousuario/multiusuario, monotarea/multitarea, mono/multiprocesador, tiempo real/compartido"
+          ],
+          [
+            "4.2 Componentes",
+            "Kernel, programas de control, de proceso y de servicio; capas kernel, ejecutivo, supervisor y usuario"
+          ],
+          [
+            "4.3 Procesos",
+            "Estados activo, bloqueado, preparado y muerto; FCFS, SJF, prioridad y Round Robin"
+          ],
+          [
+            "4.4 Memoria y ficheros",
+            "Paginación, swapping, thrashing; asignación contigua, encadenada e indexada"
+          ],
+          [
+            "4.5 Linux",
+            "Distribuciones, FHS, root, permisos r/w/x, chmod, umask, PID/PPID, ps/top/kill"
+          ],
+          [
+            "4.6 Windows",
+            "NTFS/FAT32/exFAT/ReFS, UAC, herramientas .msc, ipconfig, .msi, TPM 2.0"
+          ],
+          [
+            "4.7 Actualizaciones y móviles",
+            "Gestores de paquetes, diagnóstico, Android/iOS/HarmonyOS, macOS"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "5. Tabla comparativa: Windows y Linux de usuario",
+      "body": "La tabla resume las diferencias que más se preguntan entre los dos escritorios. Conviene fijarse en el sistema de archivos, el modelo de permisos y las herramientas de administración, porque son los tres ejes de las preguntas comparativas.",
+      "table": {
+        "columns": [
+          "Aspecto",
+          "Windows",
+          "Linux"
+        ],
+        "rows": [
+          [
+            "Núcleo",
+            "Kernel propio de Windows",
+            "Kernel Linux monolítico y modular"
+          ],
+          [
+            "Sistemas de archivos",
+            "NTFS, FAT32, exFAT y ReFS",
+            "Los de cada distribución (ext4, XFS, Btrfs, etc.)"
+          ],
+          [
+            "Usuarios",
+            "Cuentas de usuario y grupos; UAC",
+            "root y usuarios estándar; UID y GID"
+          ],
+          [
+            "Permisos",
+            "Seguridad de Windows y herencia",
+            "r, w y x para tres grupos; chmod y umask"
+          ],
+          [
+            "Herramientas de administración",
+            "gpedit.msc, services.msc, eventvwr.msc, regedit, msconfig",
+            "ps, top, kill y el gestor de paquetes de la distribución"
+          ],
+          [
+            "Instalación de software",
+            ".msi, .exe y Microsoft Store",
+            "Gestor de paquetes de la distribución (instala, actualiza y resuelve dependencias)"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** En un aula con equipos Ubuntu y Windows se detectan tres problemas: una alumna no puede modificar un fichero de configuración del sistema, un proceso se ha quedado colgado y un equipo Windows no arranca un servicio correctamente.\n\n**Resolución en Linux.** La alumna trabaja con un usuario estándar y el fichero está en `/etc`, el directorio de configuración del sistema, propiedad de root; por eso no puede escribir en él. Los permisos se consultan y ajustan con **chmod**, y si se crean ficheros nuevos el valor por defecto lo fija **umask** (con umask 022 el grupo y otros no reciben escritura). El proceso colgado se localiza con **ps** o, en tiempo real, con **top**; una vez identificado su **PID**, se termina con **kill**. Si el equipo va lento por exceso de paginación, hay que revisar la memoria y el uso del disco de intercambio.\n\n**Resolución en Windows.** Se abre el **Visor de sucesos** (eventvwr.msc) para leer el error del servicio, se comprueba su estado en **services.msc** y se revisa el arranque con **msconfig**. Si el problema es de configuración del sistema, **msinfo32** da la información del equipo y **winver** confirma la versión. Para la red se usan **ipconfig** y **ping**, y **netstat** muestra las conexiones activas.\n\n**Conclusión.** El diagnóstico sigue un orden: identificar el recurso (permisos, proceso, servicio o red), usar la herramienta adecuada en cada sistema y actuar solo después de leer el error.",
+      "table": {
+        "columns": [
+          "Problema",
+          "Sistema",
+          "Herramienta o concepto"
+        ],
+        "rows": [
+          [
+            "No se puede escribir en /etc",
+            "Linux",
+            "Usuario estándar, root, chmod y umask"
+          ],
+          [
+            "Proceso colgado",
+            "Linux",
+            "ps, top, PID y kill"
+          ],
+          [
+            "Servicio que no arranca",
+            "Windows",
+            "eventvwr.msc, services.msc y msconfig"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "Las confusiones más frecuentes en este tema son las siguientes:\n\n- **Confundir kernel con sistema operativo completo**: el kernel es el núcleo; GNU/Linux es el sistema completo con las herramientas GNU.\n- **Dar por multiusuario a cualquier Windows**: el temario sitúa esa característica en Windows 2000 y superiores; MS-DOS y Windows 95 son monousuario.\n- **Confundir los directorios FHS**: `/etc` guarda configuración y `/usr` aplicaciones y bibliotecas compartidas; `/proc` es virtual y documenta procesos y estado del núcleo.\n- **Cambiar el propietario con chmod**: chmod cambia permisos; el propietario y el grupo se gestionan con otras herramientas, y umask fija los permisos por defecto.\n- **Confundir PID con PPID**: PID identifica el proceso y PPID el proceso padre; UID y GID identifican al usuario y al grupo propietarios.\n- **Confundir herramientas de Windows**: eventvwr.msc es el Visor de sucesos, services.msc los servicios y gpedit.msc las directivas de grupo local.\n- **Creer que .msi es un ejecutable cualquiera**: es el paquete de instalación de Windows Installer; .exe, .bat y .cmd tienen otras funciones.\n- **Confundir distribuciones**: Ubuntu es de la familia Debian, Fedora de la familia Red Hat y Arch es rolling release.",
+      "table": {
+        "columns": [
+          "Confusión",
+          "Lo correcto"
+        ],
+        "rows": [
+          [
+            "Kernel = sistema operativo",
+            "Kernel es el núcleo; GNU/Linux es el sistema completo"
+          ],
+          [
+            "Todo Windows es multiusuario",
+            "Windows 2000 y superiores; MS-DOS y 95 son monousuario"
+          ],
+          [
+            "/etc = aplicaciones",
+            "/etc es configuración; /usr es aplicaciones y bibliotecas"
+          ],
+          [
+            "chmod = propietario",
+            "chmod cambia permisos; no cambia el propietario"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Clasificación.** Usuarios (monousuario/multiusuario), procesos (monotarea/multitarea), procesadores (mono/multiprocesador: simétrico y asimétrico), tiempo de respuesta (tiempo real y tiempo compartido) e interfaz (comandos o gráfica).\n\n**Núcleo y capas.** Kernel (control, E/S, interrupciones, memoria y comunicación), programas de control, de proceso y de servicio; capas kernel, ejecutivo, supervisor y usuario.\n\n**Procesos.** Programa en ejecución; estados activo, bloqueado, preparado y muerto; operaciones crear, destruir, cambiar prioridad, bloquear, activar y despachar; algoritmos FCFS, SJF, prioridad y Round Robin.\n\n**Linux.** Distribuciones por familia (Debian, Red Hat, rolling release, especializadas); gestores de paquetes; FHS (/bin, /sbin, /boot, /dev, /etc, /media, /opt, /proc, /tmp, /usr); root y usuarios estándar; permisos r/w/x; chmod y umask; PID, PPID, UID y GID; fork, exec y wait; ps, top y kill.\n\n**Windows.** Defender, Firewall y UAC; NTFS, FAT32, exFAT y ReFS; Hyper-V; herramientas certmgr, gpedit, services, eventvwr, msconfig, regedit, winver y msinfo32; extensiones .exe, .bat, .cmd y .msi; comandos dir, cd, cls, xcopy, del, type, ping, ipconfig y netstat; TPM 2.0 en Windows 11.\n\n**Móviles.** Android (kernel Linux modificado, ART, Play Store, Java y Kotlin), iOS y HarmonyOS; en desuso Windows Phone, BlackBerry OS y Symbian; macOS 15 Sequoia y macOS 26 Tahoe."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos siguientes reproducen el estilo de pregunta del bloque II. Cada uno incluye la respuesta correcta y una explicación que recuerda el dato del temario; la referencia indica el epígrafe y la fuente donde está el contenido. Se recomienda contestarlos sin mirar la solución y revisar después solo los fallos."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "El tema se ha redactado a partir de `data/fuentes/II.14.txt`, que reúne el volcado de `Tema 4.docx` (teoría general del sistema operativo) y de `Bloque 2 Actualizado 2026.docx` (Linux, Windows, sistemas móviles y macOS). Las citas concretas por apartado aparecen en la lista `sources` y en la referencia de cada caso tipo test. No se han copiado párrafos literales: los contenidos se han sintetizado y ordenado, y no se han añadido cifras ni normas que no figuren en esas fuentes."
+    }
+  ]
 }

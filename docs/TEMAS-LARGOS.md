@@ -3,22 +3,25 @@
 **Fecha:** 11/11/2026 · **Objetivo:** que cada tema se pueda estudiar sin abrir otro PDF, con
 redacción propia y fuentes citadas.
 
-## Los siete temas
+## Los diez temas
 
 | Tema | Título | Palabras | Apartados | Test cases | Tablas | Diagrama |
 |---|---|---|---|---|---|---|
 | I.1 | La Constitución Española de 1978 | **1.543** | 10 | 15 | 1 | SVG de estructura |
 | II.13 | Arquitectura de ordenadores | **2.692** | 10 | 15 | 1 | SVG Von Neumann |
+| II.14 | Sistemas operativos de usuario | **2.082** | 10 | 15 | 6 | — |
 | III.21 | Redes | **3.152** | 10 | 15 | 1 | SVG pila OSI |
+| III.22 | Comunicaciones | **2.950** | 10 | 15 | 1 | — |
 | IV.27 | Bases de datos relacionales | **3.006** | 12 | 14 | 2 | — |
+| IV.28 | SQL | **2.481** | 10 | 15 | 1 | — |
 | V.34 | Seguridad de la información | **3.064** | 12 | 13 | 5 | SVG triada CIA |
 | V.35 | ENS (RD 311/2022) | **2.488** | 12 | 14 | 3 | — |
 | V.39 | Administración electrónica práctica | **2.448** | 12 | 15 | 3 | — |
 
-**Media:** 2.628 palabras por tema · **101 casos tipo test** en total (10-15 por tema) · **16 tablas**
+**Media:** 2.591 palabras por tema · **146 casos tipo test** en total (10-15 por tema) · **24 tablas**
 comparativas · **4 diagramas SVG propios**.
 
-I.1, II.13 y III.21 se han reescrito con la **estructura definitiva de 10 apartados**: ficha oficial, epígrafes,
+I.1, II.13, II.14, III.21, III.22 e IV.28 se han reescrito con la **estructura definitiva de 10 apartados**: ficha oficial, epígrafes,
 introducción, desarrollo por epígrafe con norma al artículo, tabla, ejemplo, trampas, resumen, test
 comentado y fuentes. Los demás temas siguen la misma idea y se irán adaptando a ese formato.
 
