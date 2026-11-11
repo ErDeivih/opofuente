@@ -1,0 +1,250 @@
+{
+  "slug": "tai-propio-i-expediente",
+  "year": 2026,
+  "conv": "Supuesto propio · OpoFuente 2026",
+  "block": "I",
+  "title": "Tramitación de un expediente administrativo",
+  "difficulty": "media",
+  "official": false,
+  "estimatedMinutes": 30,
+  "statement": "Un ayuntamiento recibe una solicitud y debe comprobar plazos, órganos competentes, notificaciones y silencio administrativo. El equipo jurídico revisa el expediente antes de resolver.",
+  "steps": [
+    "1. Identificar interesados y hechos.",
+    "2. Comprobar competencia y plazos.",
+    "3. Resolver instrucción y prueba.",
+    "4. Notificar y controlar el silencio.",
+    "5. Documentar la resolución."
+  ],
+  "topics": [
+    "I.5",
+    "I.6",
+    "I.3"
+  ],
+  "source": {
+    "label": "Elaboración propia · OpoFuente",
+    "url": "https://erdeivih.github.io/opofuente-demo/",
+    "pages": "Material propio de la demo"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué ley regula el procedimiento administrativo común de las Administraciones Públicas?",
+      "options": [
+        "La Ley 7/1985, de 2 de abril",
+        "La Ley 40/2015, de 1 de octubre",
+        "La Ley 39/2015, de 1 de octubre",
+        "La Ley 19/2013, de 9 de diciembre"
+      ],
+      "correct": "c",
+      "justification": "La Ley 39/2015 regula el procedimiento administrativo común; la Ley 40/2015 regula el régimen jurídico del sector público y la Ley 19/2013 la transparencia y el acceso a la información."
+    },
+    {
+      "stem": "En los procedimientos iniciados a solicitud del interesado, ¿qué sentido tiene el silencio administrativo?",
+      "options": [
+        "Siempre desestimatorio",
+        "Depende del órgano que deba resolver",
+        "Siempre estimatorio",
+        "Con carácter general estimatorio, salvo las excepciones legales"
+      ],
+      "correct": "d",
+      "justification": "El artículo 24 establece el silencio estimatorio como regla general, con excepciones legales como el derecho de petición, el dominio público, el medio ambiente o la responsabilidad patrimonial."
+    },
+    {
+      "stem": "Si la norma que regula el procedimiento no fija plazo máximo para resolver, ¿de cuánto tiempo dispone la Administración?",
+      "options": [
+        "Tres meses",
+        "Dos meses",
+        "Un mes",
+        "Seis meses"
+      ],
+      "correct": "a",
+      "justification": "El artículo 21.3 fija en tres meses el plazo máximo cuando la norma del procedimiento no establece otro."
+    },
+    {
+      "stem": "¿Qué plazo hay para interponer el recurso de alzada contra un acto expreso?",
+      "options": [
+        "Diez días",
+        "Un mes",
+        "Veinte días",
+        "Quince días"
+      ],
+      "correct": "b",
+      "justification": "El artículo 122 concede un mes para interponer la alzada si el acto es expreso; si el acto es presunto puede interponerse en cualquier momento."
+    },
+    {
+      "stem": "¿Ante qué órgano se interpone el recurso de alzada?",
+      "options": [
+        "Ante el ministro correspondiente en todo caso",
+        "Ante el mismo órgano que dictó el acto",
+        "Ante el órgano superior jerárquico del que dictó el acto",
+        "Directamente ante el juez"
+      ],
+      "correct": "c",
+      "justification": "El artículo 121 configura la alzada como recurso ante el órgano superior jerárquico del que dictó el acto impugnado."
+    },
+    {
+      "stem": "¿Qué recurso puede interponerse, con carácter potestativo, contra un acto que pone fin a la vía administrativa antes de acudir a la jurisdicción?",
+      "options": [
+        "El recurso de alzada",
+        "La cuestión prejudicial",
+        "El recurso extraordinario de revisión",
+        "El recurso de reposición"
+      ],
+      "correct": "d",
+      "justification": "El recurso de reposición es potestativo, se interpone ante el mismo órgano que dictó el acto y permite después acudir a la jurisdicción contencioso-administrativa."
+    },
+    {
+      "stem": "¿Qué duración tiene el trámite de audiencia antes de la propuesta de resolución?",
+      "options": [
+        "Entre diez y quince días",
+        "Entre diez y veinte días",
+        "Entre cinco y diez días",
+        "Entre quince y veinte días"
+      ],
+      "correct": "a",
+      "justification": "El artículo 82 concede un plazo no inferior a diez días ni superior a quince para alegar y presentar documentos."
+    },
+    {
+      "stem": "¿Cuál es el plazo mínimo del trámite de información pública?",
+      "options": [
+        "Cinco días",
+        "Veinte días",
+        "Quince días",
+        "Diez días"
+      ],
+      "correct": "b",
+      "justification": "El artículo 83 exige que el plazo para formular alegaciones en información pública no sea inferior a veinte días."
+    },
+    {
+      "stem": "¿Cómo se computan los plazos señalados por días en el procedimiento administrativo?",
+      "options": [
+        "Solo por días laborables del interesado",
+        "Por días naturales, incluidos sábados y domingos",
+        "Por días hábiles, excluyendo sábados, domingos y festivos",
+        "Siempre por días naturales"
+      ],
+      "correct": "c",
+      "justification": "El artículo 30.2 dispone que los plazos por días son hábiles y excluye del cómputo sábados, domingos y festivos."
+    },
+    {
+      "stem": "En un procedimiento sancionador iniciado de oficio, ¿qué efecto produce el vencimiento del plazo máximo sin resolución?",
+      "options": [
+        "El silencio estimatorio",
+        "La nulidad de pleno derecho",
+        "El silencio desestimatorio",
+        "La caducidad del procedimiento"
+      ],
+      "correct": "d",
+      "justification": "El artículo 25.1.b establece que, cuando se ejercitan potestades sancionadoras o de gravamen, el vencimiento del plazo produce la caducidad del procedimiento y el archivo de las actuaciones."
+    },
+    {
+      "stem": "¿Qué ley regula el régimen jurídico del sector público?",
+      "options": [
+        "La Ley 9/2017, de 8 de noviembre",
+        "La Ley 39/2015, de 1 de octubre",
+        "La Ley 7/1985, de 2 de abril",
+        "La Ley 40/2015, de 1 de octubre"
+      ],
+      "correct": "d",
+      "justification": "La Ley 40/2015 regula el régimen jurídico del sector público; la Ley 39/2015 regula el procedimiento administrativo común y la Ley 9/2017 los contratos del sector público."
+    },
+    {
+      "stem": "¿Cómo es la competencia de los órganos administrativos?",
+      "options": [
+        "Irrenunciable, aunque su ejercicio puede delegarse o avocarse",
+        "Renunciable si lo acuerda el titular",
+        "Libremente transferible a cualquier particular",
+        "Discrecional y no reglada"
+      ],
+      "correct": "a",
+      "justification": "El artículo 8 declara la competencia irrenunciable y la ejerce el órgano que la tiene atribuida, salvo los casos de delegación o avocación previstos en la ley."
+    },
+    {
+      "stem": "¿Qué requisito es imprescindible para que una delegación de competencias sea válida?",
+      "options": [
+        "Que la autorice el Consejo de Ministros",
+        "Que se publique en el boletín oficial correspondiente",
+        "Que la acepte el órgano delegado",
+        "Que la apruebe el Pleno de la corporación"
+      ],
+      "correct": "b",
+      "justification": "El artículo 9 exige que las delegaciones de competencias y su revocación se publiquen en el BOE, en el boletín de la comunidad autónoma o en el de la provincia, según la Administración."
+    },
+    {
+      "stem": "¿Qué es la avocación?",
+      "options": [
+        "Delegar la firma en un subordinado",
+        "Sustituir temporalmente al titular de un órgano",
+        "Atraer un órgano superior el conocimiento de un asunto",
+        "Encargar una actividad material a otro órgano"
+      ],
+      "correct": "c",
+      "justification": "La avocación permite al órgano superior atraer para sí un asunto que corresponde ordinariamente o por delegación a sus órganos dependientes, mediante acuerdo motivado."
+    },
+    {
+      "stem": "¿Qué permite la encomienda de gestión?",
+      "options": [
+        "Resolver un recurso de alzada",
+        "Transferir la titularidad de la competencia",
+        "Aprobar disposiciones generales",
+        "Encargar actividades materiales o técnicas a otro órgano o entidad de derecho público"
+      ],
+      "correct": "d",
+      "justification": "La encomienda de gestión solo cubre actividades materiales o técnicas y no supone cesión de la titularidad de la competencia ni de los elementos sustantivos de su ejercicio."
+    },
+    {
+      "stem": "¿Qué efecto tiene la suplencia en la competencia del órgano?",
+      "options": [
+        "No altera la competencia y no requiere publicación",
+        "Altera la titularidad de la competencia",
+        "Exige publicación en el BOE",
+        "Requiere acuerdo del Consejo de Ministros"
+      ],
+      "correct": "a",
+      "justification": "El artículo 13 dispone que la suplencia no implica alteración de la competencia y que para su validez no es necesaria su publicación."
+    },
+    {
+      "stem": "¿Cuál es la duración máxima inicial de un convenio de colaboración?",
+      "options": [
+        "Un año",
+        "Cuatro años",
+        "Dos años",
+        "Seis años"
+      ],
+      "correct": "b",
+      "justification": "El artículo 49 exige una duración determinada no superior a cuatro años, prorrogable por acuerdo unánime de las partes por hasta cuatro años adicionales."
+    },
+    {
+      "stem": "¿Cuál es el plazo para reclamar la responsabilidad patrimonial de una Administración?",
+      "options": [
+        "Seis meses",
+        "Dos años",
+        "Un año",
+        "Cinco años"
+      ],
+      "correct": "c",
+      "justification": "El derecho a reclamar prescribe al año de producido el hecho o el acto que motive la indemnización o de manifestarse su efecto lesivo."
+    },
+    {
+      "stem": "¿Qué requisitos debe reunir el daño indemnizable por responsabilidad patrimonial?",
+      "options": [
+        "Basta con que se anule el acto administrativo",
+        "Ser solo moral o hipotético",
+        "Ser siempre superior a 1.000 euros",
+        "Ser efectivo, evaluable económicamente e individualizado"
+      ],
+      "correct": "d",
+      "justification": "El artículo 32 exige que el daño sea efectivo, evaluable económicamente e individualizado con relación a una persona o grupo de personas."
+    },
+    {
+      "stem": "¿Qué rasgo diferencia a las entidades públicas empresariales de los organismos autónomos?",
+      "options": [
+        "Se financian mayoritariamente con ingresos de mercado",
+        "Se financian íntegramente con impuestos",
+        "Carecen de personalidad jurídica propia",
+        "No pueden ejercer potestades administrativas"
+      ],
+      "correct": "a",
+      "justification": "El artículo 103 define las entidades públicas empresariales como entidades de derecho público que se financian mayoritariamente con ingresos de mercado, a diferencia de los organismos autónomos."
+    }
+  ]
+}

@@ -1,0 +1,250 @@
+{
+  "slug": "tai-propio-i-contrato",
+  "year": 2026,
+  "conv": "Supuesto propio · OpoFuente 2026",
+  "block": "I",
+  "title": "Contratación de un servicio municipal",
+  "difficulty": "media",
+  "official": false,
+  "estimatedMinutes": 30,
+  "statement": "Un municipio necesita contratar el mantenimiento informático y debe elegir procedimiento, calcular el valor estimado, publicar pliegos y adjudicar. El tribunal revisa la legalidad de cada paso.",
+  "steps": [
+    "1. Definir objeto y necesidad.",
+    "2. Calcular valor y elegir procedimiento.",
+    "3. Redactar pliegos y publicar.",
+    "4. Valorar ofertas y adjudicar.",
+    "5. Formalizar y ejecutar."
+  ],
+  "topics": [
+    "I.10",
+    "I.9",
+    "I.6"
+  ],
+  "source": {
+    "label": "Elaboración propia · OpoFuente",
+    "url": "https://erdeivih.github.io/opofuente-demo/",
+    "pages": "Material propio de la demo"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué ley regula actualmente la contratación del sector público en España?",
+      "options": [
+        "La Ley 9/2017, de Contratos del Sector Público",
+        "La Ley 30/2007, de Contratos del Sector Público",
+        "La Ley 39/2015, del Procedimiento Administrativo Común",
+        "La Ley 7/1985, de Bases del Régimen Local"
+      ],
+      "correct": "a",
+      "justification": "La Ley 9/2017, de 8 de noviembre, de Contratos del Sector Público, es la norma vigente y transpone las Directivas 2014/23/UE y 2014/24/UE."
+    },
+    {
+      "stem": "¿Cuál de las siguientes NO es una clase de contrato regulada por la LCSP?",
+      "options": [
+        "Contrato de obras",
+        "Contrato de gestión de servicios públicos",
+        "Concesión de servicios",
+        "Contrato de suministro"
+      ],
+      "correct": "b",
+      "justification": "La LCSP clasifica los contratos en obras, concesión de obras, concesión de servicios, suministro y servicios; la gestión de servicios públicos fue una categoría del régimen anterior y hoy se reconduce a la concesión de servicios."
+    },
+    {
+      "stem": "En la concesión de obras, ¿qué rasgo define la contraprestación del concesionario?",
+      "options": [
+        "Un precio cierto pagado por la Administración",
+        "La entrega de bienes muebles",
+        "El derecho a explotar la obra asumiendo el riesgo operacional",
+        "El pago de tasas por el usuario en todo caso"
+      ],
+      "correct": "c",
+      "justification": "El rasgo definitorio de la concesión es que el concesionario asume el riesgo operacional y se retribuye mediante la explotación de la obra."
+    },
+    {
+      "stem": "¿Cuál es el importe máximo de un contrato menor de servicios o de suministro?",
+      "options": [
+        "15.000 euros",
+        "30.000 euros",
+        "100.000 euros",
+        "40.000 euros"
+      ],
+      "correct": "d",
+      "justification": "Los contratos menores de suministro y servicios requieren un valor estimado inferior a 40.000 euros; los de obras, inferior a 15.000 euros."
+    },
+    {
+      "stem": "¿Qué procedimiento permite que cualquier empresario interesado presente oferta sin invitación previa?",
+      "options": [
+        "El abierto",
+        "El negociado",
+        "El diálogo competitivo",
+        "El restringido"
+      ],
+      "correct": "a",
+      "justification": "El procedimiento abierto es la regla general: cualquier interesado que acredite solvencia puede presentar oferta; el restringido exige invitación previa."
+    },
+    {
+      "stem": "¿Qué órgano valora las ofertas y propone la adjudicación en el procedimiento abierto?",
+      "options": [
+        "La Intervención",
+        "La mesa de contratación",
+        "El Pleno",
+        "El Consejo de Ministros"
+      ],
+      "correct": "b",
+      "justification": "La mesa de contratación es el órgano colegiado de asistencia que valora las ofertas y propone la adjudicación al órgano de contratación."
+    },
+    {
+      "stem": "¿Qué documento establece las cláusulas administrativas y los criterios de adjudicación de un contrato?",
+      "options": [
+        "El informe de necesidad",
+        "El pliego de prescripciones técnicas",
+        "El pliego de cláusulas administrativas particulares",
+        "El anuncio de licitación"
+      ],
+      "correct": "c",
+      "justification": "El PCAP regula los derechos y obligaciones, los criterios de adjudicación y las condiciones del contrato; el PPT define las características técnicas."
+    },
+    {
+      "stem": "La LCSP suprimió la garantía provisional y exige, con carácter general, una garantía definitiva de...",
+      "options": [
+        "El 10 % del presupuesto base de licitación",
+        "El 2 % del valor estimado",
+        "No se exige garantía definitiva",
+        "El 5 % del precio de adjudicación"
+      ],
+      "correct": "d",
+      "justification": "La garantía definitiva se fija con carácter general en el 5 % del precio de adjudicación y responde de la correcta ejecución del contrato."
+    },
+    {
+      "stem": "¿Qué recurso específico cabe contra los actos de preparación y adjudicación de los contratos del sector público?",
+      "options": [
+        "El recurso especial en materia de contratación",
+        "El recurso de reposición en todo caso",
+        "El recurso de alzada ante el alcalde",
+        "No cabe ningún recurso"
+      ],
+      "correct": "a",
+      "justification": "El recurso especial en materia de contratación se resuelve por el Tribunal Administrativo Central de Recursos Contractuales o el órgano autonómico equivalente."
+    },
+    {
+      "stem": "¿Qué dos tipos de solvencia debe acreditar el licitador?",
+      "options": [
+        "Política y social",
+        "Económica y financiera, y técnica o profesional",
+        "Penal y fiscal",
+        "Técnica y comercial"
+      ],
+      "correct": "b",
+      "justification": "La LCSP exige acreditar solvencia económica y financiera y solvencia técnica o profesional, en los términos y con los medios que fija la ley."
+    },
+    {
+      "stem": "¿Cuál es el texto vigente que regula las haciendas locales en el régimen común?",
+      "options": [
+        "La Ley 39/1988, de 28 de diciembre, en su redacción original",
+        "La Ley 7/1985, de 2 de abril, reguladora de las Bases del Régimen Local",
+        "El texto refundido aprobado por el Real Decreto Legislativo 2/2004, de 5 de marzo",
+        "La Ley Orgánica 2/2012, de 27 de abril"
+      ],
+      "correct": "c",
+      "justification": "La Ley 39/1988 fue refundida: su texto vigente es el aprobado por el Real Decreto Legislativo 2/2004 (TRLRHL), que es la norma que se maneja hoy."
+    },
+    {
+      "stem": "¿Qué recurso se exige por la utilización privativa o el aprovechamiento especial del dominio público local?",
+      "options": [
+        "El precio público",
+        "El impuesto",
+        "La contribución especial",
+        "La tasa"
+      ],
+      "correct": "d",
+      "justification": "La tasa grava la utilización privativa o el aprovechamiento especial del dominio público y la prestación de servicios o actividades de solicitud o recepción obligatoria."
+    },
+    {
+      "stem": "¿Cuál es el límite máximo de la base imponible de las contribuciones especiales?",
+      "options": [
+        "El 90 % del coste soportado por la entidad",
+        "El 75 % del coste soportado por la entidad",
+        "El 50 % del coste soportado por la entidad",
+        "El 100 % del coste de la obra"
+      ],
+      "correct": "a",
+      "justification": "La base imponible de las contribuciones especiales no puede superar el 90 % del coste que soporta la entidad, descontadas las subvenciones."
+    },
+    {
+      "stem": "¿Cuándo se devengan las contribuciones especiales?",
+      "options": [
+        "Cuando se aprueba la ordenanza fiscal",
+        "Cuando se ejecutan las obras o comienza a prestarse el servicio",
+        "Cuando el beneficiario presenta la solicitud de licencia",
+        "El 1 de enero de cada ejercicio"
+      ],
+      "correct": "b",
+      "justification": "El devengo se produce al ejecutarse las obras o al iniciarse el servicio, sin perjuicio de que la entidad pueda exigir anticipos conforme a la ley."
+    },
+    {
+      "stem": "¿Cuál de los siguientes impuestos municipales tiene carácter potestativo?",
+      "options": [
+        "El Impuesto sobre Bienes Inmuebles",
+        "El Impuesto sobre Actividades Económicas",
+        "El Impuesto sobre Construcciones, Instalaciones y Obras",
+        "El Impuesto sobre Vehículos de Tracción Mecánica"
+      ],
+      "correct": "c",
+      "justification": "El ICIO es potestativo: el ayuntamiento decide si lo exige. El IBI, el IAE y el IVTM son impuestos obligatorios del régimen común."
+    },
+    {
+      "stem": "¿Qué órgano aprueba el presupuesto general de una entidad local?",
+      "options": [
+        "La Intervención",
+        "El presidente de la corporación",
+        "La diputación provincial",
+        "El Pleno de la corporación"
+      ],
+      "correct": "d",
+      "justification": "El Pleno aprueba el presupuesto; la Intervención lo prepara y el presidente lo presenta, pero la competencia para aprobarlo corresponde al Pleno."
+    },
+    {
+      "stem": "Si el presupuesto de la entidad local no está aprobado antes del 1 de enero, ¿qué ocurre?",
+      "options": [
+        "Se prorroga automáticamente el presupuesto del ejercicio anterior",
+        "Se aplica directamente el presupuesto del Estado",
+        "La entidad queda disuelta hasta aprobar el nuevo",
+        "Se aprueba por el Pleno sin información pública"
+      ],
+      "correct": "a",
+      "justification": "La prórroga automática del presupuesto anterior garantiza que la entidad pueda seguir funcionando hasta que se apruebe el nuevo."
+    },
+    {
+      "stem": "¿Qué norma orgánica somete a las entidades locales a la estabilidad presupuestaria y la sostenibilidad financiera?",
+      "options": [
+        "La Ley 39/1988, de 28 de diciembre",
+        "La Ley Orgánica 2/2012, de 27 de abril",
+        "La Ley 7/1985, de 2 de abril",
+        "La Ley 19/2013, de 9 de diciembre"
+      ],
+      "correct": "b",
+      "justification": "La Ley Orgánica 2/2012, de Estabilidad Presupuestaria y Sostenibilidad Financiera, extiende sus principios a todas las administraciones, incluidas las entidades locales."
+    },
+    {
+      "stem": "Cuando surge un gasto necesario no previsto y no existe crédito suficiente, ¿qué modificación presupuestaria procede?",
+      "options": [
+        "Una transferencia de crédito",
+        "Una incorporación de remanentes",
+        "Un suplemento de crédito o un crédito extraordinario",
+        "Una baja por anulación"
+      ],
+      "correct": "c",
+      "justification": "Los créditos extraordinarios y los suplementos de crédito cubren gastos no previstos o insuficientemente dotados; la transferencia solo mueve crédito entre partidas y la incorporación de remanentes se refiere a créditos del ejercicio anterior."
+    },
+    {
+      "stem": "¿A quién corresponde el control externo de las cuentas de las entidades locales?",
+      "options": [
+        "A la Intervención municipal",
+        "Al Pleno de la corporación",
+        "Al Consejo de Ministros",
+        "Al Tribunal de Cuentas, sin perjuicio de las cámaras de cuentas autonómicas"
+      ],
+      "correct": "d",
+      "justification": "La Intervención ejerce el control interno; el control externo corresponde al Tribunal de Cuentas, sin perjuicio de las competencias de las cámaras de cuentas de las comunidades autónomas."
+    }
+  ]
+}

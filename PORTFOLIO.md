@@ -39,14 +39,14 @@ servidor.
 - **Calidad revisada**: 40/40 fichas con «Lo que hay que memorizar» y «Errores típicos»; 5 temas
   reforzados (II.15, II.16, II.17, III.18, III.22) y letra correcta equilibrada (100 a/b/c/d).
   Detalle en [CALIDAD-TEMARIO.md](docs/CALIDAD-TEMARIO.md).
-- **Temas largos**: 30 temas (I.1, I.12, II.13-17, III.18-26, IV.27-33 y V.34-V.40) con 1.923-3.152 palabras, 446 casos tipo test y 4 SVG; fuentes citadas y páginas autosuficientes. Detalle en [TEMAS-LARGOS.md](docs/TEMAS-LARGOS.md).
+- **Temas largos**: 32 temas (I.1-I.3, I.12, II.13-17, III.18-26, IV.27-33 y V.34-V.40) con 1.923-3.152 palabras, 476 casos tipo test y 4 SVG; fuentes citadas y páginas autosuficientes. Detalle en [TEMAS-LARGOS.md](docs/TEMAS-LARGOS.md).
 - **Cobertura por epígrafe**: los 40 temas con estado completo/parcial/ausente en
   [COBERTURA-EPIGRAFES.md](docs/COBERTURA-EPIGRAFES.md).
 - **Sellos de tema**: el índice muestra «Esquema» o «Desarrollado · N palabras» sin abrir la ficha.
 - **Lector de temas**: barra fija «Índice ▾ · epígrafe actual», un solo resumen y fuentes, H2 22 px/
   cuerpo 16 px y «Continuar en …» por epígrafe. Detalle en [UX-LECTOR.md](docs/UX-LECTOR.md).
 - **Simulacro TAI**: 80 + 20 preguntas, 120 min, −1/3 y mínimo 25/50 por parte.
-- **Supuestos resueltos**: 17 supuestos (7 oficiales del INAP + 10 propios), **340 preguntas**, resolución paso a paso, justificaciones y modo examen de 20 preguntas. Detalle en [SUPUESTOS.md](docs/SUPUESTOS.md).
+- **Supuestos resueltos**: 19 supuestos (7 oficiales del INAP + 12 propios), **380 preguntas**, resolución paso a paso, justificaciones y modo examen de 20 preguntas. Detalle en [SUPUESTOS.md](docs/SUPUESTOS.md).
 - **Inventario de fuentes**: 124 PDF/DOCX con SHA-256, páginas y tabla tema → ficheros en [INVENTARIO-FUENTES-124.md](docs/INVENTARIO-FUENTES-124.md).
 - Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14,
   II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26,
@@ -142,7 +142,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **113/113** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **120/120** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -199,7 +199,7 @@ servidor.
 
 ## 9. Revisión final y qué queda
 
-- **113/113** comprobaciones, también a **390 px**; capturas nuevas en
+- **120/120** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
 - **40/40** temas completos: I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7.
@@ -207,4 +207,4 @@ servidor.
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 113/113 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 120/120 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

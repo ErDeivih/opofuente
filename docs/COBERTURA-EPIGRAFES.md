@@ -2,16 +2,16 @@
 
 **Fecha:** 11/11/2026 · **Referencia:** `data/sources/temario-c1.md` (40 temas, 5 bloques). Estado calculado desde `data.json`:
 
-- **completo:** desarrollo largo con 10 apartados y 15 test (30 temas).
-- **parcial:** ficha corta de 6-7 apartados y práctica de 10 preguntas (10 temas).
+- **completo:** desarrollo largo con 10 apartados y 15 test (32 temas).
+- **parcial:** ficha corta de 6-7 apartados y práctica de 10 preguntas (8 temas).
 - **ausente:** sin contenido (0 temas).
 
 ## Resumen
 
 | Estado | Temas |
 |---|---|
-| Completo | **30** |
-| Parcial | **10** |
+| Completo | **32** |
+| Parcial | **8** |
 | Ausente | **0** |
 | **Total** | **40** |
 
@@ -20,8 +20,8 @@
 | Bloque | Tema | Epígrafe oficial | Estado | Desarrollo |
 |---|---|---|---|---|
 | I | I.1 | La Constitución Española de 1978 | **completo** | 10 apartados · 15 test |
-| I | I.2 | La Unión Europea | **parcial** | 6 apartados cortos · 10 test |
-| I | I.3 | El régimen local | **parcial** | 6 apartados cortos · 10 test |
+| I | I.2 | La Unión Europea | **completo** | 10 apartados · 15 test |
+| I | I.3 | El régimen local | **completo** | 10 apartados · 15 test |
 | I | I.4 | Organización municipal | **parcial** | 7 apartados cortos · 10 test |
 | I | I.5 | El procedimiento administrativo (Ley 39/2015) | **parcial** | 6 apartados cortos · 10 test |
 | I | I.6 | El régimen jurídico del sector público (Ley 40/2015) | **parcial** | 6 apartados cortos · 10 test |
@@ -62,6 +62,6 @@
 
 ## Qué falta
 
-Los **10 temas parciales** tienen apuntes y práctica, pero no el desarrollo de 10 apartados con 15 test. La prioridad es aplicarlos la misma plantilla que I.1, II.13 y III.21. No hay ningún tema ausente: los 40 tienen contenido publicado.
+Los **8 temas parciales** tienen apuntes y práctica, pero no el desarrollo de 10 apartados con 15 test. La prioridad es aplicarlos la misma plantilla que I.1, II.13 y III.21. No hay ningún tema ausente: los 40 tienen contenido publicado.
 
 La cobertura de los 30 completos es: I.1, I.12, II.13-17, III.18-26, IV.27-33, V.34-V.40 (salvo V.39 con 12 apartados).

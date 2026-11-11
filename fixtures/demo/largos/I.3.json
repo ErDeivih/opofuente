@@ -1,0 +1,184 @@
+{
+  "tema": "I.3",
+  "title": "El régimen local",
+  "difficulty": "media",
+  "topics": ["I.3", "I.4"],
+  "steps": [
+    "Leer la ficha oficial y situar el tema en el bloque I, relacionándolo con la organización municipal (I.4) y con el procedimiento administrativo (I.5).",
+    "Recorrer los epígrafes en orden: marco constitucional, municipio y organización, competencias y servicios, provincia y otras entidades, potestades, financiación, personal y reforma de 2013.",
+    "Memorizar los artículos de la LRBRL que la ficha cita: 3, 4, 11, 20, 22.2.d, 26, 31, 32 y 92.",
+    "Construir de memoria la tabla de servicios obligatorios del artículo 26 por tramos de población.",
+    "Repasar las atribuciones del Pleno y del Alcalde y el régimen de los funcionarios con habilitación de carácter nacional.",
+    "Hacer los 15 testCases y anotar las trampas en las que se falla para el repaso final."
+  ],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema I.3 — El régimen local.** Bloque I del temario común C1. Se estudia a partir de la ficha publicada del tema y de la **Ley 7/1985, de 2 de abril, reguladora de las bases del régimen local (LRBRL)**, cuyos artículos cita la propia ficha. Su núcleo es: **marco constitucional** (arts. 137 a 142 CE); **entidades locales** (municipio, provincia e isla, y otras entidades); **municipio** (elementos y organización, art. 11 y 20 LRBRL); **competencias y servicios obligatorios** (arts. 25 y 26); **provincia y diputaciones** (arts. 31 y 32); **potestades** de las entidades locales (art. 4); **financiación** (TRLRHL); **personal** (TREBEP y funcionarios con habilitación de carácter nacional, art. 92); y **reforma de 2013** (Ley 27/2013). Conecta con **I.4** (organización municipal) y con I.5 (procedimiento administrativo)."
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El tema se estudia en este orden: (1) marco constitucional y normas reguladoras; (2) el municipio: concepto, elementos y organización; (3) competencias municipales y servicios obligatorios del artículo 26; (4) la provincia, las islas y otras entidades locales; (5) potestades de las entidades locales y reparto de atribuciones entre Pleno y Alcalde; (6) financiación local; (7) el personal al servicio de la Administración local; (8) la reforma de 2013 y los retos actuales; (9) ejemplo práctico; (10) resumen y casos tipo test. Para el test pesan las **entidades locales del artículo 3**, los **elementos del municipio (art. 11)**, la **Junta de Gobierno Local (>5.000 habitantes)**, los **servicios obligatorios del artículo 26**, los **órganos de la diputación (art. 32)** y el **artículo 92** (funcionarios con habilitación nacional)."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "El régimen local regula la organización y el funcionamiento de las entidades locales, la parte de la Administración más cercana a la ciudadanía. La Constitución organiza el Estado territorialmente en municipios, provincias y comunidades autónomas (art. 137), reconoce la autonomía de municipios y provincias para la gestión de sus intereses (arts. 140 y 141) y garantiza su suficiencia financiera (art. 142).\n\nLa norma básica estatal es la **Ley 7/1985, de 2 de abril, reguladora de las bases del régimen local (LRBRL)**, que fija el marco común y remite a la legislación autonómica y sectorial para el desarrollo. El tema se ordena de lo general (marco constitucional) a lo concreto (órganos, competencias y servicios), y termina con la financiación, el personal y la reforma de 2013.\n\nEs un tema de artículos y de competencias: quién hace qué, con qué mayoría y con qué límites. Por eso conviene estudiar cada institución con su artículo y con su tramo de población."
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1 Marco constitucional y normas reguladoras.** La Constitución organiza el Estado en municipios, provincias y comunidades autónomas (art. 137 CE), reconoce la autonomía de municipios y provincias para la gestión de sus respectivos intereses (art. 140 para el municipio y 141 para la provincia) y garantiza su suficiencia financiera (art. 142). El art. 140 añade que los concejales se eligen por sufragio universal, libre, igual, directo y secreto, y que los alcaldes son elegidos por los concejales o por los vecinos en los municipios que funcionan en concejo abierto. La norma básica estatal es la **LRBRL**, que se desarrolla por la legislación autonómica y por la normativa sectorial (haciendas locales, contratación, procedimiento, transparencia…).\n\n**4.2 El municipio: elementos y organización.** El **municipio** es la entidad local básica de la organización territorial del Estado; tiene personalidad jurídica y plena capacidad para el cumplimiento de sus fines (art. 11 LRBRL). Sus **elementos** son el **territorio** (término municipal), la **población** y la **organización**. La organización municipal (art. 20 LRBRL) se articula así: el **Alcalde**, los **Tenientes de Alcalde** y el **Pleno** existen en todos los ayuntamientos; la **Junta de Gobierno Local** existe en los municipios con población superior a **5.000 habitantes** y también en los de menos cuando lo disponga su reglamento orgánico o lo acuerde el Pleno; y la **Comisión Especial de Cuentas** existe en todos los ayuntamientos. Los concejales son elegidos por sufragio; en los municipios de concejo abierto la elección del alcalde es directa por los vecinos.\n\n**4.3 Competencias y servicios obligatorios.** El municipio tiene **competencias propias**, que le atribuyen las leyes estatales y autonómicas, y puede prestar los servicios que contribuyan a satisfacer las necesidades de la comunidad vecinal; las competencias se ejercen sin duplicar las de otras administraciones y con respeto a la autonomía local. Como garantía mínima, el **artículo 26 LRBRL** impone determinados **servicios obligatorios** según la población. Además, en los municipios de menos de **20.000 habitantes**, la **diputación provincial** (o entidad equivalente) coordina la prestación de los servicios de recogida y tratamiento de residuos, abastecimiento de agua potable y evacuación y tratamiento de aguas residuales, limpieza viaria, acceso a los núcleos de población y pavimentación de vías urbanas.\n\n**4.4 La provincia y otras entidades locales.** La **provincia** es una entidad local determinada por la **agrupación de municipios**, con personalidad jurídica propia y plena capacidad (art. 31 LRBRL); sus fines propios son garantizar los principios de **solidaridad y equilibrio intermunicipales** y asegurar la prestación integral y adecuada de los servicios municipales en todo el territorio. El gobierno y la administración provincial corresponden a la **Diputación** u otra corporación representativa: en todas existen el **Presidente**, los **Vicepresidentes**, la **Junta de Gobierno** y el **Pleno** (art. 32). En las comunidades autónomas uniprovinciales no hay diputación porque sus competencias las asume la comunidad. En Canarias la provincia se articula por **cabildos insulares** y en Baleares por **consejos insulares**; además de municipio, provincia e isla (entidades locales territoriales del art. 3), existen **comarcas**, **áreas metropolitanas**, **mancomunidades** y **entidades locales menores**.\n\n**4.5 Potestades y funcionamiento.** Para cumplir sus fines, las entidades locales territoriales tienen reconocidas por el **artículo 4 LRBRL** las potestades **reglamentaria y de autoorganización**, **tributaria y financiera**, de **programación o planificación**, **expropiatoria**, de **investigación, deslinde y recuperación de oficio** de sus bienes, la **presunción de legitimidad y ejecutividad** de sus actos, las potestades de **ejecución forzosa y sancionadora**, la **revisión de oficio** de sus actos y la **inembargabilidad** de sus bienes en los términos de la ley. No son ilimitadas: se ejercen dentro de su territorio, con respeto al interés general y a la autonomía de otras administraciones. El **Pleno** y el **Alcalde** se reparten las atribuciones: el Pleno aprueba las ordenanzas (art. 22.2.d), los presupuestos y el reglamento orgánico, mientras que el Alcalde dirige el gobierno y la administración municipal, ejecuta los acuerdos y ejerce la jefatura del personal; la Junta de Gobierno Local asiste al Alcalde en sus funciones ejecutivas.\n\n**4.6 Financiación local.** La suficiencia financiera está garantizada por el art. 142 CE y se desarrolla por la **Ley Reguladora de las Haciendas Locales** (TRLRHL). Los recursos locales combinan **tributos propios** (impuestos, tasas y contribuciones especiales, regulados por ordenanza), la **participación en los tributos del Estado**, las subvenciones, los ingresos patrimoniales y el recurso al crédito. El presupuesto se aprueba por el Pleno y se somete a la estabilidad presupuestaria y a la regla de gasto; la autonomía tributaria local se ejerce dentro de los límites de la ley.\n\n**4.7 Personal al servicio de la Administración local.** El personal se rige por el **TREBEP** (tema I.7) y por la legislación autonómica y local. En los municipios existen **funcionarios con habilitación de carácter nacional** (secretario, interventor y tesorero, entre otros) regulados por el **artículo 92 LRBRL**, además del personal funcionario y laboral propio. La relación de puestos de trabajo, la oferta de empleo y la negociación colectiva ordenan la plantilla.\n\n**4.8 Reforma de 2013 y retos.** La **Ley 27/2013, de racionalización y sostenibilidad de la Administración Local**, reformó la LRBRL para reforzar la coordinación, evitar duplicidades y garantizar la sostenibilidad financiera, en línea con la estabilidad presupuestaria. Los retos actuales son la clarificación de competencias, la financiación suficiente, la despoblación, la transformación digital y la transparencia y participación ciudadana. El régimen local se completa con la legislación autonómica de régimen local, que desarrolla la LRBRL en su territorio."
+    },
+    {
+      "heading": "5. Tabla comparativa: servicios obligatorios del artículo 26 LRBRL",
+      "body": "El artículo 26 LRBRL fija los servicios mínimos que debe prestar el municipio según su población. La tabla resume los tramos que recoge la ficha del tema.",
+      "table": {
+        "columns": ["Población", "Servicios obligatorios"],
+        "rows": [
+          ["Todos los municipios", "Alumbrado público, cementerio, recogida de residuos, limpieza viaria, abastecimiento domiciliario de agua potable, alcantarillado, acceso a los núcleos de población y pavimentación de las vías públicas"],
+          ["Más de 5.000 habitantes", "Parque público, biblioteca pública y tratamiento de residuos"],
+          ["Más de 20.000 habitantes", "Protección civil, servicios sociales, prevención y extinción de incendios e instalaciones deportivas de uso público"],
+          ["Más de 50.000 habitantes", "Transporte colectivo urbano de viajeros y protección del medio ambiente urbano"]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un ayuntamiento de 8.000 habitantes quiere aprobar una ordenanza sobre terrazas de hostelería, crear una mancomunidad con un municipio vecino para recoger y tratar residuos y comprobar qué órganos necesita.\n\n**Resolución.** (1) La **ordenanza** la aprueba el **Pleno** (art. 22.2.d LRBRL), no el Alcalde; antes debe tramitarse con la participación e información que exijan la ley y la normativa autonómica. (2) Al superar los 5.000 habitantes, el ayuntamiento debe tener **Junta de Gobierno Local**; además, en todo caso, **Alcalde, Tenientes de Alcalde, Pleno y Comisión Especial de Cuentas**. (3) Con 8.000 habitantes debe prestar los servicios del tramo general y, además, parque público, biblioteca y tratamiento de residuos; no está obligado a los servicios del tramo de más de 20.000. (4) La **mancomunidad** es una entidad local asociativa que puede crearse para la prestación conjunta de servicios; su régimen se ajusta a la LRBRL y a la legislación autonómica. (5) La **diputación** puede coordinar la prestación de los servicios de residuos, agua, limpieza viaria, acceso y pavimentación en municipios de menos de 20.000 habitantes, por lo que conviene consultar su asistencia antes de crear estructuras nuevas.\n\n**Conclusión.** La respuesta se apoya en tres datos: la población (8.000) determina los servicios obligatorios y la existencia de la Junta de Gobierno; el órgano competente para la ordenanza es el Pleno; y la mancomunidad es una entidad local válida para gestionar servicios comunes."
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "- Confundir **entidades locales territoriales** (municipio, provincia e isla, art. 3 LRBRL) con otras entidades locales (comarcas, áreas metropolitanas, mancomunidades y entidades locales menores).\n- Confundir los **elementos del municipio** (territorio, población y organización, art. 11) con sus órganos.\n- Creer que la **Junta de Gobierno Local** es obligatoria en todos los municipios: solo lo es a partir de 5.000 habitantes o si lo prevé el reglamento orgánico o lo acuerda el Pleno.\n- Olvidar que la **Comisión Especial de Cuentas** existe en todos los ayuntamientos.\n- Confundir el órgano que aprueba las **ordenanzas**: es el **Pleno** (art. 22.2.d), no el Alcalde.\n- Confundir los **tramos del artículo 26**: no es lo mismo el tramo general (todos), el de más de 5.000, el de más de 20.000 y el de más de 50.000.\n- Atribuir al municipio servicios que corresponden a la **diputación** en municipios pequeños: en los de menos de 20.000 habitantes la diputación coordina determinados servicios.\n- Confundir **provincia** con **comunidad autónoma uniprovincial**: en esta última no hay diputación.\n- Confundir los órganos de la **diputación** (Presidente, Vicepresidentes, Junta de Gobierno y Pleno, art. 32) con los del ayuntamiento.\n- Confundir las **potestades del artículo 4 LRBRL** con las competencias: las potestades son instrumentos (reglamentaria, tributaria, expropiatoria, sancionadora…), no servicios concretos.\n- Creer que las potestades locales son **ilimitadas**: se ejercen dentro del territorio y con respeto al interés general y a la autonomía de otras administraciones.\n- Confundir **financiación local** (TRLRHL: tributos propios y participación en tributos del Estado) con el presupuesto y la estabilidad presupuestaria.\n- Olvidar los **funcionarios con habilitación de carácter nacional** (secretario, interventor, tesorero) del artículo 92 LRBRL.\n- Pensar que la **Ley 27/2013** creó el régimen local: lo reformó para racionalizar y garantizar la sostenibilidad."
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Lo que hay que memorizar.**\n\n1. **Constitución**: arts. 137 (organización territorial), 140 (autonomía municipal y elección de concejales), 141 (provincia) y 142 (suficiencia financiera).\n2. **Entidades locales territoriales** (art. 3 LRBRL): municipio, provincia e isla; además, comarcas, áreas metropolitanas, mancomunidades y entidades locales menores.\n3. **Municipio** (art. 11): personalidad jurídica; elementos: territorio, población y organización.\n4. **Organización municipal** (art. 20): Alcalde, Tenientes de Alcalde y Pleno en todos; Junta de Gobierno Local desde 5.000 habitantes (o si lo prevé el reglamento orgánico o el Pleno); Comisión Especial de Cuentas en todos.\n5. **Artículo 26**: servicios obligatorios por tramos (todos; >5.000; >20.000; >50.000); la diputación coordina en municipios de menos de 20.000 habitantes.\n6. **Provincia** (art. 31) y **diputación** (art. 32): Presidente, Vicepresidentes, Junta de Gobierno y Pleno; en uniprovinciales no hay diputación; cabildos y consejos insulares.\n7. **Potestades** (art. 4): reglamentaria y de autoorganización, tributaria y financiera, programación, expropiatoria, investigación y deslinde, presunción de legitimidad, ejecución forzosa, sancionadora, revisión de oficio e inembargabilidad.\n8. **Pleno y Alcalde**: el Pleno aprueba ordenanzas, presupuestos y reglamento orgánico; el Alcalde dirige el gobierno y ejecuta los acuerdos.\n9. **Financiación**: TRLRHL (tributos propios, tasas, contribuciones especiales, participación en tributos del Estado); presupuesto y estabilidad.\n10. **Personal**: TREBEP y funcionarios con habilitación nacional (art. 92 LRBRL: secretario, interventor, tesorero). **Reforma**: Ley 27/2013."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "**1.** ¿Qué artículo de la Constitución organiza el Estado en municipios, provincias y comunidades autónomas? **Respuesta: a)** El artículo 137 CE (ficha I.3).\n\n**2.** Según el artículo 3 LRBRL, ¿cuáles son entidades locales territoriales? **Respuesta: b)** El municipio, la provincia y la isla (ficha I.3).\n\n**3.** ¿Cuáles son los elementos del municipio según el artículo 11 LRBRL? **Respuesta: c)** Territorio, población y organización (ficha I.3).\n\n**4.** ¿A partir de qué población es obligatoria la Junta de Gobierno Local? **Respuesta: d)** A partir de 5.000 habitantes (art. 20 LRBRL).\n\n**5.** ¿En qué municipios existe la Comisión Especial de Cuentas? **Respuesta: a)** En todos los ayuntamientos (art. 20 LRBRL).\n\n**6.** ¿Qué órgano aprueba las ordenanzas municipales? **Respuesta: b)** El Pleno (art. 22.2.d LRBRL).\n\n**7.** ¿Qué servicios son obligatorios en todos los municipios? **Respuesta: c)** Alumbrado público, cementerio, recogida de residuos, limpieza viaria, agua potable, alcantarillado, acceso y pavimentación (art. 26 LRBRL).\n\n**8.** ¿Qué servicios son obligatorios en municipios de más de 20.000 habitantes? **Respuesta: d)** Protección civil, servicios sociales, prevención y extinción de incendios e instalaciones deportivas (art. 26 LRBRL).\n\n**9.** ¿Qué servicios añade el tramo de más de 50.000 habitantes? **Respuesta: a)** Transporte colectivo urbano y protección del medio ambiente urbano (art. 26 LRBRL).\n\n**10.** ¿Qué es la provincia según el artículo 31 LRBRL? **Respuesta: b)** Una entidad local determinada por la agrupación de municipios (ficha I.3).\n\n**11.** ¿Qué órganos existen en todas las diputaciones? **Respuesta: c)** Presidente, Vicepresidentes, Junta de Gobierno y Pleno (art. 32 LRBRL).\n\n**12.** ¿Qué ocurre en las comunidades autónomas uniprovinciales? **Respuesta: d)** No hay diputación porque sus competencias las asume la comunidad (ficha I.3).\n\n**13.** ¿Qué reconoce el artículo 4 LRBRL a las entidades locales territoriales? **Respuesta: a)** Potestades como la reglamentaria, la tributaria, la expropiatoria o la sancionadora (ficha I.3).\n\n**14.** ¿Quiénes son funcionarios con habilitación de carácter nacional? **Respuesta: b)** El secretario, el interventor y el tesorero, entre otros (art. 92 LRBRL).\n\n**15.** ¿Qué ley reformó en 2013 el régimen local para racionalizarlo y garantizar su sostenibilidad? **Respuesta: c)** La Ley 27/2013 (ficha I.3)."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "- **Ficha publicada del tema I.3** (`fixtures/demo/temas/I.3.json`): marco constitucional, municipio y organización, competencias y servicios, provincia y otras entidades, potestades, financiación, personal y ejemplo resuelto, con las citas de los artículos de la LRBRL.\n- **Ley 7/1985, de 2 de abril, reguladora de las bases del régimen local** (BOE-A-1985-5392): arts. 3, 4, 11, 20, 22.2.d, 26, 31, 32 y 92, tal como los cita la ficha.\n- **`data/fuentes/I.3.txt`**: texto consolidado de trabajo. **Aviso:** este fichero no contiene el desarrollo del régimen local (recoge la Constitución, el TREBEP, transparencia y protección de datos, y un tema de periféricos), por lo que no se usa para datos concretos; el tema se ha elaborado con la ficha publicada y la LRBRL. No se copian párrafos literales.\n\n**Limitación:** no se han podido verificar contra el BOE en esta sesión los números de todos los artículos citados; se han mantenido solo los que la ficha publicada cita expresamente, y se describen por su materia cuando no consta el número."
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Qué artículo de la Constitución organiza el Estado territorialmente en municipios, provincias y comunidades autónomas?",
+      "options": ["El artículo 137", "El artículo 140", "El artículo 141", "El artículo 142"],
+      "answer": "a",
+      "explanation": "El artículo 137 CE organiza el Estado en municipios, provincias y comunidades autónomas; el 140 y el 141 reconocen la autonomía de municipios y provincias y el 142 garantiza la suficiencia financiera. Ref.: ficha I.3, marco constitucional."
+    },
+    {
+      "question": "Según el artículo 3 LRBRL, ¿cuáles son entidades locales territoriales?",
+      "options": ["El municipio, la comarca y la mancomunidad", "El municipio, la provincia y la isla", "Solo el municipio y la provincia", "El municipio, el área metropolitana y la comarca"],
+      "answer": "b",
+      "explanation": "El artículo 3 LRBRL considera entidades locales territoriales el municipio, la provincia y la isla (en Baleares y Canarias); las comarcas, áreas metropolitanas y mancomunidades son otras entidades locales. Ref.: ficha I.3."
+    },
+    {
+      "question": "¿Cuáles son los elementos del municipio según el artículo 11 LRBRL?",
+      "options": ["Territorio, población y presupuesto", "Alcalde, Pleno y Junta de Gobierno", "Territorio, población y organización", "Término municipal, padrón y ordenanzas"],
+      "answer": "c",
+      "explanation": "El municipio tiene personalidad jurídica y plena capacidad (art. 11); sus elementos son el territorio (término municipal), la población y la organización. Ref.: ficha I.3."
+    },
+    {
+      "question": "¿A partir de qué población es obligatoria la Junta de Gobierno Local?",
+      "options": ["A partir de 20.000 habitantes", "A partir de 50.000 habitantes", "A partir de 2.000 habitantes", "A partir de 5.000 habitantes"],
+      "answer": "d",
+      "explanation": "La Junta de Gobierno Local existe en los municipios con población superior a 5.000 habitantes y también en los de menos si lo prevé el reglamento orgánico o lo acuerda el Pleno (art. 20 LRBRL). Ref.: ficha I.3."
+    },
+    {
+      "question": "¿En qué municipios existe la Comisión Especial de Cuentas?",
+      "options": ["En todos los ayuntamientos", "Solo en los de más de 5.000 habitantes", "Solo en los de más de 20.000 habitantes", "Solo en las capitales de provincia"],
+      "answer": "a",
+      "explanation": "La Comisión Especial de Cuentas existe en todos los ayuntamientos, con independencia de su población (art. 20 LRBRL). Ref.: ficha I.3."
+    },
+    {
+      "question": "¿Qué órgano aprueba las ordenanzas municipales?",
+      "options": ["El Alcalde", "El Pleno", "La Junta de Gobierno Local", "El secretario municipal"],
+      "answer": "b",
+      "explanation": "La aprobación de las ordenanzas corresponde al Pleno (art. 22.2.d LRBRL), no al Alcalde; antes debe seguirse el procedimiento de participación e información que exija la ley. Ref.: ficha I.3."
+    },
+    {
+      "question": "¿Qué servicios son obligatorios en todos los municipios?",
+      "options": [
+        "Transporte colectivo urbano y medio ambiente urbano",
+        "Protección civil y servicios sociales",
+        "Alumbrado público, cementerio, recogida de residuos, limpieza viaria, agua potable, alcantarillado, acceso y pavimentación",
+        "Parque público, biblioteca y tratamiento de residuos"
+      ],
+      "answer": "c",
+      "explanation": "El tramo general del artículo 26 LRBRL incluye alumbrado, cementerio, residuos, limpieza viaria, agua, alcantarillado, acceso a los núcleos y pavimentación. Ref.: ficha I.3, tabla del art. 26."
+    },
+    {
+      "question": "¿Qué servicios son obligatorios en municipios de más de 20.000 habitantes?",
+      "options": [
+        "Alumbrado y cementerio",
+        "Parque, biblioteca y tratamiento de residuos",
+        "Transporte colectivo urbano y medio ambiente urbano",
+        "Protección civil, servicios sociales, prevención y extinción de incendios e instalaciones deportivas"
+      ],
+      "answer": "d",
+      "explanation": "El tramo de más de 20.000 habitantes incluye protección civil, servicios sociales, prevención y extinción de incendios e instalaciones deportivas de uso público. Ref.: ficha I.3, art. 26."
+    },
+    {
+      "question": "¿Qué servicios añade el tramo de más de 50.000 habitantes del artículo 26 LRBRL?",
+      "options": ["Transporte colectivo urbano de viajeros y protección del medio ambiente urbano", "Biblioteca y parque público", "Cementerio y alumbrado", "Servicios sociales y protección civil"],
+      "answer": "a",
+      "explanation": "El tramo de más de 50.000 habitantes añade transporte colectivo urbano y protección del medio ambiente urbano. Ref.: ficha I.3, art. 26."
+    },
+    {
+      "question": "¿Qué es la provincia según el artículo 31 LRBRL?",
+      "options": ["Una entidad local supranacional", "Una entidad local determinada por la agrupación de municipios, con personalidad jurídica propia", "Un órgano de la comunidad autónoma", "Una mancomunidad de municipios"],
+      "answer": "b",
+      "explanation": "La provincia es una entidad local determinada por la agrupación de municipios, con personalidad jurídica propia y plena capacidad (art. 31 LRBRL); sus fines son la solidaridad y el equilibrio intermunicipales. Ref.: ficha I.3."
+    },
+    {
+      "question": "¿Qué órganos existen en todas las diputaciones provinciales?",
+      "options": ["Alcalde, Tenientes y Pleno", "Presidente, Consejo de Ministros y Pleno", "Presidente, Vicepresidentes, Junta de Gobierno y Pleno", "Solo el Presidente y el Pleno"],
+      "answer": "c",
+      "explanation": "El gobierno y la administración de la provincia corresponden a la Diputación u otra corporación representativa; en todas existen el Presidente, los Vicepresidentes, la Junta de Gobierno y el Pleno (art. 32 LRBRL). Ref.: ficha I.3."
+    },
+    {
+      "question": "¿Qué ocurre en las comunidades autónomas uniprovinciales?",
+      "options": ["Tienen dos diputaciones", "Mantienen la diputación como órgano consultivo", "La diputación se sustituye por una mancomunidad", "No hay diputación porque sus competencias las asume la comunidad"],
+      "answer": "d",
+      "explanation": "En las comunidades autónomas uniprovinciales no existe diputación, ya que sus competencias las asume la comunidad autónoma. Ref.: ficha I.3."
+    },
+    {
+      "question": "¿Qué reconoce el artículo 4 LRBRL a las entidades locales territoriales?",
+      "options": ["Potestades como la reglamentaria, la tributaria, la expropiatoria o la sancionadora", "La potestad legislativa", "La competencia exclusiva sobre el dominio público estatal", "La facultad de dictar leyes orgánicas"],
+      "answer": "a",
+      "explanation": "El artículo 4 LRBRL reconoce la potestad reglamentaria y de autoorganización, la tributaria y financiera, la expropiatoria, la sancionadora, la de ejecución forzosa y la revisión de oficio, entre otras. Ref.: ficha I.3."
+    },
+    {
+      "question": "¿Quiénes son funcionarios con habilitación de carácter nacional en la Administración local?",
+      "options": ["Los concejales y el alcalde", "El secretario, el interventor y el tesorero, entre otros", "Solo los funcionarios de carrera del Estado", "Los asesores del grupo municipal"],
+      "answer": "b",
+      "explanation": "El artículo 92 LRBRL regula los funcionarios con habilitación de carácter nacional, entre ellos el secretario, el interventor y el tesorero. Ref.: ficha I.3."
+    },
+    {
+      "question": "¿Qué ley reformó en 2013 el régimen local para racionalizarlo y garantizar su sostenibilidad?",
+      "options": ["La Ley 7/1985", "La Ley 39/2015", "La Ley 27/2013", "La Ley 5/2010"],
+      "answer": "c",
+      "explanation": "La Ley 27/2013, de racionalización y sostenibilidad de la Administración Local, reformó la LRBRL para reforzar la coordinación, evitar duplicidades y garantizar la sostenibilidad financiera. Ref.: ficha I.3."
+    }
+  ],
+  "sources": [
+    {
+      "file": "fixtures/demo/temas/I.3.json",
+      "page": "ficha publicada del tema: marco constitucional, municipio y organización, competencias y servicios, provincia y otras entidades, potestades, financiación, personal y ejemplo resuelto",
+      "use": "base de contenido y citas de los artículos de la LRBRL"
+    },
+    {
+      "file": "Ley 7/1985, de 2 de abril, reguladora de las bases del régimen local (BOE-A-1985-5392)",
+      "page": "arts. 3, 4, 11, 20, 22.2.d, 26, 31, 32 y 92 (según la cita de la ficha)",
+      "use": "entidades locales, elementos y organización del municipio, servicios obligatorios, provincia, potestades y personal"
+    },
+    {
+      "file": "data/fuentes/I.3.txt",
+      "page": "texto consolidado de fuentes del tema (no contiene el apartado de régimen local)",
+      "use": "consolidado de trabajo; comprobado que no desarrolla el régimen local, por lo que no se usa para datos concretos"
+    }
+  ]
+}

@@ -1703,6 +1703,7 @@ function Temario({ initialFiltro = 'todos' }: { readonly initialFiltro?: Filtro 
   const [query, setQuery] = useState('');
   const [filtro, setFiltro] = useState<Filtro>(initialFiltro);
   const search = normalized(query.trim());
+  const desarrollados = data.curriculum.blocks.flatMap((block) => block.topics).filter((topic) => topic.formato === 'desarrollado').length;
   const blocks = data.curriculum.blocks
     .map((block) => ({
       ...block,
@@ -1733,7 +1734,7 @@ function Temario({ initialFiltro = 'todos' }: { readonly initialFiltro?: Filtro 
         </p>
         <div className="demo-actions">
           <button className="button" type="button" onClick={() => { go('cobertura'); }}>
-            Ver cobertura de los 40
+            Ver cobertura ({desarrollados}/40)
           </button>
         </div>
       </section>

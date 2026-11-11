@@ -155,7 +155,7 @@ check(
 );
 
 // Revisión de los dos temas de la tanda: contenido, tabla y 10 preguntas.
-for (const temaId of ['II.15', 'II.16', 'II.17', 'III.19', 'III.20', 'III.24', 'III.25', 'III.26', 'IV.30', 'IV.33', 'V.36', 'V.37', 'V.38', 'V.40']) {
+for (const temaId of ['I.2', 'I.3', 'II.15', 'II.16', 'II.17', 'III.19', 'III.20', 'III.24', 'III.25', 'III.26', 'IV.30', 'IV.33', 'V.36', 'V.37', 'V.38', 'V.40']) {
   const nombre = temaId.toLowerCase().replace('.', '-');
   const texto = await captura(`tema/${temaId}`, `tema-${nombre}`, 390);
   check(
@@ -170,9 +170,23 @@ for (const temaId of ['II.15', 'II.16', 'II.17', 'III.19', 'III.20', 'III.24', '
 // Cobertura enlazada desde la portada del temario.
 await page.goto(`${BASE}/#/temario`, { waitUntil: 'networkidle' });
 await page.waitForSelector('h1');
-await page.getByRole('button', { name: 'Ver cobertura de los 40' }).click();
+await page.getByRole('button', { name: /Ver cobertura \(\d+\/40\)/ }).click();
 await page.waitForTimeout(300);
 check('la portada del temario enlaza la cobertura en un toque', (await page.locator('h1').innerText()).includes('Mapa de cobertura'));
+check('el boton indica la cobertura actual', (await page.locator('main').innerText()).includes('Cobertura por epígrafe'));
+
+// Índice y test a un toque en los temas nuevos.
+for (const temaId of ['I.2', 'I.3']) {
+  await page.goto(`${BASE}/#/tema/${temaId}`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('h1');
+  await page.getByRole('button', { name: /Índice/ }).first().click();
+  check(`${temaId}: un toque abre el índice`, (await page.locator('.demo-indexbar__item').count()) >= 5);
+  await page.getByRole('button', { name: /Índice/ }).first().click();
+  await page.getByRole('button', { name: 'Test del tema' }).click();
+  await page.waitForTimeout(800);
+  const top = await page.evaluate(() => document.querySelector('.demo-seccion h2')?.getBoundingClientRect().top ?? 999);
+  check(`${temaId}: un toque abre el test`, top < 300);
+}
 
 // Búsqueda y filtro.
 await page.setViewportSize({ width: 1280, height: 900 });

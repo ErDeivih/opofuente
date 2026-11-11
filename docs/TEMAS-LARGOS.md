@@ -3,11 +3,13 @@
 **Fecha:** 11/11/2026 · **Objetivo:** que cada tema se pueda estudiar sin abrir otro PDF, con
 redacción propia y fuentes citadas.
 
-## Los treinta temas
+## Los treinta y dos temas
 
 | Tema | Título | Palabras | Apartados | Test cases | Tablas | Diagrama |
 |---|---|---|---|---|---|---|
 | I.1 | La Constitución Española de 1978 | **1.543** | 10 | 15 | 1 | SVG de estructura |
+| I.2 | La Unión Europea | **2.407** | 10 | 15 | 6 | — |
+| I.3 | El régimen local | **2.568** | 10 | 15 | 1 | — |
 | I.12 | Transparencia y protección de datos | **2.952** | 10 | 15 | 1 | — |
 | II.13 | Arquitectura de ordenadores | **2.692** | 10 | 15 | 1 | SVG Von Neumann |
 | II.14 | Sistemas operativos de usuario | **2.082** | 10 | 15 | 6 | — |
@@ -38,7 +40,7 @@ redacción propia y fuentes citadas.
 | V.39 | Administración electrónica práctica | **2.448** | 12 | 15 | 3 | — |
 | V.40 | Accesibilidad y usabilidad | **2.371** | 10 | 15 | 1 | — |
 
-**Media:** 2.568 palabras por tema · **446 casos tipo test** en total (10-15 por tema) · **84 tablas**
+**Media:** 2.563 palabras por tema · **476 casos tipo test** en total (10-15 por tema) · **91 tablas**
 comparativas · **4 diagramas SVG propios**.
 
 I.1, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26, IV.28, IV.29, IV.30, IV.31, IV.32 y IV.33 se han reescrito con la **estructura definitiva de 10 apartados**: ficha oficial, epígrafes,
