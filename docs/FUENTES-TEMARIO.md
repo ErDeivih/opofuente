@@ -27,7 +27,7 @@
 | `BLOQUE 4` | 22 | DOCX + PDF | Supuestos prácticos, OSI, subnetting, CPD, CCN-CERT, Wi-Fi |
 | `data/sources` | 15 | PDF + MD | BOE TAI, temario C1, PDFs de CAP y exámenes de otros cuerpos |
 
-## Los 5 temas con más peso y mejores fuentes
+## Los 6 temas con más peso y mejores fuentes
 
 Selección por volumen de fuente útil y peso en el examen: **Constitución**, **Redes**, **Bases de
 datos**, **Seguridad de la información** y **ENS**.
@@ -59,6 +59,8 @@ datos**, **Seguridad de la información** y **ENS**.
 | V.35 | `ENS.hellcito.pdf` | 3 pág. | Esquema | **Escaneado**; no citado |
 | V.35 | `Como Categorizar un Sistema en el ENS_V.04.pdf` | 7 pág. | Guía | **Escaneado**; no citado |
 | V.35 | `Catalogo-servicios-administracion-digital-version-2018.pdf` | 103 pág. | Catálogo | **Escaneado**; no citado |
+| **V.39 Administración electrónica** | `Bloque 1 Actualizado 2026.docx` | DOCX, 168.022 caracteres | Apuntes TAI I.8/I.9 | Sede, registro, notificaciones, ENI |
+| V.39 | Ley 39/2015, RD 203/2021 y ENI (BOE) | Normas consolidadas | Normativa | Contraste de artículos verificados |
 
 ## Fuentes por tema y estado
 
@@ -93,4 +95,4 @@ commitean. La demo publicada seguirá usando redacción propia y citas de fuente
 
 ## Resultado
 
-Los cinco temas elegidos se han reescrito y están en [TEMAS-LARGOS.md](TEMAS-LARGOS.md): 2.488-3.064 palabras por tema, 70 casos tipo test, 27 tablas y 3 SVG propios.
+Los seis temas elegidos se han reescrito y están en [TEMAS-LARGOS.md](TEMAS-LARGOS.md): 2.448-3.064 palabras por tema, 85 casos tipo test, 30 tablas y 3 SVG propios.

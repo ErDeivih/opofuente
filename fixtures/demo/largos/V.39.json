@@ -1,0 +1,281 @@
+{
+  "tema": "V.39",
+  "title": "Administración electrónica práctica",
+  "difficulty": "media",
+  "topics": ["V.39", "III.23", "V.35"],
+  "steps": [
+    "Situar el marco: Ley 39/2015 y Ley 40/2015, desarrolladas por el RD 203/2021, y las normas técnicas del ENI.",
+    "Ordenar el recorrido de una tramitación electrónica: identificación, representación, registro, expediente, notificación y archivo.",
+    "Memorizar las diferencias entre sede electrónica, portal de internet y Punto de Acceso General, y entre aviso y notificación.",
+    "Relacionar cada servicio común (Cl@ve, @firma, DEHú, SIR, PID, Carpeta Ciudadana) con la fase del procedimiento en la que se usa.",
+    "Repasar los datos con cifras que sí son exigibles: los diez días naturales del rechazo de la notificación y los plazos de conservación y horas oficiales que cita el ENI.",
+    "Probarse con los testCases y explicar en voz alta por qué fallan las opciones descartadas."
+  ],
+  "sections": [
+    {
+      "heading": "1. Introducción: administrar electrónicamente",
+      "body": "La **administración electrónica** no es una oficina virtual añadida a la administración tradicional: es la forma ordinaria de tramitar. La **Ley 39/2015**, del procedimiento administrativo común, y la **Ley 40/2015**, del régimen jurídico del sector público, diseñaron un modelo en el que los procedimientos se tramitan por medios electrónicos y las administraciones se relacionan entre sí también por esos medios. El desarrollo práctico llegó con el **Real Decreto 203/2021**, que aprueba el Reglamento de actuación y funcionamiento del sector público por medios electrónicos.\n\nEl Reglamento persigue cuatro objetivos: mejorar la **eficiencia administrativa**, incrementar la **transparencia y la participación**, garantizar **servicios digitales fácilmente utilizables** y reforzar la **seguridad jurídica**. Para lograrlo se apoya en principios como la **neutralidad tecnológica**, la **accesibilidad**, la **facilidad de uso**, la **interoperabilidad**, la **proporcionalidad** y la **personalización y proactividad** de los servicios.\n\nEste tema recorre lo que hay que dominar: quién está obligado a relacionarse electrónicamente, qué es una sede y en qué se diferencia de un portal, cómo funcionan el registro, la identificación, la representación, las notificaciones, el expediente y el archivo, y qué papel juegan la interoperabilidad y los servicios comunes del Estado.\n\n*(Fuente: V.39.txt, TEMA 8; RD 203/2021, preámbulo.)*"
+    },
+    {
+      "heading": "2. Derecho y obligación de relacionarse electrónicamente",
+      "body": "**Personas físicas y sujetos obligados.** Como regla general, las personas físicas **eligen** en cada momento si se relacionan con la Administración por medios electrónicos o presenciales, y pueden cambiar esa elección. Pero hay sujetos **obligados** a hacerlo por vía electrónica: las **personas jurídicas**, las **entidades sin personalidad jurídica**, quienes ejercen una **actividad profesional con colegiación obligatoria**, quienes **representan** a un interesado que está obligado y los **empleados públicos** para los trámites que realicen por su condición de empleado.\n\n**Canales de asistencia.** La Administración no puede limitarse a exigir el canal electrónico y dejar solo al ciudadano: el Reglamento obliga a prestar asistencia a través de varios canales, como el **presencial** en oficinas de asistencia, los **portales y sedes electrónicas**, las **redes sociales**, el **teléfono** y el **correo electrónico**. Esa asistencia es la contrapartida del derecho a relacionarse electrónicamente.\n\n**Consecuencia práctica.** Para los sujetos obligados, el cauce electrónico es el previsto legalmente; para la persona física no obligada sigue siendo una opción. Esta distinción es la primera que hay que dejar clara en un supuesto práctico, porque condiciona qué canal, qué identificación y qué representación se admiten.\n\n*(Fuente: V.39.txt, TEMA 8; Ley 39/2015, art. 14; RD 203/2021.)*"
+    },
+    {
+      "heading": "3. Sede electrónica, portal de internet y Punto de Acceso General",
+      "body": "**Sede electrónica.** Es una **dirección electrónica** disponible por redes de telecomunicaciones cuya **titularidad** corresponde a una administración pública, o a uno o varios organismos o entidades de derecho público en el ejercicio de sus competencias. Su establecimiento conlleva la **responsabilidad** del titular sobre la **integridad, veracidad y actualización** de la información y los servicios a los que se accede. Debe garantizar la **identificación del órgano titular**, medios para sugerencias y quejas, **comunicaciones seguras** y certificados de autenticación de sitio web, y se rige por los principios de transparencia, publicidad, responsabilidad, calidad, seguridad, disponibilidad, accesibilidad, neutralidad e interoperabilidad.\n\n**Portal de internet.** Es el punto de acceso electrónico titularidad de una administración, organismo o entidad de derecho público que permite acceder a la información publicada y, en su caso, a la sede electrónica. La diferencia es sustancial: el portal **informa**; la sede **presta servicios y trámites** con garantías jurídicas y responsabilidad del titular.\n\n**Punto de Acceso General (PAG).** Es el portal de acceso general que reúne el acceso a los servicios de las administraciones. El Reglamento desarrolla su funcionamiento y el de la **Carpeta Ciudadana** como área personalizada para consultar trámites y notificaciones. Existen además **sedes electrónicas asociadas**, que permiten a entidades sin medios propios adherirse a la sede de otra administración.\n\n*(Fuente: V.39.txt, TEMA 8; RD 203/2021, preámbulo y título I.)*",
+      "table": {
+        "columns": ["Concepto", "Qué es", "Responsabilidad"],
+        "rows": [
+          ["Sede electrónica", "Dirección electrónica titularidad de una administración para prestar servicios y trámites", "Del titular: integridad, veracidad y actualización de información y servicios"],
+          ["Portal de internet", "Punto de acceso que publica información y enlaza, en su caso, con la sede", "De la administración titular del portal"],
+          ["Punto de Acceso General", "Acceso general a los servicios de las administraciones y a las notificaciones", "De la administración que lo mantiene, sin sustituir a cada sede"]
+        ]
+      }
+    },
+    {
+      "heading": "4. El registro electrónico",
+      "body": "**Qué es y para qué sirve.** Los registros electrónicos reciben y remiten **solicitudes, escritos y comunicaciones** y deben ser **plenamente interoperables** para garantizar su compatibilidad informática e interconexión. Cada administración dispone de un **Registro Electrónico General** en el que se asienta todo documento presentado o recibido en cualquier órgano, organismo público o entidad de derecho público vinculada o dependiente; esos organismos pueden tener su propio registro, interconectado con el general.\n\n**Qué se puede presentar.** Se admiten **documentos electrónicos normalizados** correspondientes a los trámites previstos, cumplimentados en los formatos establecidos, y **cualquier solicitud, escrito o comunicación** dirigida a una administración pública. Las **oficinas de asistencia en materia de registros** atienden a quien no dispone de medios, digitalizan la documentación y la incorporan al expediente.\n\n**Interconexión.** El **Sistema de Interconexión de Registros (SIR)** conecta los registros de las administraciones para que un asiento presentado ante una administración llegue al órgano competente de otra. En el catálogo de servicios comunes figuran piezas como el **Registro Electrónico Común**, **GEISER** (gestión de entrada y salida en oficinas de asistencia) y **ORVE** (oficina de registro virtual).\n\n**Hora oficial.** Los sistemas que intervienen en un servicio público electrónico deben sincronizarse con la **hora oficial** para garantizar la certidumbre de los plazos; el ENI fija esa sincronización con el Real Instituto y Observatorio de la Armada.\n\n*(Fuente: V.39.txt, TEMA 8 y TEMA 9; ENI, RD 4/2010, art. 15.)*"
+    },
+    {
+      "heading": "5. Identificación y firma electrónica",
+      "body": "**Identificarse no es firmar.** La **identificación** acredita quién es el interesado; la **firma** expresa su voluntad y da autenticidad al documento. La Ley 39/2015 regula los sistemas de identificación y de firma, y el Reglamento de administración electrónica precisa las condiciones de interoperabilidad, las plataformas de verificación y la acreditación de la representación.\n\n**Sistemas del ciudadano.** Los más habituales son el **certificado electrónico** reconocido o cualificado, incluido el **DNIe**, y los sistemas de **Cl@ve**: Cl@ve Móvil, Cl@ve PIN y Cl@ve Permanente. **Cl@ve Firma** permite firmar con certificados centralizados. La administración, por su parte, se identifica con un **sello electrónico** basado en certificado reconocido o cualificado, que incluye el NIF y la denominación de la entidad, y cuya relación debe ser pública y verificable.\n\n**Firma del empleado público.** El personal público firma con certificados de empleado público; **Port@firmas** aporta la firma electrónica del empleado, **FIRe** ofrece una solución integral de firma y **@firma** valida certificados y firmas, con **Valide** y **TS@** para validación y sellado de tiempo. La **política de firma electrónica y de certificados** del ENI fija perfiles, algoritmos y formatos para que las firmas se reconozcan entre administraciones.\n\n*(Fuente: V.39.txt, TEMA 8 y TEMA 9; ENI, RD 4/2010.)*",
+      "table": {
+        "columns": ["Sistema", "Quién lo usa", "Para qué"],
+        "rows": [
+          ["DNIe o certificado electrónico", "Ciudadanía y profesionales", "Identificarse y firmar con certificado reconocido o cualificado"],
+          ["Cl@ve (Móvil, PIN y Permanente)", "Ciudadanía", "Identificación y autenticación ante las administraciones"],
+          ["Sello electrónico", "Administraciones y órganos", "Identificar a la administración y autenticar su actuación"],
+          ["Port@firmas y FIRe", "Empleados públicos", "Firmar documentos en el ejercicio de su puesto"],
+          ["@firma, Valide y TS@", "Aplicaciones y sedes", "Validar firmas y certificados y sellar el tiempo"]
+        ]
+      }
+    },
+    {
+      "heading": "6. Representación y apoderamientos",
+      "body": "**Representación.** El interesado puede actuar por medio de **representante** ante la Administración. La representación puede acreditarse mediante **apoderamiento apud acta**, presencial o electrónico, por **documento público** o por comparecencia en la sede. Para el entorno electrónico existe el **Registro Electrónico de Apoderamientos**, que permite inscribir y consultar los poderes para que el representante actúe sin aportar el documento en cada trámite.\n\n**Quién está obligado.** Si el representado está obligado a relacionarse electrónicamente, su representante también lo está. El catálogo de servicios comunes incluye **Apodera** para otorgar poderes, **Habilit@** como registro de funcionarios habilitados, **Representa** para validar la identidad de profesionales que actúan por terceros y **Notaria** para consultar poderes notariales y de administradores.\n\n**Ejemplo de uso.** Un asesor colegiado que presenta solicitudes en nombre de varios clientes inscribe su poder en el registro electrónico y actúa con su propia identificación; la sede comprueba la representación sin exigir papeles en cada expediente. Si el poder se revoca, la inscripción debe actualizarse para que la sede no admita actuaciones no cubiertas.\n\n*(Fuente: V.39.txt, TEMA 8 y TEMA 9; RD 203/2021, preámbulo.)*"
+    },
+    {
+      "heading": "7. Notificaciones electrónicas",
+      "body": "**Dónde se notifica.** Las notificaciones electrónicas se practican mediante **comparecencia en la sede electrónica** de la administración actuante, a través de la **Dirección Electrónica Habilitada única (DEHú)** o por ambos sistemas. El aviso de puesta a disposición informa de que hay una notificación, pero el aviso no es la notificación.\n\n**Momento de la práctica.** La notificación se entiende practicada cuando se **accede a su contenido**. Cuando la notificación es obligatoria o el interesado la eligió, se entiende **rechazada** si transcurren **diez días naturales** desde la puesta a disposición sin acceder. El **Punto de Acceso General** funciona como portal de acceso a las notificaciones. En el catálogo común aparecen **Notifica**, **DEHú**, **SNE** (entrega en la dirección electrónica habilitada) y **SIM** (avisos por SMS o correo electrónico).\n\n**Consecuencias.** El rechazo no paraliza el procedimiento: la notificación se tiene por practicada y el plazo sigue. Por eso conviene consultar DEHú con frecuencia y mantener actualizados los datos de contacto. En un supuesto práctico, distinguir «aviso enviado» de «notificación practicada» es la diferencia entre acertar y fallar la pregunta.\n\n*(Fuente: V.39.txt, TEMA 8; Ley 39/2015, art. 43; RD 203/2021.)*"
+    },
+    {
+      "heading": "8. Expediente electrónico y archivo",
+      "body": "**Documento y expediente.** El **documento administrativo electrónico** es la unidad documental; el **expediente electrónico** es el conjunto ordenado de documentos y actuaciones que forman un procedimiento, con un **índice electrónico firmado** que garantiza su integridad y permite su recuperación. Los documentos se asocian a **metadatos** mínimos obligatorios y complementarios que los identifican y describen a lo largo de su ciclo de vida.\n\n**Copias auténticas.** La administración puede emitir **copias auténticas** de documentos públicos o privados con la misma validez que el original cuando cumple los requisitos; la digitalización se realiza con formatos, resoluciones y metadatos normalizados.\n\n**Conservación y archivo.** El **archivo electrónico único** conserva los expedientes durante su ciclo de vida y los pone a disposición cuando procede. Se conserva el **formato** original, preferentemente un estándar abierto, junto con la firma y los metadatos; cuando el formato queda obsoleto se aplican procedimientos de **copiado auténtico** y migración. El catálogo común incluye **InSiDe** para gestión documental, **Archive** para archivo definitivo y **eVisor** para generar copias auténticas en papel de documentos electrónicos firmados.\n\n*(Fuente: V.39.txt, TEMA 8 y TEMA 9; ENI, RD 4/2010, arts. 21-23.)*"
+    },
+    {
+      "heading": "9. Tramitación electrónica, automatización y responsabilidad",
+      "body": "**Tramitación de principio a fin.** El Reglamento regula la **actuación administrativa automatizada** —actos producidos por sistemas sin intervención directa de una persona—, el régimen de **subsanaciones** y la tramitación por medios electrónicos. La sede y el registro son las puertas de entrada y salida de la información, y el expediente electrónico es el soporte de la tramitación.\n\n**Responsabilidad de la tramitación.** Los titulares de las unidades administrativas y el personal que tiene a su cargo la resolución o el despacho de los asuntos son **responsables directos de la tramitación** y deben eliminar los obstáculos que impidan, dificulten o retrasen el ejercicio de los derechos de los interesados. La responsabilidad no desaparece porque el trámite sea electrónico.\n\n**Automatización con garantías.** La actuación automatizada exige identificar al órgano y el sistema que adopta la decisión, dejar traza y mantener las garantías del procedimiento: motivación cuando proceda, audiencia y control. La comodidad del sistema no puede recortar derechos ni trasladar al ciudadano errores de la administración. En el catálogo de servicios, **ACCEDA** cubre la sede y la gestión electrónica de procedimientos.\n\n*(Fuente: V.39.txt, TEMA 8; Ley 39/2015, art. 20; RD 203/2021.)*"
+    },
+    {
+      "heading": "10. Interoperabilidad (ENI) y servicios comunes",
+      "body": "**El ENI.** El **Esquema Nacional de Interoperabilidad**, aprobado por el **Real Decreto 4/2010**, es el conjunto de criterios y recomendaciones de seguridad, normalización y conservación que aseguran la interoperabilidad **organizativa, semántica y técnica** de los sistemas de las administraciones. Se apoya en tres principios específicos: la interoperabilidad como **cualidad integral**, su **carácter multidimensional** y el **enfoque de soluciones multilaterales**. El ENI fue modificado por el propio RD 203/2021 para adaptar el catálogo de estándares, los inventarios de información y la política de firma.\n\n**Normas técnicas.** El ENI se desarrolla mediante **Normas Técnicas de Interoperabilidad (NTI)**: catálogo de estándares, documento electrónico, digitalización, expediente electrónico, política de firma electrónica y de certificados, protocolos de intermediación de datos, modelos de datos, política de gestión de documentos, requisitos de conexión a la red de las administraciones, copiado auténtico y conversión, intercambio de asientos registrales, reutilización y declaración de conformidad. La **Red SARA** presta la red de comunicaciones de las administraciones públicas españolas.\n\n**Servicios comunes.** La administración no debe construir de cero lo que ya existe: el catálogo ofrece identificación (Cl@ve), firma y validación (@firma, Valide, TS@), notificaciones (DEHú), registro (SIR, ORVE), intermediación de datos (PID) y consulta ciudadana (Carpeta Ciudadana), entre otros. La reutilización de aplicaciones se canaliza por el **Centro de Transferencia de Tecnología (CTT)** y el ENI regula las condiciones de licenciamiento.\n\n*(Fuente: V.39.txt, TEMA 8 y TEMA 9; ENI, RD 4/2010, arts. 4-13 y disposición adicional primera.)*",
+      "table": {
+        "columns": ["Servicio", "Para qué sirve"],
+        "rows": [
+          ["Cl@ve", "Identificación y autenticación de la ciudadanía"],
+          ["@firma, Valide y TS@", "Validación de firmas y certificados y sellado de tiempo"],
+          ["DEHú y Notifica", "Notificaciones electrónicas y su puesta a disposición"],
+          ["SIR y ORVE", "Interconexión de registros entre administraciones"],
+          ["PID y Carpeta Ciudadana", "Intermediación de datos y consulta de trámites y notificaciones"]
+        ]
+      }
+    },
+    {
+      "heading": "11. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un vecino, persona física no obligada, quiere que una asesora colegiada presente en su nombre una solicitud de ayuda en la sede electrónica de una consejería y que le lleguen las notificaciones electrónicas.\n\n**Resolución.** (1) El vecino y la asesora acuerdan la representación; si se inscribe en el **Registro Electrónico de Apoderamientos**, el poder se acredita electrónicamente sin aportar documentos en cada trámite. (2) La asesora está obligada a relacionarse electrónicamente por su colegiación obligatoria y usa su certificado o Cl@ve para identificarse y firmar la solicitud. (3) La solicitud se presenta en la **sede electrónica**, que genera el **justificante** con fecha, hora y número de registro; si se presentara ante otra administración, el **SIR** la encaminaría al órgano competente. (4) La administración forma el **expediente electrónico** con los documentos y su índice firmado y notifica en la sede o en **DEHú**. (5) El vecino debe acceder al contenido: si no lo hace en **diez días naturales** y la notificación es obligatoria o elegida, se entenderá rechazada y el procedimiento continuará. (6) La administración puede consultar datos que ya obran en su poder mediante la **intermediación de datos (PID)**, evitando que el vecino aporte certificados innecesarios.\n\n**Conclusión.** Cada pieza tiene una función: registro, sede, identificación, representación, notificación y expediente. El error típico es confundir el **aviso** con la notificación o creer que no acceder paraliza el procedimiento."
+    },
+    {
+      "heading": "12. Resumen y fuentes",
+      "body": "**Lo que hay que memorizar.**\n\n- **RD 203/2021**: desarrolla la Ley 39/2015 y la Ley 40/2015; consta de 65 artículos, cuatro títulos, diez disposiciones adicionales y un anexo.\n- **Cuatro objetivos**: eficiencia administrativa, transparencia y participación, servicios digitales utilizables y seguridad jurídica.\n- **Obligados** (Ley 39/2015, art. 14): personas jurídicas, entidades sin personalidad, colegiación obligatoria, representantes de obligados y empleados públicos.\n- **Sede** = dirección electrónica con titularidad y responsabilidad; **portal** = punto de acceso; **PAG** = acceso general y a las notificaciones.\n- **Registro Electrónico General** en cada administración, interoperable y conectado por el **SIR**.\n- **Notificaciones**: sede o DEHú; se practican con el acceso; se rechazan a los **diez días naturales**.\n- **Expediente electrónico**: índice firmado, metadatos, copias auténticas y **archivo electrónico único**.\n- **ENI (RD 4/2010)**: interoperabilidad organizativa, semántica y técnica; NTI; Red SARA; hora oficial.\n- **Servicios comunes**: Cl@ve, @firma/Valide, DEHú, SIR, PID y Carpeta Ciudadana.\n\n**Fuentes.** Tema elaborado a partir del apartado de administración electrónica del Bloque 1 (TEMA 8 y TEMA 9) y contrastado con el RD 203/2021, la Ley 39/2015 y el ENI (RD 4/2010), publicados en el BOE. No se reproducen párrafos literales; los plazos citados están tomados de la ley (los diez días naturales del rechazo de la notificación)."
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Qué norma aprueba el Reglamento de actuación y funcionamiento del sector público por medios electrónicos?",
+      "options": [
+        "a) El Real Decreto 203/2021, de 30 de marzo",
+        "b) El Real Decreto 4/2010, de 8 de enero",
+        "c) El Real Decreto 311/2022, de 3 de mayo",
+        "d) El Real Decreto 1671/2009, de 6 de noviembre"
+      ],
+      "answer": "a",
+      "explanation": "El RD 203/2021 aprueba ese Reglamento y deroga el RD 1671/2009. El RD 4/2010 regula el ENI y el RD 311/2022 el ENS."
+    },
+    {
+      "question": "¿Cuál de los siguientes es uno de los cuatro objetivos del Reglamento de administración electrónica?",
+      "options": [
+        "a) Regular el régimen disciplinario de los empleados públicos",
+        "b) Sustituir la Ley 39/2015 por un reglamento",
+        "c) Establecer el régimen retributivo del personal",
+        "d) Mejorar la eficiencia administrativa y garantizar servicios digitales utilizables"
+      ],
+      "answer": "d",
+      "explanation": "Los cuatro objetivos son mejorar la eficiencia administrativa, incrementar la transparencia y la participación, garantizar servicios digitales fácilmente utilizables y reforzar la seguridad jurídica; no regula régimen disciplinario ni retribuciones."
+    },
+    {
+      "question": "¿Qué sujetos están obligados a relacionarse electrónicamente con las administraciones públicas?",
+      "options": [
+        "a) Todas las personas físicas, sin excepción",
+        "b) Las personas jurídicas y las entidades sin personalidad jurídica, entre otros",
+        "c) Solo los empleados públicos",
+        "d) Solo quien lo solicite expresamente"
+      ],
+      "answer": "b",
+      "explanation": "El artículo 14 de la Ley 39/2015 incluye a personas jurídicas, entidades sin personalidad, profesionales con colegiación obligatoria, representantes de obligados y empleados públicos por su condición; las personas físicas no obligadas pueden elegir."
+    },
+    {
+      "question": "¿Qué diferencia hay entre una sede electrónica y un portal de internet?",
+      "options": [
+        "a) Son exactamente lo mismo",
+        "b) La sede solo publica noticias y el portal tramita",
+        "c) El portal permite acceder a la información y, en su caso, a la sede; la sede es la dirección electrónica con titularidad y responsabilidad para prestar servicios y trámites",
+        "d) El portal solo existe en la Administración General del Estado"
+      ],
+      "answer": "c",
+      "explanation": "La sede electrónica es una dirección electrónica de titularidad pública con responsabilidad sobre la información y los servicios; el portal es un punto de acceso que informa y enlaza con la sede, sin sustituirla."
+    },
+    {
+      "question": "¿Cuál de los siguientes canales de asistencia a la ciudadanía prevé el Reglamento?",
+      "options": [
+        "a) El presencial en oficinas de asistencia",
+        "b) El telefónico",
+        "c) Los portales de internet y sedes electrónicas",
+        "d) Todos los anteriores, junto con las redes sociales y el correo electrónico"
+      ],
+      "answer": "d",
+      "explanation": "El Reglamento enumera los canales presencial, portales y sedes, redes sociales, telefónico y correo electrónico; la administración debe prestar asistencia por alguno o varios de ellos."
+    },
+    {
+      "question": "¿Qué sistemas de identificación se agrupan bajo la plataforma Cl@ve?",
+      "options": [
+        "a) Cl@ve Móvil, Cl@ve PIN y Cl@ve Permanente",
+        "b) Únicamente el DNI electrónico",
+        "c) El sello electrónico de órgano",
+        "d) Port@firmas y TS@"
+      ],
+      "answer": "a",
+      "explanation": "Cl@ve ofrece Cl@ve Móvil, Cl@ve PIN y Cl@ve Permanente para identificarse; el DNIe es un certificado, el sello electrónico identifica a la administración y Port@firmas y TS@ son servicios de firma y sellado."
+    },
+    {
+      "question": "¿Para qué sirve el sello electrónico de una administración pública?",
+      "options": [
+        "a) Para firmar el DNI de los ciudadanos",
+        "b) Para sustituir al registro electrónico",
+        "c) Para identificar a la administración y autenticar su actuación, con su NIF y denominación",
+        "d) Para cifrar el correo electrónico de los empleados"
+      ],
+      "answer": "c",
+      "explanation": "El sello electrónico se basa en un certificado reconocido o cualificado e incluye el NIF y la denominación de la entidad; identifica a la administración y autentica su actuación. La relación de sellos debe ser pública."
+    },
+    {
+      "question": "Si una notificación electrónica obligatoria no se abre, ¿cuándo se entiende rechazada?",
+      "options": [
+        "a) A los cinco días hábiles",
+        "b) A los diez días naturales desde la puesta a disposición",
+        "c) A los diez días hábiles",
+        "d) A los quince días naturales"
+      ],
+      "answer": "b",
+      "explanation": "Cuando la notificación es obligatoria o fue elegida por el interesado, se entiende rechazada transcurridos diez días naturales desde su puesta a disposición sin acceder a su contenido."
+    },
+    {
+      "question": "¿Cuándo se entiende practicada una notificación electrónica?",
+      "options": [
+        "a) Cuando se envía el aviso de puesta a disposición",
+        "b) A los diez días de la puesta a disposición, siempre",
+        "c) Cuando el interesado la firma",
+        "d) Cuando se accede a su contenido"
+      ],
+      "answer": "d",
+      "explanation": "La notificación se entiende practicada en el momento del acceso a su contenido; el aviso solo informa de que está disponible y la firma no es requisito para tenerla por practicada."
+    },
+    {
+      "question": "¿Qué servicio constituye la Dirección Electrónica Habilitada única para notificaciones?",
+      "options": [
+        "a) El SIR",
+        "b) La PID",
+        "c) DEHú",
+        "d) GEISER"
+      ],
+      "answer": "c",
+      "explanation": "DEHú es la Dirección Electrónica Habilitada única, punto único de notificaciones para las administraciones. El SIR interconecta registros, la PID intermedia datos y GEISER gestiona el registro de entrada y salida en oficinas."
+    },
+    {
+      "question": "¿Qué se puede presentar en un registro electrónico?",
+      "options": [
+        "a) Solo documentos electrónicos normalizados",
+        "b) Solo escritos presentados en papel",
+        "c) Documentos electrónicos normalizados y cualquier solicitud, escrito o comunicación dirigida a una administración",
+        "d) Solo documentos que ya estén firmados por la administración"
+      ],
+      "answer": "c",
+      "explanation": "Los registros admiten los documentos normalizados de los trámites previstos y cualquier solicitud, escrito o comunicación dirigida a una administración pública."
+    },
+    {
+      "question": "¿Qué sistema interconecta los registros de las distintas administraciones públicas?",
+      "options": [
+        "a) El Sistema de Interconexión de Registros (SIR)",
+        "b) La Plataforma de Intermediación de Datos (PID)",
+        "c) GEISER",
+        "d) El Punto de Acceso General"
+      ],
+      "answer": "a",
+      "explanation": "El SIR conecta los registros para que un asiento presentado ante una administración llegue al órgano competente de otra; la PID intermedia datos y GEISER gestiona la entrada y salida en oficinas de registro."
+    },
+    {
+      "question": "¿Qué dimensiones comprende la interoperabilidad según el ENI?",
+      "options": [
+        "a) Física, lógica y organizativa",
+        "b) Funcional, técnica y legal",
+        "c) Únicamente la técnica",
+        "d) Organizativa, semántica y técnica"
+      ],
+      "answer": "d",
+      "explanation": "El ENI exige interoperabilidad organizativa, semántica y técnica, con un enfoque integral y multilateral; las dimensiones física, lógica o funcional no son las que define el esquema."
+    },
+    {
+      "question": "¿Qué red presta la red de comunicaciones de las administraciones públicas españolas?",
+      "options": [
+        "a) RedIRIS",
+        "b) Red SARA",
+        "c) DEHú",
+        "d) El Punto de Acceso General"
+      ],
+      "answer": "b",
+      "explanation": "La Red SARA presta la red de comunicaciones de las administraciones públicas españolas; RedIRIS es la red académica y DEHú y el PAG son servicios de notificación y acceso, no redes de comunicaciones."
+    },
+    {
+      "question": "¿Qué finalidad tiene el archivo electrónico único?",
+      "options": [
+        "a) Guardar únicamente copias en papel de los expedientes",
+        "b) Conservar los expedientes electrónicos durante su ciclo de vida y ponerlos a disposición cuando procede",
+        "c) Sustituir al registro electrónico en la recepción de solicitudes",
+        "d) Eliminar las firmas electrónicas para ahorrar espacio"
+      ],
+      "answer": "b",
+      "explanation": "El archivo electrónico único conserva los documentos y expedientes electrónicos con su formato, firma y metadatos durante el ciclo de vida; no sustituye al registro ni elimina las firmas."
+    }
+  ],
+  "sources": [
+    {
+      "file": "V.39.txt",
+      "page": "apartados «TEMA 8 Reglamento Real Decreto 203/2021» y «TEMA 9. Catálogo de servicios»",
+      "use": "canales de asistencia, derecho y obligación de relacionarse electrónicamente, registro, sede, portal, sellos, notificaciones, resumen del ENS y del ENI y catálogo de servicios comunes"
+    },
+    {
+      "file": "Real Decreto 203/2021 (BOE-A-2021-5032)",
+      "page": "preámbulo y títulos I-IV",
+      "use": "objetivos, principios, PAGe, sedes electrónicas y asociadas, registros, notificaciones, expediente, archivo electrónico único y SIR"
+    },
+    {
+      "file": "Ley 39/2015 (BOE-A-2015-10565)",
+      "page": "arts. 9-10, 14, 20, 43 y 50",
+      "use": "identificación y firma, sujetos obligados, responsabilidad de la tramitación, notificaciones electrónicas y conversión de actos viciados"
+    },
+    {
+      "file": "Real Decreto 4/2010, Esquema Nacional de Interoperabilidad (BOE-A-2010-1331)",
+      "page": "arts. 4-13, 18-28 y disposición adicional primera",
+      "use": "principios y dimensiones de la interoperabilidad, Red SARA, hora oficial, normas técnicas de interoperabilidad, firma y conservación del documento electrónico"
+    }
+  ]
+}
