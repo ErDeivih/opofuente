@@ -17,7 +17,7 @@ casos prácticos y 40 prácticas**, publicado como demo estática, sin cuentas n
 | Prácticas | **40** (una por tema) |
 | Bloques | **5** (I-IV al 100 %; V 7/7) |
 | Convocatorias C1 | **12** (10 draft, 2 archivadas) |
-| Comprobaciones Playwright | **69/69** en la URL pública |
+| Comprobaciones Playwright | **71/71** en la URL pública |
 | Enlaces de convocatoria | **12/12** (HTTP 200) |
 | Pruebas | **517** unitarias backend · **225** web |
 | Capturas | 390 y 1280 px en `docs/capturas/demo-pages/` |
@@ -55,6 +55,8 @@ las opciones de test están equilibrados: 100 respuestas correctas por cada letr
 - **Prácticas** de 10 preguntas con corrección al elegir, explicación, fuente y reanudación.
 - **Casos prácticos**: 5 escenarios de 10 preguntas sobre los temas más delgados (II.15, II.16,
   II.17, III.18 y III.22), con su propio runner y registro en el historial.
+- **Temas largos**: I.1, III.21, IV.27, V.34 y V.35 con 2.488-3.064 palabras, 70 test cases, tablas
+  y 3 SVG propios; página autosuficiente y fuentes citadas por apartado/página.
 - **Guía de estudio** con orden de bloques y temas flojos (<70 % en la última práctica).
 - **Examen por bloque** y **examen completo** que mezcla los cinco bloques, con tiempo total,
   penalización por fallo, nota y revisión de fallos. El perfil TAI usa 120 min y −1/3; las C1 locales

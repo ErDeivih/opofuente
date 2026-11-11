@@ -90,3 +90,7 @@ datos**, **Seguridad de la información** y **ENS**.
 
 Estos ficheros son material de trabajo **interno** (derechos de terceros): no se publican ni se
 commitean. La demo publicada seguirá usando redacción propia y citas de fuente oficial.
+
+## Resultado
+
+Los cinco temas elegidos se han reescrito y están en [TEMAS-LARGOS.md](TEMAS-LARGOS.md): 2.488-3.064 palabras por tema, 70 casos tipo test, 27 tablas y 3 SVG propios.

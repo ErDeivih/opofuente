@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 10/11 (noche): 5 casos practicos de 10 preguntas cada uno para los temas mas delgados (II.15, II.16, II.17, III.18, III.22), con escenario propio y runner; 400 preguntas base + 50 de casos = 450. CASO-OPOFUENTE.md con cobertura 40/40, metricas y capturas actualizado. 69/69 comprobaciones y 12/12 enlaces.
+resumen: Sesion 11/11: inventario y extraccion de 147 fuentes locales, 5 temas largos reescritos (I.1, III.21, IV.27, V.34, V.35) con 2.488-3.064 palabras, 70 casos tipo test, 27 tablas, 3 SVG propios y fuentes citadas; cada tema con commit propio. Demo 71/71 y 40/40; quedan 35 temas y hay 5 sin fuente local suficiente.
 estado: completado
-tarea: temario 40/40 con practicas y casos; demo y portfolio al dia
+tarea: cinco temas largos integrados y demo actualizada
 nivel: 2
-siguiente: mantener la demo; revisar reglas de C1 locales cuando se publiquen; TAI recuperado privado
+siguiente: continuar con los siguientes temas segun fuentes; priorizar los que tienen TAI completo y no reescribir aun II.15, II.17, IV.33, I.9 ni I.10
 bloqueado: ninguno
-fecha: 2026-11-10
+fecha: 2026-11-11

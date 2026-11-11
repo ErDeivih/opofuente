@@ -39,6 +39,9 @@ servidor.
 - **Calidad revisada**: 40/40 fichas con «Lo que hay que memorizar» y «Errores típicos»; 5 temas
   reforzados (II.15, II.16, II.17, III.18, III.22) y letra correcta equilibrada (100 a/b/c/d).
   Detalle en [CALIDAD-TEMARIO.md](docs/CALIDAD-TEMARIO.md).
+- **Temas largos**: I.1, III.21, IV.27, V.34 y V.35 reescritos con 2.488-3.064 palabras, 70 casos
+  tipo test y 3 SVG propios; fuentes citadas y páginas de estudio autosuficientes. Detalle en
+  [TEMAS-LARGOS.md](docs/TEMAS-LARGOS.md).
 - Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14,
   II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26,
   IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, IV.33, V.34, V.35, V.36, V.37, V.38, V.39 y V.40.
@@ -108,6 +111,7 @@ servidor.
 | Tema IV.30 | — | [tema-iv-30-390](docs/capturas/demo-pages/tema-iv-30-390.png) |
 | Tema V.40 | — | [tema-v-40-390](docs/capturas/demo-pages/tema-v-40-390.png) |
 | Guía de estudio | — | [guia-390](docs/capturas/demo-pages/guia-390.png) |
+| Tema largo I.1 | — | [tema-completo-390](docs/capturas/demo-pages/tema-completo-390.png) |
 | Examen | — | [examen-390](docs/capturas/demo-pages/examen-390.png) |
 | Examen completo | — | [examen-completo-390](docs/capturas/demo-pages/examen-completo-390.png) |
 | Resultado del examen | — | [examen-resultado-390](docs/capturas/demo-pages/examen-resultado-390.png) |
@@ -121,7 +125,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **69/69** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **71/71** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -178,7 +182,7 @@ servidor.
 
 ## 9. Revisión final y qué queda
 
-- **69/69** comprobaciones, también a **390 px**; capturas nuevas en
+- **71/71** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
 - **40/40** temas completos: I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7.
@@ -186,4 +190,4 @@ servidor.
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 69/69 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 71/71 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
