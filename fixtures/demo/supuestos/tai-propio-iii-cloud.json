@@ -1,0 +1,251 @@
+{
+  "slug": "tai-propio-iii-cloud",
+  "year": 2026,
+  "conv": "Supuesto propio · OpoFuente 2026",
+  "block": "III",
+  "title": "Migración de servicios a la nube",
+  "difficulty": "media",
+  "official": false,
+  "estimatedMinutes": 30,
+  "statement": "Un organismo quiere mover parte de sus servicios a la nube manteniendo datos sensibles en su CPD. El equipo debe elegir modelo de servicio, despliegue, redundancia, almacenamiento, seguridad y costes.",
+  "steps": [
+    "1. Clasificar servicios y datos.",
+    "2. Elegir IaaS/PaaS/SaaS y despliegue.",
+    "3. Diseñar redundancia y continuidad.",
+    "4. Resolver seguridad y costes.",
+    "5. Planificar la migración."
+  ],
+  "topics": [
+    "III.25",
+    "III.19",
+    "III.20",
+    "IV.33"
+  ],
+  "source": {
+    "label": "Elaboración propia · OpoFuente",
+    "url": "https://erdeivih.github.io/opofuente-demo/",
+    "pages": "Material propio de la demo"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué modelo ofrece máquinas, red y almacenamiento y deja al cliente el sistema operativo?",
+      "options": [
+        "SaaS",
+        "PaaS",
+        "IaaS",
+        "On-premise"
+      ],
+      "correct": "c",
+      "justification": "En IaaS el proveedor gestiona la infraestructura y el cliente el sistema operativo, el middleware y la aplicación."
+    },
+    {
+      "stem": "¿Qué modelo ofrece un entorno de ejecución y el cliente solo despliega su aplicación?",
+      "options": [
+        "Colocation",
+        "IaaS",
+        "SaaS",
+        "PaaS"
+      ],
+      "correct": "d",
+      "justification": "En PaaS el proveedor gestiona la infraestructura y el runtime; el cliente se centra en la aplicación y los datos."
+    },
+    {
+      "stem": "¿Qué significa responsabilidad compartida en la nube?",
+      "options": [
+        "El proveedor protege la infraestructura y el cliente sus datos, identidades y configuración",
+        "El proveedor se responsabiliza de todo",
+        "El cliente se responsabiliza de todo",
+        "No hay responsabilidades de seguridad"
+      ],
+      "correct": "a",
+      "justification": "La seguridad se reparte: el proveedor protege la plataforma y el cliente gestiona datos, accesos y configuración."
+    },
+    {
+      "stem": "¿Qué característica del NIST permite aprovisionar recursos sin intervención del proveedor?",
+      "options": [
+        "Elasticidad rápida",
+        "Autoservicio bajo demanda",
+        "Servicio medido",
+        "Agrupación de recursos"
+      ],
+      "correct": "b",
+      "justification": "El autoservicio permite al cliente obtener recursos por sí mismo; la elasticidad es la capacidad de escalar."
+    },
+    {
+      "stem": "¿Qué es una nube híbrida?",
+      "options": [
+        "Un centro de datos sin virtualización",
+        "Una nube solo para empleados",
+        "Una combinación de nube pública y privada",
+        "Un modelo sin facturación"
+      ],
+      "correct": "c",
+      "justification": "La nube híbrida combina entornos públicos y privados y permite mover cargas según requisitos."
+    },
+    {
+      "stem": "¿Qué es una zona de disponibilidad?",
+      "options": [
+        "Una copia de seguridad",
+        "Un tipo de contrato",
+        "Un protocolo de correo",
+        "Una ubicación separada con infraestructura redundante dentro de una región"
+      ],
+      "correct": "d",
+      "justification": "Las zonas de disponibilidad están separadas físicamente para que un fallo local no afecte a toda la región."
+    },
+    {
+      "stem": "¿Qué debe incluir un contrato de nube para evitar dependencia excesiva?",
+      "options": [
+        "Exportación de datos y un plan de salida",
+        "Solo el precio mensual",
+        "La promesa de no cambiar nunca",
+        "La eliminación de las copias"
+      ],
+      "correct": "a",
+      "justification": "La portabilidad exige poder exportar datos y servicios; sin plan de salida el lock-in es alto."
+    },
+    {
+      "stem": "¿Quién sigue siendo responsable del tratamiento de datos personales en la nube?",
+      "options": [
+        "El proveedor de la nube",
+        "La administración que contrata el servicio",
+        "El fabricante del hardware",
+        "Nadie"
+      ],
+      "correct": "b",
+      "justification": "El proveedor puede ser encargado del tratamiento, pero el responsable sigue siendo la administración."
+    },
+    {
+      "stem": "¿Por qué una copia en la nube no es automáticamente una copia de seguridad?",
+      "options": [
+        "Porque las copias solo se hacen en cinta",
+        "Porque la nube no almacena datos",
+        "Porque la sincronización replica también borrados y cifrado; hace falta una copia independiente y probada",
+        "Porque la nube no tiene cifrado"
+      ],
+      "correct": "c",
+      "justification": "La replicación o sincronización no protege de borrados, ransomware o errores; se necesita copia independiente, retención y prueba de restauración."
+    },
+    {
+      "stem": "¿Qué decisión debe tomarse antes de elegir nube para un sistema público?",
+      "options": [
+        "Eliminar el plan de continuidad",
+        "Elegir el proveedor más barato sin analizar",
+        "Subir todos los datos sin cifrar",
+        "Clasificar la información y revisar requisitos legales y de soberanía"
+      ],
+      "correct": "d",
+      "justification": "La clasificación de datos y los requisitos legales determinan qué puede ir a la nube y con qué garantías."
+    },
+    {
+      "stem": "¿Qué es un KPI?",
+      "options": [
+        "Un lenguaje de programación",
+        "Un tipo de tabla de base de datos",
+        "Un indicador clave con fórmula, periodo y meta para medir un objetivo",
+        "Un protocolo de red"
+      ],
+      "correct": "c",
+      "justification": "El KPI mide un objetivo de forma accionable; debe tener fórmula, unidad, periodo y meta."
+    },
+    {
+      "stem": "¿Qué significa ETL?",
+      "options": [
+        "Editar, tabular y leer",
+        "Enviar, transmitir y listar",
+        "Evaluar, testear y lanzar",
+        "Extraer, transformar y cargar datos"
+      ],
+      "correct": "d",
+      "justification": "ETL mueve datos desde fuentes, los limpia y transforma, y los carga en un destino analítico."
+    },
+    {
+      "stem": "¿Qué gráfico es más adecuado para comparar categorías?",
+      "options": [
+        "Barras",
+        "Líneas",
+        "Tarta",
+        "Dispersión"
+      ],
+      "correct": "a",
+      "justification": "Las barras comparan magnitudes entre categorías; las líneas muestran evolución temporal."
+    },
+    {
+      "stem": "¿Qué gráfico muestra mejor una evolución temporal?",
+      "options": [
+        "Tarta",
+        "Líneas",
+        "Barras horizontales",
+        "Mapa"
+      ],
+      "correct": "b",
+      "justification": "La línea representa la evolución de un valor a lo largo del tiempo."
+    },
+    {
+      "stem": "¿Qué es una vista materializada?",
+      "options": [
+        "Un índice de texto",
+        "Una tabla temporal que se borra al cerrar",
+        "Una consulta cuyo resultado se guarda para acelerar lecturas",
+        "Un tipo de gráfico"
+      ],
+      "correct": "c",
+      "justification": "La vista materializada almacena el resultado y debe actualizarse; acelera consultas costosas."
+    },
+    {
+      "stem": "¿Qué permite un modelo en estrella?",
+      "options": [
+        "Sustituir el ETL",
+        "Eliminar la necesidad de SQL",
+        "Cifrar los datos",
+        "Separar hechos y dimensiones para facilitar el análisis"
+      ],
+      "correct": "d",
+      "justification": "El modelo en estrella organiza hechos y dimensiones y simplifica filtros y agregaciones."
+    },
+    {
+      "stem": "¿Qué debe incluir un panel para no engañar?",
+      "options": [
+        "Periodo, unidad, fuente y definición de cada KPI",
+        "Solo colores llamativos",
+        "La mayor cantidad de gráficos posible",
+        "Datos personales sin protección"
+      ],
+      "correct": "a",
+      "justification": "El contexto y las definiciones evitan interpretaciones erróneas y permiten auditar las cifras."
+    },
+    {
+      "stem": "¿Qué es drill-down?",
+      "options": [
+        "Eliminar filtros",
+        "Pasar de un resumen a un nivel de detalle mayor",
+        "Cambiar el color del gráfico",
+        "Exportar a PDF"
+      ],
+      "correct": "b",
+      "justification": "El drill-down permite navegar del agregado al detalle para investigar una cifra."
+    },
+    {
+      "stem": "¿Qué riesgo tiene un panel con datos personales?",
+      "options": [
+        "Que no se pueda exportar",
+        "Que los gráficos sean más lentos",
+        "Exponer información si no se controla el acceso y se minimiza",
+        "Ninguno, si está en la intranet"
+      ],
+      "correct": "c",
+      "justification": "Los datos personales requieren base jurídica, minimización, control de acceso y, a menudo, agregación."
+    },
+    {
+      "stem": "¿Por qué hay que validar la calidad del dato antes de publicar un informe?",
+      "options": [
+        "Porque mejora el color",
+        "Porque el informe ocupa más",
+        "Porque lo exige el lenguaje SQL",
+        "Porque nulos, duplicados o rangos erróneos producen conclusiones falsas"
+      ],
+      "correct": "d",
+      "justification": "Un informe con datos sucios transmite errores con apariencia de rigor; la validación es parte del proceso."
+    }
+  ]
+}

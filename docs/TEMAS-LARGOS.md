@@ -3,18 +3,23 @@
 **Fecha:** 11/11/2026 · **Objetivo:** que cada tema se pueda estudiar sin abrir otro PDF, con
 redacción propia y fuentes citadas.
 
-## Los diecinueve temas
+## Los veinticinco temas
 
 | Tema | Título | Palabras | Apartados | Test cases | Tablas | Diagrama |
 |---|---|---|---|---|---|---|
 | I.1 | La Constitución Española de 1978 | **1.543** | 10 | 15 | 1 | SVG de estructura |
 | II.13 | Arquitectura de ordenadores | **2.692** | 10 | 15 | 1 | SVG Von Neumann |
 | II.14 | Sistemas operativos de usuario | **2.082** | 10 | 15 | 6 | — |
+| II.15 | Ofimática | **1.923** | 10 | 15 | 6 | — |
+| II.16 | Correo y colaboración | **2.186** | 10 | 15 | 6 | — |
+| II.17 | Licencias y software libre | **2.434** | 10 | 15 | 6 | — |
 | III.18 | Sistemas operativos de servidor | **2.485** | 10 | 15 | 6 | — |
 | III.19 | Virtualización y contenedores | **2.454** | 10 | 15 | 6 | — |
 | III.20 | Almacenamiento y copias | **2.850** | 10 | 15 | 1 | — |
 | III.21 | Redes | **3.152** | 10 | 15 | 1 | SVG pila OSI |
 | III.24 | Monitorización e incidencias | **2.608** | 10 | 15 | 1 | — |
+| III.25 | Cloud y centros de datos | **2.818** | 10 | 15 | 1 | — |
+| III.26 | Soporte al puesto de trabajo | **2.730** | 10 | 15 | 1 | — |
 | III.22 | Comunicaciones | **2.950** | 10 | 15 | 1 | — |
 | III.23 | Servicios de red | **2.528** | 10 | 15 | 6 | — |
 | IV.27 | Bases de datos relacionales | **3.006** | 12 | 14 | 2 | — |
@@ -23,14 +28,15 @@ redacción propia y fuentes citadas.
 | IV.30 | Programación | **2.591** | 10 | 15 | 1 | — |
 | IV.31 | Desarrollo web | **2.898** | 10 | 15 | 1 | — |
 | IV.32 | Interoperabilidad | **2.782** | 10 | 15 | 1 | — |
+| IV.33 | Informes y explotación de datos | **2.349** | 10 | 15 | 1 | — |
 | V.34 | Seguridad de la información | **3.064** | 12 | 13 | 5 | SVG triada CIA |
 | V.35 | ENS (RD 311/2022) | **2.488** | 12 | 14 | 3 | — |
 | V.39 | Administración electrónica práctica | **2.448** | 12 | 15 | 3 | — |
 
-**Media:** 2.620 palabras por tema · **281 casos tipo test** en total (10-15 por tema) · **48 tablas**
+**Media:** 2.569 palabras por tema · **371 casos tipo test** en total (10-15 por tema) · **69 tablas**
 comparativas · **4 diagramas SVG propios**.
 
-I.1, II.13, II.14, III.18, III.19, III.20, III.21, III.22, III.23, III.24, IV.28, IV.29, IV.30, IV.31 y IV.32 se han reescrito con la **estructura definitiva de 10 apartados**: ficha oficial, epígrafes,
+I.1, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26, IV.28, IV.29, IV.30, IV.31, IV.32 y IV.33 se han reescrito con la **estructura definitiva de 10 apartados**: ficha oficial, epígrafes,
 introducción, desarrollo por epígrafe con norma al artículo, tabla, ejemplo, trampas, resumen, test
 comentado y fuentes. Los demás temas siguen la misma idea y se irán adaptando a ese formato.
 

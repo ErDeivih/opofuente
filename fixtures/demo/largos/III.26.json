@@ -1,0 +1,284 @@
+{
+  "tema": "III.26",
+  "title": "Soporte al puesto de trabajo: inventario, despliegue, SLA y endpoint",
+  "difficulty": "media",
+  "topics": [
+    "III.26",
+    "III.24"
+  ],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema III.26 · Soporte al puesto de trabajo.** Bloque III (Sistemas, redes y comunicaciones) del temario común de Técnicos Auxiliares de Informática. Se relaciona con el tema III.24 (monitorización y gestión de incidencias): el soporte al puesto es el día a día del service desk y de la administración de equipos.\n\n**Objetivo de examen.** Reconocer el ciclo de vida del puesto (inventario, imagen, despliegue, mantenimiento y retirada), aplicar los niveles de servicio (SLA, SLM, OLA y UC), clasificar incidencias por severidad y prioridad, distinguir los tipos de mantenimiento y resolver las tareas típicas de actualización, reparación, seguridad del puesto y teletrabajo. Dificultad **media**: mucha terminología y siglas fáciles de confundir.\n\n**Fuentes de este tema.** El consolidado data/fuentes/III.26.txt, formado por Tema 6.docx (administración del sistema, incidencias y SLA/SLM), Tema 10.docx (seguridad de los sistemas y del puesto) y Bloque 4 Actualizado 2026.docx (administración del SO, actualización, copias, MDM/BYOD, VPN y VDI). (Fuente: data/fuentes/III.26.txt.)"
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "Este tema se ordena en diez apartados:\n\n1. Ficha oficial del tema: ubicación, objetivo, dificultad y fuentes.\n2. Índice de epígrafes: el mapa que está leyendo.\n3. Introducción y contexto: el ciclo de vida del puesto de trabajo.\n4. Desarrollo por epígrafe: inventario, imagen y despliegue, mantenimiento, incidencias, SLA/SLM, helpdesk, seguridad del puesto, teletrabajo y métricas.\n5. Tabla comparativa: tipos de mantenimiento.\n6. Ejemplo práctico resuelto.\n7. Trampas típicas de examen.\n8. Resumen para memorizar.\n9. Casos tipo test comentados (15 preguntas).\n10. Fuentes citadas.\n\nLos epígrafes oficiales (inventario, imagen, despliegue, incidencias, helpdesk, SLA, seguridad del puesto y teletrabajo) se cubren en el apartado 4; los casos del apartado 9 coinciden con los quince testCases del fichero. (Fuente: data/fuentes/III.26.txt.)"
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "El soporte al puesto de trabajo cubre todo lo que ocurre desde que se prepara un equipo para un usuario hasta que se retira. No es solo «arreglar ordenadores»: incluye inventariar el parque, preparar una imagen base, desplegarla, mantener el sistema actualizado, atender incidencias con unos niveles de servicio, proteger el endpoint y dar servicio a quienes trabajan fuera de la oficina.\n\nLa fuente ordena esas tareas desde el papel del administrador: conoce el sistema, lo diseña de forma fiable, lo hace fácil de usar, se anticipa a los problemas y tiene un plan de contingencia. Entre sus funciones están instalar y configurar estaciones, gestionar usuarios, altas y bajas, agregar o quitar hardware, hacer copias, instalar software, monitorizar, resolver problemas y mantener la documentación al día. Esa documentación («qué, quién, cuándo y cómo») es la base del inventario y del histórico de cada equipo.\n\nSobre esa operación se apoyan dos capas: los **acuerdos de nivel de servicio** (SLA, SLM, OLA y UC), que fijan qué se promete y cómo se mide, y la **seguridad del puesto**, que protege el equipo y los datos con actualizaciones, antivirus, cortafuegos y políticas de uso. El teletrabajo añade una tercera dimensión: el acceso remoto seguro y la gestión de dispositivos fuera de la oficina. (Fuentes: Tema 6.docx, apartados 2 y 3; Tema 10.docx, apartados 2 y 6.2; Bloque 4 Actualizado 2026.docx, Tema 1.)"
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**1) Inventario y ciclo de vida.** Inventariar es mantener un registro actualizado de cada equipo y de su configuración: usuario asignado, hardware, software instalado, número de serie, ubicación y garantía. La fuente relaciona esta tarea con las responsabilidades del administrador: crear y mantener el esquema de hardware, documentar la configuración del SO y del cableado, los registros de mantenimiento y las copias. Un inventario bien llevado permite saber qué hay, dónde está y qué hay que actualizar o retirar; sin él, el soporte se vuelve reactivo y se duplican compras.\n\n**2) Imagen y despliegue.** Una **imagen** es una plantilla del sistema operativo y del software base que se instala en los equipos nuevos para que todos partan de una configuración homogénea y probada. La fuente menciona la instalación desde USB, DVD o red, la configuración de particiones y usuarios y la herramienta DISM de Windows («Administración y mantenimiento de imagen de implementación»), que sirve para preparar y mantener imágenes de implementación. El **despliegue** es el proceso de distribuir esa imagen a los puestos; hacerlo por imágenes reduce errores y tiempo frente a instalar equipo a equipo. Después del despliegue hay que actualizar el inventario y entregar el equipo con sus instrucciones de uso.\n\n**3) Configuración, actualización y mantenimiento.** La configuración incluye usuarios y permisos (Panel de Control y Administrador de Usuarios en Windows; adduser, chmod y chown en Linux). Actualizar aporta seguridad, corrige fallos y mejora el rendimiento; en Windows se usan Windows Update y WSUS (que centraliza y distribuye las actualizaciones en la red), y en Linux los gestores de paquetes (apt en Debian/Ubuntu, yum/dnf en Red Hat/CentOS, pacman en Arch). En macOS se usa la App Store y softwareupdate. La fuente distingue parches de seguridad, actualizaciones de software y de firmware.\n\nEl **mantenimiento** se clasifica de dos formas. Según dónde esté el técnico: «in site» (se desplaza a la oficina), «on site» (ya está en ella) y **remoto** (resuelve problemas de software con herramientas de control remoto). Según la acción: **correctivo** (corrige errores), **evolutivo** (cubre nuevas necesidades), **adaptativo** (adapta el entorno de hardware o software) y **perfectivo** (revisa para detectar focos de problemas). Para reparar se dispone de Modo Seguro o Recovery Mode, CHKDSK/fsck, System Restore o snapshots y Live CD; en Windows, bootrec (FixMBR, FixBoot, RebuildBCD), SFC y DISM.\n\n**4) Incidencias: severidad y prioridad.** Una incidencia puede venir de un comportamiento anómalo del software, de la red, de incompatibilidades entre arquitecturas o sistemas o de una actualización. Toda incidencia tiene un **nivel de severidad** y una **prioridad** de resolución. La fuente distingue: **Urgente** (aplicación crítica, plazo que se puede vencer, impacto directo y sin workaround), **Alta** (crítica y sensible al tiempo, impacto indirecto, pero con workaround), **Media** (afecta a operaciones normales, hay workaround y no es sensible al tiempo) y **Baja** (afecta a documentación o procedimientos, sin impacto en la capacidad del usuario y con workaround). El **workaround** es la alternativa temporal que suple al componente afectado.\n\n**5) SLA y SLM.** El **SLA** es el contrato que fija los niveles de un servicio con parámetros objetivos: tipo de servicio, soporte y asistencia, seguridad y datos, garantías y tiempos de respuesta, disponibilidad, conectividad, multas por caída y especificaciones de MTBF y MTTR. La prestación incluye instalar y mantener versiones del SO y software base, monitorizar y optimizar, configurar comunicaciones, administrar usuarios y grupos y mantener las copias. La fuente agrupa los procesos en gestión de disponibilidad, configuración, rendimiento, seguridad y backup. El **SLM** (Service Level Management) es la metodología que asegura que los clientes reciben los niveles acordados y que los OLA y UC son apropiados.\n\n**6) Helpdesk y funciones de soporte.** La fuente habla del grupo de soporte y de la matriz **RACI** para definir roles: **Responsible** (hace el trabajo), **Accountable** (responsable único del resultado), **Consulted** (se le consulta) e **Informed** (debe estar al tanto). En el marco estándar, el **helpdesk o service desk** es el punto único de contacto: registra el ticket, lo clasifica, lo prioriza, lo resuelve o lo escala (primer, segundo y tercer nivel; escalado funcional o jerárquico) y lo cierra con confirmación. La fuente no desarrolla el service desk como tal; se resume como concepto estándar.\n\n**7) Seguridad del puesto.** El endpoint se protege en capas: políticas de seguridad y medidas (la fuente distingue medidas de prevención, detección y recuperación), antivirus y antitroyanos, cortafuegos local y proxies, actualizaciones y parches, control de usuarios y permisos, y control de acceso a la red (NAC) para autorizar o denegar dispositivos según políticas. La formación del usuario y la política de uso completan la protección: el eslabón humano sigue siendo el principal vector de entrada.\n\n**8) Teletrabajo y acceso remoto.** El teletrabajo se apoya en la **VPN de acceso remoto**, que da al usuario un acceso seguro a la red corporativa desde cualquier conexión a Internet; la VPN garantiza confidencialidad, integridad y autenticación mediante túneles cifrados (IPsec, OpenVPN basado en SSL/TLS, L2TP/IPsec, etc.). El **split tunneling** decide qué tráfico se encamina por el túnel y cuál va directo a Internet. Para publicar escritorios se usa **VDI** (infraestructura de escritorio virtual), con escritorios persistentes (el usuario personaliza su imagen) o no persistentes (vuelven a su estado original al cerrar sesión). Los dispositivos se gestionan con MDM y modelos BYOD, CYOD, COBO o COPE.\n\n**9) Métricas.** El **tiempo de respuesta** es el que transcurre desde el aviso hasta que el equipo técnico se dispone a resolver; el **MTTR** mide desde la notificación hasta la restitución; el **MTBF** es el periodo medio entre fallos consecutivos y se usa como medida de calidad. En copias de seguridad, la fuente añade RPO (pérdida máxima de datos), RTO (tiempo máximo de restauración), MTD (caída máxima tolerable) y WRT (tiempo para retomar el trabajo). La disponibilidad y el cumplimiento del SLA se calculan con estas métricas. (Fuentes: Tema 6.docx, apartados 2, 3 y 4; Tema 10.docx, apartados 2, 6 y 6.2; Bloque 4 Actualizado 2026.docx, Tema 1, Tema 2, Tema 9 y Tema 10.)"
+    },
+    {
+      "heading": "5. Tabla comparativa: tipos de mantenimiento",
+      "body": "Clasificación del mantenimiento según la acción realizada, con un ejemplo de cada tipo. (Fuente: Tema 6.docx, apartado 4.2.)",
+      "table": {
+        "columns": [
+          "Tipo",
+          "Qué busca",
+          "Ejemplo"
+        ],
+        "rows": [
+          [
+            "Correctivo",
+            "Corregir errores concretos",
+            "Reparar un servicio que no arranca"
+          ],
+          [
+            "Evolutivo",
+            "Cubrir nuevas necesidades o cambios",
+            "Añadir una función solicitada por los usuarios"
+          ],
+          [
+            "Adaptativo",
+            "Adaptar el entorno de hardware o software",
+            "Actualizar el sistema para una nueva versión del SO"
+          ],
+          [
+            "Perfectivo",
+            "Detectar focos de problemas antes de que aparezcan",
+            "Revisar y optimizar el rendimiento periódicamente"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un organismo incorpora a un nuevo empleado. Hay que preparar su puesto, entregarlo con seguridad y atender una incidencia de correo en su primer día.\n\n**Resolución.**\n\n- **Inventario:** se da de alta el equipo en el inventario con número de serie, usuario, ubicación y software autorizado.\n- **Imagen y despliegue:** se aplica la imagen base del organismo (SO y aplicaciones ofimáticas) y se personaliza la cuenta; se comprueba que el equipo arranca y que la configuración coincide con la imagen.\n- **Actualización y seguridad:** se instalan parches por WSUS, se actualiza el antivirus, se activa el cortafuegos y se aplican las políticas de usuario y de acceso a la red.\n- **Entrega:** se documenta la entrega y se explica al usuario cómo solicitar soporte y cómo usar la VPN si va a teletrabajar.\n- **Incidencia:** el usuario no puede enviar correo. Se abre un ticket, se clasifica como **Alta** (aplicación crítica, sensible al tiempo, con workaround: puede usar la web de correo) y se resuelve en el primer nivel reconfigurando el cliente. El tiempo desde la notificación hasta la restitución es de 40 minutos, dentro del SLA.\n\n**Qué se aprende.** El puesto se soporta mejor con procesos: inventario para saber qué hay, imagen para desplegar igual en todas partes, actualizaciones y seguridad para prevenir, SLA para comprometer plazos y un ticket para dejar trazabilidad. (Fuentes: Tema 6.docx, apartados 2, 3 y 4; Bloque 4 Actualizado 2026.docx, Tema 1.)"
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "- **SLA no es SLM.** El SLA es el acuerdo concreto con parámetros y penalizaciones; el SLM es la metodología que vela por cumplir los niveles acordados.\n- **OLA no es UC.** La OLA es un acuerdo interno entre equipos y el UC un contrato con un proveedor externo.\n- **Severidad no es prioridad.** La severidad describe el impacto; la prioridad ordena la resolución combinando impacto y urgencia.\n- **Workaround no es solución.** Es la alternativa temporal que permite seguir trabajando mientras se busca la causa.\n- **«In site» no es «on site».** «In site» implica que el técnico se desplaza; «on site» que ya está en la oficina; el remoto resuelve por control remoto.\n- **Correctivo no es perfectivo.** El correctivo repara un error; el perfectivo busca focos de problemas antes de que ocurran.\n- **MTTR no es MTBF.** El MTTR mide la reparación; el MTBF, el tiempo entre fallos. El tiempo de respuesta es otro concepto distinto.\n- **Windows Update no es WSUS.** Windows Update descarga del fabricante; WSUS centraliza y distribuye actualizaciones en la red.\n- **apt-get update no instala.** Actualiza la lista de paquetes; para instalar o actualizar se usa upgrade u otra orden equivalente.\n- **bootrec, SFC y DISM no son lo mismo.** bootrec repara el arranque; SFC comprueba archivos protegidos; DISM mantiene y repara imágenes de Windows.\n- **VPN no es proxy.** La VPN cifra todo el tráfico; el proxy solo redirige y no cifra.\n- **VDI persistente no es no persistente.** La persistente conserva la personalización; la no persistente vuelve al estado original al cerrar sesión.\n- **BYOD no es COPE.** En BYOD el dispositivo es del empleado; en COPE es de la empresa con permiso de uso personal.\n\n(Fuentes: Tema 6.docx, apartados 3 y 4; Tema 10.docx, apartados 6 y 6.2; Bloque 4 Actualizado 2026.docx, Tema 1, Tema 9 y Tema 10.)"
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "Lo que hay que retener:\n\n- Ciclo del puesto: inventario, imagen, despliegue, configuración, mantenimiento y retirada; la documentación es la base del inventario.\n- Imagen base y despliegue homogéneo; DISM para imágenes de Windows; instalación desde USB, DVD o red.\n- Actualizaciones: Windows Update y WSUS en Windows; apt, yum/dnf y pacman en Linux; parches de seguridad, software y firmware.\n- Mantenimiento según lugar: in site, on site y remoto. Según acción: correctivo, evolutivo, adaptativo y perfectivo.\n- Reparación: Modo Seguro/Recovery, CHKDSK/fsck, System Restore, bootrec, SFC y DISM.\n- Incidencias: severidad y prioridad; Urgente, Alta, Media y Baja según criticidad, plazo y workaround.\n- SLA con sus apartados; SLM, OLA y UC. Procesos: disponibilidad, configuración, rendimiento, seguridad y backup.\n- RACI: Responsible, Accountable, Consulted, Informed.\n- Seguridad del puesto: antivirus, antitroyanos, cortafuegos, parches, permisos, NAC y formación.\n- Teletrabajo: VPN de acceso remoto, split tunneling, VDI persistente o no persistente y MDM/BYOD/CYOD/COBO/COPE.\n- Métricas: tiempo de respuesta, MTTR, MTBF, disponibilidad; en copias, RPO, RTO, MTD y WRT.\n\n(Fuentes: Tema 6.docx, apartados 2-4; Tema 10.docx, apartados 2 y 6; Bloque 4 Actualizado 2026.docx, Tema 1, Tema 2, Tema 9 y Tema 10.)"
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos del fichero, comentados y con su referencia:\n\n**1.** Qué es un SLA. **Respuesta: a)** El acuerdo con el cliente que fija niveles medibles del servicio (apartado 4, SLA).\n\n**2.** Criterio de una incidencia «Urgente». **Respuesta: b)** Aplicación crítica, plazo sensible y sin workaround (apartado 4, incidencias).\n\n**3.** Rol RACI responsable único del resultado final. **Respuesta: c)** Accountable (apartado 4, helpdesk y funciones).\n\n**4.** Mantenimiento que corrige errores concretos. **Respuesta: d)** Correctivo (apartado 4, mantenimiento).\n\n**5.** Mantenimiento en el que el técnico ya está en la oficina. **Respuesta: a)** On site (apartado 4, mantenimiento).\n\n**6.** Qué hace WSUS. **Respuesta: b)** Centraliza y distribuye actualizaciones Windows en la red (apartado 4, actualización).\n\n**7.** Qué hace «sudo apt-get update». **Respuesta: c)** Actualiza la lista de paquetes disponibles (apartado 4, actualización).\n\n**8.** Para qué sirve DISM. **Respuesta: d)** Mantener y reparar imágenes de Windows (apartado 4, reparación).\n\n**9.** Qué repara bootrec con /FixMBR. **Respuesta: a)** El MBR (apartado 4, reparación).\n\n**10.** Qué mide el MTTR. **Respuesta: b)** El tiempo entre la notificación y la restitución (apartado 4, métricas).\n\n**11.** Qué mide el MTBF. **Respuesta: c)** El periodo medio entre fallos consecutivos (apartado 4, métricas).\n\n**12.** Qué permite la VPN de acceso remoto. **Respuesta: d)** Acceder con seguridad a la red corporativa desde Internet (apartado 4, teletrabajo).\n\n**13.** Qué permite el split tunneling. **Respuesta: a)** Decidir qué tráfico va por la VPN y qué tráfico sale directo (apartado 4, teletrabajo).\n\n**14.** Qué caracteriza al VDI no persistente. **Respuesta: b)** El escritorio vuelve a su estado original al cerrar sesión (apartado 4, teletrabajo).\n\n**15.** Qué es BYOD. **Respuesta: c)** El empleado usa su dispositivo personal (apartado 4, teletrabajo).\n\nCada caso incluye su explicación completa y la referencia de fuente en el campo reference de testCases. (Fuentes: Tema 6.docx, apartados 3 y 4; Bloque 4 Actualizado 2026.docx, Tema 1, Tema 9 y Tema 10.)"
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "- **Tema 6.docx**, apartados 1-4: tipos de software, tareas y responsabilidades del administrador, gestión de incidencias (SLA/SLM, severidad y prioridad, RACI, herramientas de gestión), actualización del SO (Windows Update, WSUS, YUM, APT), mecanismos de reparación (bootrec, SFC, DISM), tipos de mantenimiento y métricas (tiempo de respuesta, MTTR, MTBF).\n- **Tema 10.docx**, apartados 2 y 6: políticas de seguridad, tipos de medidas, identificación y autenticación, amenazas, virus, programas de defensa (cortafuegos, antitroyanos, proxys).\n- **Bloque 4 Actualizado 2026.docx**, Tema 1 (administración del SO, instalación, actualización, mantenimiento y reparación), Tema 2 (copias: RPO, RTO, MTD y WRT), Tema 9 (VPN: acceso remoto, túnel, split tunneling, IPsec, OpenVPN, VDI) y Tema 10 (MDM, BYOD, CYOD, COBO y COPE; NAC).\n- **data/fuentes/III.26.txt**: texto consolidado de las fuentes anteriores, utilizado para verificar las citas.\n\nAviso de alcance: la fuente no desarrolla el inventario como proceso formal, el despliegue por imágenes ni el helpdesk/service desk con niveles; esos conceptos se resumen en el apartado 4 como práctica estándar de soporte y se identifican como tales. (Fuente: data/fuentes/III.26.txt.)"
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Qué es un SLA?",
+      "options": [
+        "El acuerdo con el cliente que fija niveles medibles del servicio",
+        "Un acuerdo interno entre equipos de la organización",
+        "El contrato con un proveedor externo",
+        "Una herramienta de despliegue de imágenes"
+      ],
+      "answer": "a",
+      "explanation": "El SLA (Service Level Agreement) es el contrato con el cliente que fija parámetros objetivos del servicio (disponibilidad, tiempos, penalizaciones). La OLA es interna y el UC es el contrato con el proveedor externo.",
+      "reference": "Apartado 4, SLA; Tema 6.docx, apartado 3.1."
+    },
+    {
+      "question": "¿Qué caracteriza a una incidencia de severidad «Urgente»?",
+      "options": [
+        "Afecta a documentación y no tiene impacto directo",
+        "Afecta a una aplicación crítica, es sensible al tiempo y no tiene workaround",
+        "Afecta a la capacidad del usuario pero tiene workaround",
+        "Solo afecta al rendimiento y puede esperar"
+      ],
+      "answer": "b",
+      "explanation": "La fuente define Urgente como la incidencia que afecta a una aplicación crítica, tiene plazos que se pueden vencer, impacto directo y no dispone de workaround. Las demás opciones corresponden a severidades menores.",
+      "reference": "Apartado 4, incidencias; Tema 6.docx, apartado 3.2."
+    },
+    {
+      "question": "En una matriz RACI, ¿qué rol es el responsable único del resultado final?",
+      "options": [
+        "Responsible",
+        "Consulted",
+        "Accountable",
+        "Informed"
+      ],
+      "answer": "c",
+      "explanation": "Accountable es la persona o grupo responsable único del resultado final. Responsible hace el trabajo, Consulted aporta opinión e Informed debe estar al tanto.",
+      "reference": "Apartado 4, helpdesk y funciones; Tema 6.docx, apartado 3.2."
+    },
+    {
+      "question": "¿Qué tipo de mantenimiento busca corregir errores concretos?",
+      "options": [
+        "Evolutivo",
+        "Adaptativo",
+        "Perfectivo",
+        "Correctivo"
+      ],
+      "answer": "d",
+      "explanation": "El mantenimiento correctivo aplica cambios para corregir errores. El evolutivo cubre nuevas necesidades, el adaptativo ajusta el entorno y el perfectivo busca focos de problemas.",
+      "reference": "Apartado 4, mantenimiento; Tema 6.docx, apartado 4.2."
+    },
+    {
+      "question": "En el mantenimiento de un puesto, ¿cuándo se habla de «on site»?",
+      "options": [
+        "Cuando el técnico ya está ubicado en la oficina",
+        "Cuando el técnico se desplaza a la oficina",
+        "Cuando se resuelve por control remoto",
+        "Cuando se sustituye el equipo completo"
+      ],
+      "answer": "a",
+      "explanation": "«On site» significa que el técnico ya está en la oficina; «in site» implica que se desplaza y el mantenimiento remoto se hace por control remoto.",
+      "reference": "Apartado 4, mantenimiento; Tema 6.docx, apartado 4.2."
+    },
+    {
+      "question": "¿Para qué sirve WSUS en una red Windows?",
+      "options": [
+        "Para gestionar las copias de seguridad",
+        "Para centralizar y distribuir las actualizaciones de Windows",
+        "Para sustituir al cortafuegos",
+        "Para inventariar el hardware"
+      ],
+      "answer": "b",
+      "explanation": "WSUS (Windows Server Update Services) sirve para repartir y controlar desde un servidor las actualizaciones de los equipos Windows de la red, ahorrando ancho de banda.",
+      "reference": "Apartado 4, actualización; Tema 6.docx, apartado 4; Bloque 4 Actualizado 2026.docx, Tema 10."
+    },
+    {
+      "question": "¿Qué hace exactamente «sudo apt-get update»?",
+      "options": [
+        "Instala las actualizaciones pendientes",
+        "Elimina los paquetes obsoletos",
+        "Actualiza la lista de paquetes disponibles",
+        "Reinicia el sistema"
+      ],
+      "answer": "c",
+      "explanation": "«apt-get update» actualiza la lista de paquetes disponibles, pero no instala ni actualiza ningún paquete; para instalarlos se usa «apt-get upgrade» u otra orden equivalente.",
+      "reference": "Apartado 4, actualización; Tema 6.docx, apartado 4 (APT)."
+    },
+    {
+      "question": "¿Cuál es la función de DISM en Windows?",
+      "options": [
+        "Comprobar el estado del disco",
+        "Reconstruir el menú de arranque",
+        "Administrar usuarios y permisos",
+        "Mantener y reparar imágenes de implementación de Windows"
+      ],
+      "answer": "d",
+      "explanation": "DISM es la herramienta de administración y mantenimiento de imágenes de implementación; permite reparar archivos de la imagen, por ejemplo con Restorehealth. CHKDSK revisa el disco y bootrec repara el arranque.",
+      "reference": "Apartado 4, reparación; Tema 6.docx, apartado 4.1."
+    },
+    {
+      "question": "¿Qué repara bootrec con el parámetro /FixMBR?",
+      "options": [
+        "El MBR del disco de arranque",
+        "El registro de Windows",
+        "Los controladores de red",
+        "La caché DNS"
+      ],
+      "answer": "a",
+      "explanation": "bootrec /FixMBR repara o recupera el MBR (sector de arranque) del disco. /FixBoot actúa sobre el sector de arranque y /RebuildBCD reconstruye el almacén BCD.",
+      "reference": "Apartado 4, reparación; Tema 6.docx, apartado 4.1."
+    },
+    {
+      "question": "¿Qué mide el MTTR?",
+      "options": [
+        "El periodo medio entre dos fallos consecutivos",
+        "El tiempo entre la notificación y la restitución del elemento",
+        "El tiempo desde el aviso hasta que el técnico se dispone a resolver",
+        "El porcentaje de disponibilidad mensual"
+      ],
+      "answer": "b",
+      "explanation": "El MTTR mide desde la notificación de la incidencia hasta la restitución del elemento. El MTBF mide el tiempo entre fallos y el tiempo de respuesta desde el aviso hasta que el técnico acude.",
+      "reference": "Apartado 4, métricas; Tema 6.docx, apartado 4.2."
+    },
+    {
+      "question": "¿Qué mide el MTBF?",
+      "options": [
+        "El tiempo de reparación",
+        "El tiempo de respuesta",
+        "El periodo medio entre dos fallos consecutivos",
+        "El tiempo de restauración de una copia"
+      ],
+      "answer": "c",
+      "explanation": "El MTBF (Mean Time Between Failures) es el periodo medio comprendido entre dos fallos consecutivos y se usa como medida de calidad de los equipos.",
+      "reference": "Apartado 4, métricas; Tema 6.docx, apartado 4.2."
+    },
+    {
+      "question": "¿Qué permite una VPN de acceso remoto?",
+      "options": [
+        "Sustituir al cortafuegos perimetral",
+        "Cifrar solo el correo electrónico",
+        "Aumentar el ancho de banda de la oficina",
+        "Acceder con seguridad a la red corporativa desde Internet"
+      ],
+      "answer": "d",
+      "explanation": "La VPN de acceso remoto da al usuario un acceso seguro a la red corporativa desde Internet, con confidencialidad, integridad y autenticación mediante un túnel cifrado.",
+      "reference": "Apartado 4, teletrabajo; Bloque 4 Actualizado 2026.docx, Tema 9."
+    },
+    {
+      "question": "¿Qué permite el split tunneling en una VPN?",
+      "options": [
+        "Decidir qué tráfico se encamina por el túnel y cuál va directo a Internet",
+        "Cifrar dos veces el tráfico",
+        "Conectarse sin autenticación",
+        "Eliminar la necesidad de cortafuegos"
+      ],
+      "answer": "a",
+      "explanation": "El split tunneling decide qué tráfico se encamina por el túnel y cuál va directo a Internet, lo que reduce consumo de ancho de banda y carga de la red corporativa.",
+      "reference": "Apartado 4, teletrabajo; Bloque 4 Actualizado 2026.docx, Tema 9."
+    },
+    {
+      "question": "¿Qué caracteriza a un escritorio VDI no persistente?",
+      "options": [
+        "El usuario puede personalizarlo y se conserva",
+        "Vuelve a su estado original al cerrar sesión",
+        "Se ejecuta en el equipo local del usuario",
+        "No necesita servidor central"
+      ],
+      "answer": "b",
+      "explanation": "En el VDI no persistente el escritorio vuelve a su estado original tras cerrar sesión; el persistente conserva la personalización del usuario. Ambos se ejecutan en un servidor central.",
+      "reference": "Apartado 4, teletrabajo; Bloque 4 Actualizado 2026.docx, Tema 9."
+    },
+    {
+      "question": "¿Qué es BYOD?",
+      "options": [
+        "Un dispositivo de la empresa solo para uso laboral",
+        "Un dispositivo de la empresa con permiso de uso personal",
+        "El empleado usa su dispositivo personal",
+        "Un dispositivo elegido de una lista aprobada"
+      ],
+      "answer": "c",
+      "explanation": "BYOD (Bring Your Own Device) significa que el empleado utiliza su dispositivo personal. COBO es de la empresa y solo laboral, COPE es de la empresa con uso personal y CYOD es el dispositivo elegido de una lista aprobada.",
+      "reference": "Apartado 4, teletrabajo; Bloque 4 Actualizado 2026.docx, Tema 10."
+    }
+  ],
+  "sources": [
+    {
+      "file": "Tema 6.docx",
+      "page": "apartados 1-4",
+      "use": "Tipos de software, tareas y responsabilidades del administrador, gestión de incidencias (SLA/SLM, severidad y prioridad, RACI, herramientas), actualización (Windows Update, WSUS, YUM, APT), reparación (bootrec, SFC, DISM), mantenimiento y métricas (tiempo de respuesta, MTTR, MTBF)"
+    },
+    {
+      "file": "Tema 10.docx",
+      "page": "apartados 2 y 6",
+      "use": "Políticas de seguridad, tipos de medidas, identificación y autenticación, amenazas, virus y programas de defensa (cortafuegos, antitroyanos, proxys)"
+    },
+    {
+      "file": "Bloque 4 Actualizado 2026.docx",
+      "page": "Tema 1, Tema 2, Tema 9 y Tema 10",
+      "use": "Administración del SO, copias de seguridad (RPO, RTO, MTD, WRT), VPN de acceso remoto y split tunneling, VDI, MDM y modelos BYOD/CYOD/COBO/COPE, NAC"
+    },
+    {
+      "file": "data/fuentes/III.26.txt",
+      "page": "texto consolidado",
+      "use": "Verificación de las citas de los documentos anteriores"
+    }
+  ]
+}

@@ -1,0 +1,251 @@
+{
+  "tema": "II.17",
+  "title": "Licencias y software libre",
+  "difficulty": "media",
+  "topics": ["II.17", "II.14"],
+  "steps": [
+    "Leer la ficha oficial y situar el tema en el bloque II, relacionándolo con los sistemas operativos (II.14) y con la reutilización de aplicaciones públicas.",
+    "Recorrer los epígrafes en orden: derecho de autor y licencia, libertades del software libre, licencias permisivas, copyleft, contenido abierto, licencias propietarias, cumplimiento y Administración.",
+    "Escribir de memoria las cuatro libertades y comprobar qué exige cada una sobre el código fuente.",
+    "Construir una tabla propia con MIT, Apache 2.0, GPL, LGPL y AGPL, anotando si permiten cerrar el derivado y qué obligación imponen.",
+    "Repasar las licencias de contenido (CC BY, BY-SA, ND, NC y CC0) y la diferencia entre dominio público y licencia permisiva.",
+    "Hacer los 15 testCases y anotar las trampas en las que se falla para el repaso final."
+  ],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema II.17 — Licencias y software libre.** Bloque II del temario común C1. Se estudia a partir de la ficha publicada del tema y de las fuentes oficiales de las licencias: la definición de software libre del **Proyecto GNU**, el catálogo de licencias aprobadas por la **Open Source Initiative (OSI)**, las licencias **Creative Commons**, la lista de identificadores **SPDX** y la **EUPL** de la Comisión Europea. Su núcleo es: **derecho de autor y licencia** (incluida la EULA del software propietario); **software libre y open source** con sus cuatro libertades; **licencias permisivas** (MIT, BSD y Apache 2.0) frente a **copyleft** (GPL, LGPL y AGPL); **licencias de contenido y datos** (Creative Commons y CC0); **modelos de licencia propietaria** (OEM, volumen, suscripción y servicio); **compatibilidad, cumplimiento y auditoría** de dependencias; y **software libre en la Administración** (publicación, reutilización y EUPL). Conecta con el tema **II.14** (sistemas operativos) y con la reutilización de aplicaciones en el sector público."
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El tema se estudia en este orden: (1) derecho de autor, licencia y EULA; (2) qué es el software libre: las cuatro libertades y el acceso al código fuente; (3) open source, freeware, shareware y dominio público; (4) licencias permisivas: MIT, BSD y Apache 2.0; (5) copyleft: GPL, LGPL y AGPL; (6) licencias de contenido y datos: Creative Commons y CC0; (7) licencias y modelos del software propietario; (8) compatibilidad de licencias, cumplimiento y auditoría (inventario, SBOM y SPDX); (9) software libre en la Administración y EUPL; (10) resumen y casos tipo test. Para el test pesan las **cuatro libertades**, la diferencia **permisiva/copyleft**, **GPL/LGPL/AGPL** y las **licencias Creative Commons**."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "El software está protegido por el **derecho de autor**. Sin un permiso del titular, nadie puede copiarlo, modificarlo ni redistribuirlo más allá de lo que permita la ley. Ese permiso es la **licencia**: un contrato o autorización que fija qué se puede hacer con el programa, con qué obligaciones y bajo qué condiciones.\n\nLa confusión más frecuente es identificar «software libre» con «software gratuito». El software libre es una cuestión de **libertad**: su licencia garantiza poder ejecutar, estudiar, modificar y redistribuir el programa y su código fuente. Se puede cobrar por él y se puede usar comercialmente; lo que no se puede es impedir esas libertades a quien recibe una copia.\n\nEl tema importa en la Administración por dos razones: la **reutilización** de aplicaciones entre administraciones y el **cumplimiento** de las obligaciones de cada licencia cuando se combinan componentes. Una licencia mal elegida o una dependencia incompatible puede impedir publicar o distribuir el conjunto. Por eso el tema se ordena desde el derecho de autor hasta la auditoría de dependencias."
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1 Derecho de autor, licencia y EULA.** El autor o titular conserva los derechos de explotación; la licencia autoriza determinados usos sin transferir la titularidad. El **software propietario** suele distribuirse con una **EULA** (End User License Agreement) que permite usar el programa en las condiciones fijadas, pero no acceder al código fuente ni redistribuirlo. La licencia puede ser gratuita o de pago: el precio no cambia su naturaleza jurídica.\n\n**4.2 Software libre y open source.** Un programa es **software libre** si su licencia concede las **cuatro libertades esenciales** (GNU): la **libertad 0**, ejecutar el programa como se desee con cualquier propósito; la **libertad 1**, estudiar cómo funciona y modificarlo, para lo que el **código fuente** es condición necesaria; la **libertad 2**, redistribuir copias; y la **libertad 3**, distribuir copias de las versiones modificadas. El software libre **puede ser comercial**: se puede vender, y lo que no puede hacer la licencia es prohibir esas libertades. El **open source** es una corriente con filosofía y definición práctica propias, aunque en la práctica casi todo el software de código abierto es libre; la OSI publica las licencias que considera aprobadas. No deben confundirse con el software libre el **freeware** (gratuito pero propietario), el **shareware** (prueba antes de comprar) ni el **dominio público** (sin derechos de autor o con renuncia a ellos).\n\n**4.3 Licencias permisivas.** Permiten usar, modificar y redistribuir el código, incluso dentro de productos propietarios, con obligaciones mínimas. **MIT** exige conservar el aviso de copyright y la licencia; **BSD** (en sus variantes de 2 y 3 cláusulas) es igualmente permisiva y añade en algunas versiones la prohibición de usar el nombre del proyecto para promocionar derivados; **Apache 2.0** es permisiva, incluye una concesión expresa de patentes y exige conservar avisos y el archivo NOTICE cuando corresponda. Ninguna de ellas obliga a publicar el código de las obras derivadas.\n\n**4.4 Copyleft.** El **copyleft** exige que las obras derivadas se distribuyan con la misma licencia (o una compatible), de modo que el código siga siendo libre. La **GPL** es copyleft fuerte: si se distribuye un derivado, hay que entregar el código fuente y mantener la licencia. La **LGPL** es copyleft débil: permite enlazar la biblioteca con software propietario bajo condiciones y obliga a compartir los cambios de la propia biblioteca. La **AGPL** extiende la obligación al uso en red: si se ofrece el programa como servicio, también hay que facilitar el código fuente a los usuarios. El copyleft **no prohíbe el uso comercial**: prohíbe cerrar el derivado.\n\n**4.5 Licencias de contenido y datos.** Para textos, imágenes, datos o música se usan licencias como **Creative Commons**, que ofrecen un espectro de «algunos derechos reservados»: **CC BY** exige atribución y permite uso comercial y derivados; **CC BY-SA** añade compartir igual; **CC BY-ND** prohíbe derivados; **CC BY-NC** limita a usos no comerciales; y las variantes **NC-SA** y **NC-ND** combinan condiciones. **CC0** es una renuncia a los derechos en la medida que permite la ley, próxima al dominio público. En datos abiertos, la atribución y la interoperabilidad son esenciales.\n\n**4.6 Licencias y modelos del software propietario.** Además de la EULA, el software propietario se comercializa con modelos como la licencia **OEM** (preinstalada y vinculada al equipo), la licencia por **volumen** (para organizaciones con muchos equipos), la **suscripción** (pago periódico) y el **servicio en la nube** (SaaS), donde no se posee el programa sino el derecho a usarlo. Estos modelos condicionan el número de instalaciones, la transferibilidad y el soporte.\n\n**4.7 Compatibilidad, cumplimiento y auditoría.** Cada licencia impone obligaciones que deben poder cumplirse **a la vez**: si dos componentes tienen licencias incompatibles, el conjunto no se puede distribuir legalmente. Por eso es necesario un **inventario de dependencias** (SBOM), identificar cada licencia con su **identificador SPDX**, conservar los avisos de copyright, incluir un archivo LICENSE y revisar la compatibilidad antes de publicar. La **EUPL** es una licencia copyleft de la Comisión Europea, con identificador SPDX **EUPL-1.2**, pensada para obras europeas y con un mecanismo de compatibilidad con otras licencias libres. La auditoría de licencias debe ser continua: cada actualización de una dependencia puede cambiar sus condiciones.\n\n**4.8 Software libre en la Administración.** La administración pública no solo usa software libre: también lo **publica y reutiliza**. Publicar una aplicación con licencia libre permite que otras administraciones la adapten y que el dinero público genere bienes reutilizables. Las buenas prácticas son: comprobar la compatibilidad de todas las dependencias, conservar avisos de copyright y un archivo LICENSE claro, documentar versión, procedencia y obligaciones de cada componente y usar catálogos y repositorios institucionales. La **EUPL** es una opción habitual para obras de la Administración europea, pero su elección debe revisarse con el resto del stack.\n\n*(Fuentes: ficha del tema II.17; GNU, OSI, Creative Commons, SPDX y EUPL.)*"
+    },
+    {
+      "heading": "5. Tabla comparativa: licencias de software",
+      "body": "La diferencia práctica entre licencias está en qué obligaciones imponen al distribuir y en si permiten cerrar el código del derivado. Esta tabla resume las más preguntadas.",
+      "table": {
+        "columns": ["Licencia", "Tipo", "Obligación principal", "¿Permite derivado propietario?"],
+        "rows": [
+          ["MIT", "Permisiva", "Conservar aviso de copyright y licencia", "Sí"],
+          ["BSD (2/3 cláusulas)", "Permisiva", "Conservar aviso; en 3 cláusulas, no usar el nombre para promocionar", "Sí"],
+          ["Apache 2.0", "Permisiva", "Avisos, NOTICE y concesión de patentes", "Sí"],
+          ["GPL", "Copyleft fuerte", "Distribuir el derivado con GPL y facilitar el código fuente", "No"],
+          ["LGPL", "Copyleft débil", "Compartir los cambios de la biblioteca; permite enlazar con propietario", "Sí, bajo condiciones"],
+          ["AGPL", "Copyleft fuerte (red)", "Como GPL, también al ofrecer el programa como servicio en red", "No"]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un ayuntamiento publica una aplicación web para gestionar subvenciones y quiere que otras administraciones puedan reutilizarla, pero sin permitir que una empresa la cierre y la venda como propietaria. La aplicación usa tres bibliotecas: una MIT, una Apache 2.0 y una GPL. ¿Qué licencia elige y qué debe comprobar?\n\n**Resolución.** (1) **Objetivo:** se busca una licencia **copyleft** que impida cerrar el derivado; la **EUPL** (EUPL-1.2) o la **GPL** son candidatas adecuadas para el conjunto. (2) **Dependencias:** la biblioteca MIT y la Apache 2.0 son permisivas y no impiden distribuir el conjunto bajo copyleft; la GPL impone que el derivado se distribuya con la misma licencia, lo que es coherente con el objetivo. Aun así, hay que revisar cada compatibilidad concreta (por ejemplo, las condiciones de Apache 2.0 y la versión de GPL elegida) antes de publicar. (3) **Obligaciones:** conservar avisos de copyright, incluir el texto de la licencia y el archivo NOTICE de los componentes Apache, y documentar la procedencia de cada biblioteca. (4) **Datos e imágenes:** si se usan datos o imágenes de terceros, se revisa su licencia (CC BY, CC0, etc.) y se atribuye correctamente. (5) **Auditoría:** se genera un inventario de dependencias con identificadores SPDX y se revisa en cada actualización.\n\n**Conclusión.** Publicar el código no basta: hay que elegir una licencia compatible con el objetivo, comprobar la cadena de dependencias, cumplir las obligaciones de atribución y mantener la auditoría en el tiempo."
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "- Confundir **software libre** con **software gratuito**: libre se refiere a las libertades, no al precio; se puede vender.\n- Creer que el software libre **no puede usarse comercialmente**: las cuatro libertades incluyen el uso con cualquier propósito, también comercial.\n- Confundir **open source** con **software libre**: son corrientes con filosofías distintas, aunque en la práctica casi todo el código abierto es libre.\n- Confundir **freeware** (gratuito pero propietario), **shareware** (prueba) y **dominio público** (sin derechos) con el software libre.\n- Creer que **MIT o BSD** obligan a publicar el código del derivado: son permisivas y solo exigen avisos.\n- Confundir **GPL** (copyleft fuerte) con **LGPL** (copyleft débil, permite enlazar con propietario) y con **AGPL** (incluye el uso en red).\n- Pensar que **GPL prohíbe vender** el software: permite venderlo; lo que exige es mantener las libertades y la licencia en los derivados.\n- Confundir **EULA** (licencia de usuario final del software propietario) con una licencia libre.\n- Confundir **CC BY-SA** (compartir igual) con **CC BY-ND** (sin derivados) y con **CC BY-NC** (no comercial).\n- Creer que **CC0** es una licencia permisiva al estilo MIT: es una renuncia a derechos, próxima al dominio público.\n- Ignorar la **compatibilidad**: mezclar componentes con licencias incompatibles puede impedir distribuir el conjunto.\n- Creer que **SPDX** es una licencia: es una lista de identificadores normalizados para nombrar licencias.\n- Pensar que el **dominio público** y una licencia permisiva son lo mismo: en el dominio público no hay derechos que atribuir; una licencia permisiva conserva el copyright y exige avisos."
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Lo que hay que memorizar.**\n\n1. **Derecho de autor**: el software está protegido; la **licencia** autoriza usos y fija obligaciones; la **EULA** es la del software propietario.\n2. **Cuatro libertades** (GNU): 0 ejecutar, 1 estudiar y modificar (con código fuente), 2 redistribuir copias, 3 distribuir versiones modificadas.\n3. **Libre no es gratis**: se puede vender y usar comercialmente; lo que no se puede es quitar libertades.\n4. **Permisivas**: MIT, BSD y Apache 2.0; permiten derivados propietarios con avisos (Apache añade patentes y NOTICE).\n5. **Copyleft**: GPL (fuerte), LGPL (débil, permite enlazar con propietario) y AGPL (incluye el servicio en red); exigen mantener la licencia y facilitar el código.\n6. **Contenido**: CC BY (atribución), CC BY-SA (compartir igual), CC BY-ND (sin derivados), CC BY-NC (no comercial) y CC0 (renuncia, próxima al dominio público).\n7. **Propietario**: EULA, OEM, volumen, suscripción y servicio en la nube.\n8. **Cumplimiento**: compatibilidad entre licencias, inventario de dependencias (SBOM), identificadores **SPDX**, archivo LICENSE, avisos y NOTICE.\n9. **Administración**: publicar y reutilizar aplicaciones; la **EUPL** (EUPL-1.2) es una licencia copyleft europea con mecanismo de compatibilidad.\n10. **Auditoría**: cada actualización de dependencias puede cambiar las condiciones; hay que revisarlas de forma continua."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "**1.** ¿Qué es una licencia de software? **Respuesta: a)** El permiso o contrato por el que el titular autoriza determinados usos del programa (ficha II.17).\n\n**2.** ¿En qué consiste la libertad 0 del software libre? **Respuesta: b)** En ejecutar el programa como se desee, con cualquier propósito (GNU, cuatro libertades).\n\n**3.** ¿Significa «software libre» que sea siempre gratuito? **Respuesta: c)** No: es una cuestión de libertad, no de precio (GNU).\n\n**4.** ¿Qué licencia es permisiva y permite usar el código en un producto propietario? **Respuesta: d)** MIT (ficha II.17).\n\n**5.** ¿Qué exige la GPL al distribuir una obra derivada? **Respuesta: a)** Que se distribuya con la misma licencia y se facilite el código fuente (ficha II.17).\n\n**6.** ¿Qué caracteriza a la LGPL frente a la GPL? **Respuesta: b)** Es copyleft débil: permite enlazar con software propietario bajo condiciones (ficha II.17).\n\n**7.** ¿Qué añade la AGPL a la GPL? **Respuesta: c)** Extiende la obligación a quien ofrece el programa como servicio en red (ficha II.17).\n\n**8.** ¿Qué rasgo distingue a Apache 2.0 de otras licencias permisivas? **Respuesta: d)** Incluye una concesión expresa de patentes y exige avisos y NOTICE (Apache 2.0).\n\n**9.** ¿Qué obligación impone una licencia BSD? **Respuesta: a)** Conservar el aviso de copyright (y, en la variante de 3 cláusulas, no usar el nombre para promocionar) (ficha II.17).\n\n**10.** ¿Qué es una EULA? **Respuesta: b)** La licencia de usuario final del software propietario (ficha II.17).\n\n**11.** ¿Qué exige la licencia CC BY? **Respuesta: c)** Atribuir la autoría de la obra (Creative Commons).\n\n**12.** ¿Qué licencia se acerca más al dominio público? **Respuesta: d)** CC0, que renuncia a los derechos en la medida permitida por la ley (Creative Commons).\n\n**13.** ¿Por qué importa la compatibilidad de licencias? **Respuesta: a)** Porque mezclar componentes con condiciones incompatibles puede impedir distribuir el conjunto (ficha II.17).\n\n**14.** ¿Qué es SPDX? **Respuesta: b)** Una lista de identificadores normalizados para nombrar licencias (SPDX License List).\n\n**15.** ¿Prohíbe el copyleft el uso comercial del software? **Respuesta: c)** No: permite el uso comercial; lo que exige es que el derivado mantenga la licencia y las libertades (GNU)."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "- **Ficha publicada del tema** (`fixtures/demo/temas/II.17.json`): secciones de derecho de autor, cuatro libertades, permisivas y copyleft, contenido abierto, tabla de licencias, software libre en la Administración y ejemplo resuelto.\n- **GNU — ¿Qué es el software libre?** (gnu.org, `philosophy/free-sw.es.html`): las cuatro libertades esenciales, el carácter comercial del software libre y el copyleft.\n- **Creative Commons — CC licenses** (creativecommons.org): los seis tipos de licencia, la atribución, el compartir igual, las restricciones NC y ND y CC0.\n- **SPDX License List** (spdx.org, versión 3.29.0): identificadores normalizados de licencias.\n- **EUPL 1.2** (Interoperable Europe Portal, Comisión Europea): licencia copyleft europea, versión e identificador SPDX EUPL-1.2.\n- **`data/fuentes/II.17.txt`**: texto consolidado de trabajo. **Aviso:** este fichero no contiene el desarrollo del apartado de licencias (recoge correo, hardware y Linux del bloque), por lo que no se ha usado para datos concretos; el contenido se ha elaborado con la ficha del tema y las fuentes oficiales anteriores. No se copian párrafos literales."
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Qué es una licencia de software?",
+      "options": [
+        "El permiso o contrato por el que el titular autoriza determinados usos del programa",
+        "El código fuente del programa",
+        "Un tipo de copia de seguridad",
+        "Un estándar de red"
+      ],
+      "answer": "a",
+      "explanation": "El software está protegido por el derecho de autor; la licencia autoriza determinados usos y fija obligaciones, sin transferir la titularidad. Ref.: ficha II.17, derecho de autor y licencia."
+    },
+    {
+      "question": "¿En qué consiste la libertad 0 del software libre?",
+      "options": [
+        "En estudiar y modificar el código",
+        "En ejecutar el programa como se desee, con cualquier propósito",
+        "En redistribuir copias",
+        "En distribuir versiones modificadas"
+      ],
+      "answer": "b",
+      "explanation": "La libertad 0 es ejecutar el programa con cualquier propósito; las libertades 1 a 3 cubren estudiar/modificar, redistribuir copias y distribuir versiones modificadas. Ref.: GNU, cuatro libertades esenciales."
+    },
+    {
+      "question": "¿Significa «software libre» que sea siempre gratuito?",
+      "options": ["Sí, siempre", "Solo si lo publica una Administración", "No: es una cuestión de libertad, no de precio", "Solo en el ámbito educativo"],
+      "answer": "c",
+      "explanation": "El software libre es una cuestión de libertad y puede venderse y usarse comercialmente; lo que no puede hacer su licencia es quitar las libertades. Ref.: GNU, ¿qué es el software libre?"
+    },
+    {
+      "question": "¿Qué licencia es permisiva y permite usar el código en un producto propietario manteniendo el aviso de copyright?",
+      "options": ["GPL", "AGPL", "CC BY-SA", "MIT"],
+      "answer": "d",
+      "explanation": "MIT es permisiva: permite reutilizar el código en productos propietarios conservando el aviso de copyright y la licencia. Ref.: ficha II.17, permisivas y copyleft."
+    },
+    {
+      "question": "¿Qué exige la GPL al distribuir una obra derivada?",
+      "options": [
+        "Que se distribuya con la misma licencia y se facilite el código fuente",
+        "Que se pague una regalía al autor",
+        "Que se prohíba su uso comercial",
+        "Que se cambie el nombre del programa"
+      ],
+      "answer": "a",
+      "explanation": "La GPL es copyleft fuerte: el derivado debe distribuirse con la misma licencia y hay que facilitar el código fuente; no exige regalías ni prohíbe el uso comercial. Ref.: ficha II.17, permisivas y copyleft."
+    },
+    {
+      "question": "¿Qué caracteriza a la LGPL frente a la GPL?",
+      "options": [
+        "Es propietaria",
+        "Es copyleft débil: permite enlazar con software propietario bajo condiciones",
+        "No exige compartir cambios",
+        "Solo se aplica a datos"
+      ],
+      "answer": "b",
+      "explanation": "La LGPL es copyleft débil: permite enlazar la biblioteca con software propietario bajo condiciones y obliga a compartir los cambios de la propia biblioteca. Ref.: ficha II.17."
+    },
+    {
+      "question": "¿Qué añade la AGPL a la GPL?",
+      "options": [
+        "Una prohibición de uso comercial",
+        "La obligación de usar XML",
+        "Extiende la obligación a quien ofrece el programa como servicio en red",
+        "Nada: son idénticas"
+      ],
+      "answer": "c",
+      "explanation": "La AGPL extiende la obligación al uso en red: si se ofrece el programa como servicio, también hay que facilitar el código fuente a los usuarios. Ref.: ficha II.17."
+    },
+    {
+      "question": "¿Qué rasgo distingue a Apache 2.0 de otras licencias permisivas?",
+      "options": [
+        "Obliga a publicar el código del derivado",
+        "Prohíbe el uso comercial",
+        "Solo se aplica a documentación",
+        "Incluye una concesión expresa de patentes y exige avisos y NOTICE"
+      ],
+      "answer": "d",
+      "explanation": "Apache 2.0 es permisiva, pero añade una concesión expresa de patentes y obligaciones de aviso (incluido el archivo NOTICE). Ref.: Apache License 2.0."
+    },
+    {
+      "question": "¿Qué obligación impone una licencia BSD?",
+      "options": [
+        "Conservar el aviso de copyright (y, en la variante de 3 cláusulas, no usar el nombre para promocionar)",
+        "Publicar el código del derivado con la misma licencia",
+        "Pagar una regalía al autor",
+        "Prohibir el uso en productos propietarios"
+      ],
+      "answer": "a",
+      "explanation": "BSD es permisiva: exige conservar el aviso de copyright; la variante de 3 cláusulas añade la prohibición de usar el nombre del proyecto para promocionar derivados. Ref.: ficha II.17."
+    },
+    {
+      "question": "¿Qué es una EULA?",
+      "options": [
+        "Una licencia de datos abiertos",
+        "La licencia de usuario final del software propietario",
+        "Un estándar de red",
+        "Un tipo de copia de seguridad"
+      ],
+      "answer": "b",
+      "explanation": "La EULA (End User License Agreement) es el contrato de licencia de usuario final que fija los usos permitidos del software propietario. Ref.: ficha II.17."
+    },
+    {
+      "question": "¿Qué exige la licencia Creative Commons CC BY?",
+      "options": [
+        "Prohibir el uso comercial",
+        "Compartir igual los derivados",
+        "Atribuir la autoría de la obra",
+        "Renunciar a todos los derechos"
+      ],
+      "answer": "c",
+      "explanation": "CC BY exige atribución y permite uso comercial y derivados; compartir igual es CC BY-SA y la renuncia es CC0. Ref.: Creative Commons, CC licenses."
+    },
+    {
+      "question": "¿Qué licencia se acerca más al dominio público?",
+      "options": ["CC BY-SA", "CC BY-NC", "GPL", "CC0"],
+      "answer": "d",
+      "explanation": "CC0 renuncia a los derechos en la medida permitida por la ley, por lo que se aproxima al dominio público. Ref.: Creative Commons, CC licenses."
+    },
+    {
+      "question": "¿Por qué es importante la compatibilidad de licencias?",
+      "options": [
+        "Porque mezclar componentes con condiciones incompatibles puede impedir distribuir el conjunto",
+        "Porque acelera el compilador",
+        "Porque cambia el color de la interfaz",
+        "Porque elimina la necesidad de atribución"
+      ],
+      "answer": "a",
+      "explanation": "Las obligaciones de cada licencia deben poder cumplirse a la vez; si no, el conjunto no se puede distribuir legalmente. Ref.: ficha II.17, compatibilidad."
+    },
+    {
+      "question": "¿Qué es SPDX?",
+      "options": [
+        "Una licencia copyleft",
+        "Una lista de identificadores normalizados para nombrar licencias",
+        "Un formato de imagen",
+        "Un tipo de contrato de software propietario"
+      ],
+      "answer": "b",
+      "explanation": "SPDX es una lista de identificadores normalizados (por ejemplo, Apache-2.0 o EUPL-1.2) que permite identificar licencias de forma fiable. Ref.: SPDX License List."
+    },
+    {
+      "question": "¿Prohíbe el copyleft el uso comercial del software?",
+      "options": [
+        "Sí, siempre",
+        "Solo en la GPL",
+        "No: permite el uso comercial y exige que el derivado mantenga la licencia y las libertades",
+        "Solo si se usa en la Administración"
+      ],
+      "answer": "c",
+      "explanation": "El copyleft no prohíbe el uso comercial: lo que exige es que las obras derivadas mantengan la licencia y las libertades. Ref.: GNU, copyleft."
+    }
+  ],
+  "sources": [
+    {
+      "file": "fixtures/demo/temas/II.17.json",
+      "page": "ficha publicada del tema: derecho de autor, cuatro libertades, permisivas y copyleft, Creative Commons, tabla de licencias y software libre en la Administración",
+      "use": "base de contenido y estructura del tema"
+    },
+    {
+      "file": "GNU — ¿Qué es el software libre? (gnu.org)",
+      "page": "Las cuatro libertades esenciales; sección Copyleft; carácter comercial del software libre",
+      "use": "definición de software libre, libertades y copyleft"
+    },
+    {
+      "file": "Creative Commons — CC licenses (creativecommons.org)",
+      "page": "The CC Licenses",
+      "use": "licencias CC BY, BY-SA, BY-ND, BY-NC y CC0"
+    },
+    {
+      "file": "SPDX License List (spdx.org)",
+      "page": "SPDX License List 3.29.0",
+      "use": "identificadores normalizados de licencias (Apache-2.0, EUPL-1.2, etc.)"
+    },
+    {
+      "file": "EUPL 1.2 (Interoperable Europe Portal, Comisión Europea)",
+      "page": "EUPL text (EUPL-1.2)",
+      "use": "licencia copyleft europea, versión e identificador SPDX"
+    },
+    {
+      "file": "data/fuentes/II.17.txt",
+      "page": "texto consolidado de fuentes del tema (no contiene el apartado de licencias)",
+      "use": "consolidado de trabajo; comprobado que no desarrolla licencias, por lo que no se usa para datos concretos"
+    }
+  ]
+}

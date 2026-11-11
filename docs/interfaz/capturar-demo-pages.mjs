@@ -155,7 +155,7 @@ check(
 );
 
 // Revisión de los dos temas de la tanda: contenido, tabla y 10 preguntas.
-for (const temaId of ['III.19', 'III.20', 'III.24', 'III.26', 'IV.30', 'V.40']) {
+for (const temaId of ['II.15', 'II.16', 'II.17', 'III.19', 'III.20', 'III.24', 'III.25', 'III.26', 'IV.30', 'IV.33', 'V.40']) {
   const nombre = temaId.toLowerCase().replace('.', '-');
   const texto = await captura(`tema/${temaId}`, `tema-${nombre}`, 390);
   check(
@@ -166,6 +166,13 @@ for (const temaId of ['III.19', 'III.20', 'III.24', 'III.26', 'IV.30', 'V.40']) 
       (await page.locator('ol.demo-questions li').count()) === 10,
   );
 }
+
+// Cobertura enlazada desde la portada del temario.
+await page.goto(`${BASE}/#/temario`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+await page.getByRole('button', { name: 'Ver cobertura de los 40' }).click();
+await page.waitForTimeout(300);
+check('la portada del temario enlaza la cobertura en un toque', (await page.locator('h1').innerText()).includes('Mapa de cobertura'));
 
 // Búsqueda y filtro.
 await page.setViewportSize({ width: 1280, height: 900 });
@@ -446,7 +453,7 @@ await page.goto(`${BASE}/#/supuestos`, { waitUntil: 'networkidle' });
 await page.waitForSelector('h1');
 const supuestos = await page.locator('main').innerText();
 check('la pestaña Supuestos lista los supuestos oficiales', /Supuestos/.test(supuestos) && (await page.locator('.demo-card, section.card h2').count()) >= 3);
-check('incluye los supuestos propios de bloque IV', /Auditoría y recuperación/.test(supuestos) && /Integración de una sede/.test(supuestos));
+check('incluye los supuestos propios', /Auditoría y recuperación/.test(supuestos) && /Integración de una sede/.test(supuestos) && /Puesto de trabajo ofimático/.test(supuestos) && /Migración de servicios/.test(supuestos));
 check('los supuestos indican año, bloque y dificultad', /2024/.test(supuestos) && /Bloque IV/.test(supuestos) && /Dificultad media/.test(supuestos));
 await page.screenshot({ path: path.join(OUT_DIR, 'supuestos-390.png'), fullPage: true });
 await page.getByRole('button', { name: '2024', exact: true }).click();

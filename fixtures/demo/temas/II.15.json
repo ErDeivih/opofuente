@@ -215,5 +215,227 @@
     "Creer que un CSV conserva fórmulas, tipos o formato.",
     "Publicar un documento con metadatos o macros sin revisar."
   ],
-  "reviewedAt": "2026-11-10"
+  "reviewedAt": "2026-11-10",
+  "longSections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema:** II.15, «Ofimática», del bloque II (Informática básica y ofimática) del temario común de informática C1. **Materias que cubre:** procesador de textos, hoja de cálculo, presentaciones, formatos de archivo, PDF, plantillas y estilos, accesibilidad y buenas prácticas de uso. **Relación con otros temas:** se apoya en II.14 (sistemas operativos de usuario) y conecta con V.40 (accesibilidad y usabilidad). **Fuente:** no hay documento de ofimática en el escritorio de fuentes; este tema se ha redactado como material propio de OpoFuente, sin copiar textos ajenos y sin citar fuentes que no existen.",
+      "table": {
+        "columns": [
+          "Dato de la ficha",
+          "Valor"
+        ],
+        "rows": [
+          [
+            "Tema",
+            "II.15 Ofimática"
+          ],
+          [
+            "Bloque",
+            "II · Informática básica y ofimática"
+          ],
+          [
+            "Materias",
+            "Procesador de textos, hoja de cálculo, presentaciones, formatos, PDF, plantillas y accesibilidad"
+          ],
+          [
+            "Temas relacionados",
+            "II.14 Sistemas operativos de usuario; V.40 Accesibilidad"
+          ],
+          [
+            "Fuente",
+            "Elaboración propia · OpoFuente"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El desarrollo del tema se organiza en los epígrafes del apartado 4:\n\n- **4.1.** El procesador de textos: Word y Writer.\n- **4.2.** La hoja de cálculo: Excel y Calc.\n- **4.3.** Las presentaciones: PowerPoint e Impress.\n- **4.4.** Los formatos de archivo ofimáticos.\n- **4.5.** El PDF como formato de distribución.\n- **4.6.** Plantillas, estilos y normas de formato.\n- **4.7.** Accesibilidad de los documentos.\n- **4.8.** Buenas prácticas, riesgos y colaboración.\n\nCompletan el tema la tabla comparativa (apartado 5), el ejemplo práctico (6), las trampas de examen (7), el resumen para memorizar (8), los quince casos tipo test (9) y las fuentes citadas (10)."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "La ofimática es el conjunto de aplicaciones que permiten crear, editar, almacenar y compartir documentos de uso administrativo y profesional: textos, hojas de cálculo, presentaciones y documentos portables. En una Administración Pública, la ofimática es la herramienta de trabajo diaria: una memoria, un presupuesto, un informe, una presentación para una reunión o una resolución que se publica en PDF.\n\nLas suites ofimáticas más extendidas son Microsoft Office o Microsoft 365, LibreOffice y Google Workspace. Todas ofrecen aplicaciones equivalentes (procesador de textos, hoja de cálculo y presentaciones) y formatos propios o abiertos que condicionan la interoperabilidad: no es lo mismo guardar un documento en el formato nativo de la suite que exportarlo a un formato abierto o a PDF.\n\nEste tema ordena las funciones básicas de cada aplicación, los formatos que se usan en la Administración, las ventajas del PDF y las reglas de accesibilidad, cada vez más exigidas por la normativa y por los pliegos de contratación.",
+      "table": {
+        "columns": [
+          "Aplicación",
+          "Uso principal",
+          "Formato nativo"
+        ],
+        "rows": [
+          [
+            "Procesador de textos",
+            "Memorias, informes, resoluciones y escritos",
+            "DOCX / ODT"
+          ],
+          [
+            "Hoja de cálculo",
+            "Presupuestos, listados, cálculos y gráficos",
+            "XLSX / ODS"
+          ],
+          [
+            "Presentaciones",
+            "Reuniones, formación y exposición de resultados",
+            "PPTX / ODP"
+          ],
+          [
+            "Lector de PDF",
+            "Consulta y distribución de documentos cerrados",
+            "PDF"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1. El procesador de textos.** Word y Writer sirven para redactar documentos con formato. El documento se organiza en **caracteres**, **párrafos**, **secciones** y **páginas**; cada nivel admite formato propio (fuente, tamaño, negrita, alineación, sangría, interlineado, bordes y sombreado). Los **estilos** agrupan ese formato y permiten cambiar el aspecto de todo el documento de una vez, generar un índice automático y mantener la coherencia. Las funciones habituales son: tablas, imágenes y objetos, encabezados y pies de página, numeración y viñetas, notas al pie, comentarios, control de cambios, revisión ortográfica y gramatical, índices y referencias, combinación de correspondencia y protección del documento. En la Administración se usan además plantillas corporativas, logotipos y normas de estilo.\n\n**4.2. La hoja de cálculo.** Excel y Calc organizan la información en un **libro** formado por **hojas**, y cada hoja en **celdas** identificadas por columna y fila (A1, B7). Las celdas contienen números, texto, fechas o fórmulas. Un **rango** es un conjunto de celdas (A1:B10). Las **referencias** pueden ser **relativas** (A1), **absolutas** ($A$1) o **mixtas** ($A1, A$1), y su comportamiento al copiar una fórmula es una de las preguntas clásicas. Las **fórmulas** empiezan por el signo igual y combinan operadores y funciones: SUMA, PROMEDIO, MAX, MIN, CONTAR, SI, BUSCARV, XLOOKUP, SUMAR.SI, CONTAR.SI, etc. La hoja de cálculo permite ordenar y filtrar, validar datos, aplicar formato condicional, crear gráficos, tablas dinámicas, escenarios y macros. El formato de celdas (número, moneda, porcentaje, fecha) no cambia el valor, solo su presentación.\n\n**4.3. Las presentaciones.** PowerPoint e Impress organizan el contenido en **diapositivas**, con diseños y un **patrón** que fija colores, fuentes y logotipos. Cada diapositiva admite texto, imágenes, tablas, gráficos, vídeos y formas. Las **transiciones** son efectos entre diapositivas y las **animaciones** son efectos dentro de una diapositiva; no deben confundirse. Las presentaciones se pueden proyectar, imprimir como documento, exportar a PDF o guardar como presentación con diapositivas. Una buena presentación tiene poco texto por diapositiva, una idea por diapositiva y un orden claro.\n\n**4.4. Los formatos de archivo.** Los formatos nativos actuales son **OOXML** (DOCX, XLSX y PPTX) en Microsoft Office y **ODF** (ODT, ODS y ODP) en LibreOffice; ambos son estándares abiertos y comprimidos (son paquetes de XML y otros recursos). También existen formatos de intercambio: **RTF** (texto enriquecido), **TXT** (texto plano), **CSV** (valores separados por comas, sin formato ni fórmulas), **HTML** y **PDF**. La conversión entre suites puede perder formato, fórmulas o macros; por eso conviene comprobar el resultado y, cuando el documento es final, distribuirlo en PDF. Los formatos propietarios antiguos (DOC, XLS, PPT) siguen apareciendo y exigen compatibilidad.\n\n**4.5. El PDF.** El **PDF** (Portable Document Format) es un formato de documento que conserva el diseño y las fuentes tal como se creó, con independencia del equipo o del sistema operativo. Se genera desde la aplicación ofimática mediante «Exportar a PDF» o «Guardar como PDF». Es el formato habitual de distribución porque garantiza que el receptor ve el documento igual que el autor, admite contraseña y permisos, firma digital, formularios y compresión, y puede ser **accesible** si se etiqueta correctamente. Su edición es limitada: para modificar el contenido hay que volver al archivo original. Para conservación a largo plazo se usa **PDF/A**, una variante normalizada para el archivo.\n\n**4.6. Plantillas, estilos y normas.** Una **plantilla** es un documento base con formato, estilos, logotipos y contenido fijo que se reutiliza para crear documentos nuevos. Las extensiones típicas son DOTX/DOTM en Word, XLTX/XLSM en Excel y POTX/POTM en PowerPoint, y OTT, OTS y OTP en LibreOffice. Las plantillas ahorran trabajo, unifican la imagen corporativa y reducen errores. Los **estilos** y **temas** aplican formato coherente y permiten actualizaciones globales; en Excel los estilos de celda y las tablas con formato cumplen una función similar. Una norma de estilo fija márgenes, tipografías, colores, numeración y estructuras obligatorias.\n\n**4.7. Accesibilidad de los documentos.** Un documento accesible puede ser leído y comprendido por personas con discapacidad y por productos de apoyo como lectores de pantalla. Las reglas básicas son: usar **estilos de encabezado** para la estructura (no negritas manuales), añadir **texto alternativo** a imágenes, tablas y gráficos, incluir **encabezados de tabla**, mantener un **orden de lectura** lógico, usar contraste y tamaños de fuente suficientes, no transmitir información solo por color, subtitular vídeos y audios, y comprobar la accesibilidad con la herramienta de la suite. En PDF, la accesibilidad exige que el archivo esté etiquetado y que conserve la estructura y el texto alternativo; exportar un documento accesible a PDF no garantiza por sí solo un PDF accesible.\n\n**4.8. Buenas prácticas y riesgos.** Conviene guardar con nombres claros y versiones, usar plantillas y estilos, evitar formatos y macros innecesarios y proteger los documentos con contraseña cuando contengan datos personales. Las **macros** son programas incrustados que pueden ejecutar acciones maliciosas: hay que abrir solo documentos de confianza y mantener la seguridad de macros activada. Los **metadatos** (autor, fecha, comentarios) pueden revelar información y deben revisarse antes de publicar. La **colaboración** mediante coedición o carpetas compartidas exige control de versiones y permisos; los cambios deben revisarse antes de dar un documento por definitivo.",
+      "table": {
+        "columns": [
+          "Epígrafe",
+          "Datos que hay que retener"
+        ],
+        "rows": [
+          [
+            "Procesador",
+            "Carácter, párrafo, sección; estilos; índice; control de cambios; combinar correspondencia"
+          ],
+          [
+            "Hoja de cálculo",
+            "Libro, hoja y celda; referencias relativas, absolutas y mixtas; funciones; tablas dinámicas"
+          ],
+          [
+            "Presentaciones",
+            "Diapositivas, patrón, transiciones (entre diapositivas) y animaciones (dentro de una)"
+          ],
+          [
+            "Formatos",
+            "DOCX/XLSX/PPTX (OOXML) y ODT/ODS/ODP (ODF); RTF, TXT, CSV, HTML, PDF"
+          ],
+          [
+            "PDF",
+            "Diseño fijo, fuentes incrustadas, firma, formularios; PDF/A para archivo"
+          ],
+          [
+            "Plantillas",
+            "DOTX, XLTX, POTX y OTT, OTS, OTP; estilos y temas"
+          ],
+          [
+            "Accesibilidad",
+            "Encabezados, texto alternativo, encabezados de tabla, contraste, orden de lectura, PDF etiquetado"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "5. Tabla comparativa: aplicaciones y usos",
+      "body": "La tabla resume la equivalencia entre las suites más habituales y el uso de cada aplicación, con sus extensiones nativas y de plantilla.",
+      "table": {
+        "columns": [
+          "Función",
+          "Microsoft",
+          "LibreOffice",
+          "Uso típico"
+        ],
+        "rows": [
+          [
+            "Procesador de textos",
+            "Word (DOCX; plantilla DOTX)",
+            "Writer (ODT; plantilla OTT)",
+            "Memorias, informes, resoluciones"
+          ],
+          [
+            "Hoja de cálculo",
+            "Excel (XLSX; plantilla XLTX)",
+            "Calc (ODS; plantilla OTS)",
+            "Presupuestos, listados, cálculos"
+          ],
+          [
+            "Presentaciones",
+            "PowerPoint (PPTX; plantilla POTX)",
+            "Impress (ODP; plantilla OTP)",
+            "Reuniones, formación"
+          ],
+          [
+            "Documento final",
+            "PDF (exportar)",
+            "PDF (exportar)",
+            "Distribución y publicación"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Una unidad administrativa debe preparar la memoria anual de su servicio, un presupuesto con desglose por conceptos y una presentación para la reunión de dirección. Los documentos deben publicarse en la sede electrónica y ser accesibles.\n\n**Resolución.**\n\n- **Memoria:** se parte de la plantilla corporativa en el procesador de textos, se aplican estilos de título y de párrafo y se genera el índice automático. Las imágenes llevan texto alternativo y las tablas, encabezados de columna. Antes de cerrar se revisan los comentarios y se aceptan o rechazan los cambios.\n- **Presupuesto:** se crea un libro con una hoja de datos y otra de resumen. Las fórmulas usan referencias absolutas cuando deben apuntar siempre a la misma celda (por ejemplo, el tipo de IVA) y relativas cuando se copian hacia abajo. Se añade formato condicional para destacar las desviaciones y una tabla dinámica para el resumen por conceptos.\n- **Presentación:** se usa la plantilla de la organización, una idea por diapositiva y pocas transiciones; los gráficos se copian desde la hoja de cálculo y se actualizan al cambiar los datos.\n- **Publicación:** los tres documentos se exportan a **PDF** para garantizar que el receptor los ve igual, y se comprueba que el PDF conserva los encabezados, el texto alternativo y el orden de lectura. Los archivos originales se conservan para futuras modificaciones.\n\n**Conclusión.** La ofimática no consiste solo en escribir o calcular: exige elegir bien el formato, mantener la estructura y los estilos y garantizar que el documento final sea accesible y reutilizable.",
+      "table": {
+        "columns": [
+          "Entregable",
+          "Herramienta",
+          "Punto clave"
+        ],
+        "rows": [
+          [
+            "Memoria",
+            "Word/Writer",
+            "Plantilla, estilos, índice y texto alternativo"
+          ],
+          [
+            "Presupuesto",
+            "Excel/Calc",
+            "Referencias absolutas y relativas, tabla dinámica"
+          ],
+          [
+            "Presentación",
+            "PowerPoint/Impress",
+            "Patrón, una idea por diapositiva"
+          ],
+          [
+            "Publicación",
+            "Exportar a PDF",
+            "PDF accesible y archivo original conservado"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "Las confusiones más frecuentes de este tema son estas:\n\n- **Confundir extensión y formato**: DOCX es OOXML y ODT es ODF; ambos son estándares abiertos, pero no son el mismo formato.\n- **Confundir referencia relativa y absoluta**: A1 cambia al copiar la fórmula; $A$1 se mantiene fija; $A1 y A$1 son mixtas.\n- **Confundir transición y animación**: la transición es el efecto entre diapositivas; la animación, el efecto dentro de una diapositiva.\n- **Confundir PDF con un formato editable**: el PDF conserva el diseño, pero para modificar el contenido hay que volver al archivo original.\n- **Creer que CSV guarda fórmulas o formato**: CSV es texto plano con valores separados por comas.\n- **Confundir plantilla con documento**: la plantilla sirve de base; el documento es el resultado que se guarda con otro nombre.\n- **Creer que exportar a PDF garantiza accesibilidad**: hace falta que el PDF esté etiquetado y conserve estructura y texto alternativo.\n- **Olvidar la seguridad de las macros**: abrir documentos con macros de origen desconocido es un riesgo.\n- **Usar negritas en lugar de estilos de encabezado**: rompe el índice automático y la accesibilidad.",
+      "table": {
+        "columns": [
+          "Confusión",
+          "Lo correcto"
+        ],
+        "rows": [
+          [
+            "DOCX = ODT",
+            "Son formatos distintos: OOXML y ODF"
+          ],
+          [
+            "A1 = $A$1",
+            "A1 es relativa; $A$1 es absoluta"
+          ],
+          [
+            "Transición = animación",
+            "Transición entre diapositivas; animación dentro de una"
+          ],
+          [
+            "PDF = editable",
+            "El PDF no es el formato de edición; se edita el original"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Procesador de textos.** Carácter, párrafo y sección; estilos; tablas, imágenes, índices, control de cambios y combinación de correspondencia.\n\n**Hoja de cálculo.** Libro, hoja y celda; referencias relativas (A1), absolutas ($A$1) y mixtas ($A1, A$1); funciones (SUMA, SI, BUSCARV, CONTAR); gráficos, validación, formato condicional y tablas dinámicas.\n\n**Presentaciones.** Diapositivas, diseños y patrón; transiciones entre diapositivas y animaciones dentro de ellas; notas y exportación.\n\n**Formatos.** OOXML (DOCX, XLSX, PPTX) y ODF (ODT, ODS, ODP); RTF, TXT, CSV, HTML y PDF; las conversiones pueden perder formato o fórmulas.\n\n**PDF.** Diseño fijo, fuentes incrustadas, firma, formularios y compresión; PDF/A para archivo a largo plazo; no es el formato de edición.\n\n**Plantillas.** DOTX, XLTX, POTX y OTT, OTS, OTP; estilos y temas para mantener la coherencia.\n\n**Accesibilidad.** Encabezados, texto alternativo, encabezados de tabla, contraste, orden de lectura y PDF etiquetado.\n\n**Buenas prácticas.** Nombres y versiones, plantillas, protección de datos, cuidado con macros y metadatos, y control de cambios antes de publicar."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos siguientes reproducen el estilo de pregunta del bloque II. Cada uno incluye la respuesta correcta y una explicación que recuerda el concepto del apartado correspondiente; la referencia indica el epígrafe donde se desarrolla. Conviene contestarlos sin mirar la solución y revisar después solo los fallos."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "Este tema se ha redactado como **material propio de OpoFuente**, ante la ausencia de un documento de ofimática en el escritorio de fuentes. No se han copiado textos de academias, blogs ni apuntes privados, y no se citan fuentes inexistentes: la entrada de `sources` lo deja constancia de forma expresa. Las referencias de los casos tipo test apuntan a los apartados de este mismo tema."
+    }
+  ]
 }

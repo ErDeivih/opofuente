@@ -1,0 +1,272 @@
+{
+  "tema": "II.16",
+  "title": "Correo electrónico y colaboración",
+  "difficulty": "media",
+  "topics": ["II.16", "III.23"],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema:** II.16, «Correo electrónico y colaboración», del bloque II (Informática básica y ofimática) del temario común de informática C1. **Materias que cubre:** redes de trabajo en grupo y recursos compartidos, arquitectura del correo (MUA, MTA, MDA y MAA), SMTP, POP3 e IMAP, MIME, webmail, listas de correo, seguridad del correo (TLS y SPF) y continuidad del servicio. **Relación con otros temas:** se apoya en II.14 (sistemas operativos de usuario) y III.23 (servicios de red). **Fuentes:** `Tema 9.docx` y `Tema 13.docx`, volcados en `data/fuentes/II.16.txt`.\n\n**Limitación de la fuente:** el volcado de II.16 desarrolla el correo y la colaboración basada en recursos compartidos, pero no contiene apartados específicos de Microsoft Teams, SharePoint ni calendarios compartidos. Para no inventar, este tema no incluye esas herramientas y se limita a los contenidos que sí documenta la fuente.",
+      "table": {
+        "columns": ["Dato de la ficha", "Valor"],
+        "rows": [
+          ["Tema", "II.16 Correo electrónico y colaboración"],
+          ["Bloque", "II · Informática básica y ofimática"],
+          ["Materias", "SMTP, POP3, IMAP, MIME, webmail, recursos compartidos, TLS y SPF"],
+          ["Temas relacionados", "II.14 Sistemas operativos de usuario; III.23 Servicios de red"],
+          ["Fuente", "Tema 9.docx y Tema 13.docx"]
+        ]
+      }
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El desarrollo del tema se organiza en los epígrafes del apartado 4:\n\n- **4.1.** Redes de trabajo en grupo y recursos compartidos.\n- **4.2.** La arquitectura del correo: agentes y funciones.\n- **4.3.** SMTP: el envío de mensajes.\n- **4.4.** POP3: la recepción diferida.\n- **4.5.** IMAP4: la recepción sincronizada.\n- **4.6.** Webmail, listas de correo y colaboración.\n- **4.7.** Seguridad del correo y buenas prácticas.\n- **4.8.** Administración y continuidad del servicio.\n\nCompletan el tema la tabla comparativa (apartado 5), el ejemplo práctico (6), las trampas de examen (7), el resumen para memorizar (8), los quince casos tipo test (9) y las fuentes citadas (10)."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "El correo electrónico es el servicio de Internet que permite enviar y recibir mensajes de forma **asíncrona**, con la posibilidad de adjuntar archivos y de aplicar formatos y prioridades. En la Administración es una herramienta de trabajo cotidiana: notificaciones, comunicaciones internas, convocatorias y traslado de documentos. A su alrededor han crecido los servicios de **colaboración**: carpetas y recursos compartidos, directorios de usuarios, agendas y herramientas web que permiten trabajar en grupo.\n\nTécnicamente, el correo se apoya en tres piezas: un cliente que redacta y lee los mensajes, servidores que los transfieren y almacenan, y protocolos que regulan el envío y la recepción. Entender esa arquitectura es lo que permite responder sin dudas a las preguntas sobre SMTP, POP3 e IMAP, sus puertos y sus comandos.\n\nEste tema explica también cómo se comparte información en una red (modelo de trabajo en grupo frente a red basada en servidor) y qué medidas protegen el correo: cifrado TLS, autenticación y registros SPF contra el spam.",
+      "table": {
+        "columns": ["Fuente", "Qué aporta"],
+        "rows": [
+          ["Tema 9.docx", "Administración de redes, trabajo en grupo, servidores, usuarios, recursos compartidos y mensajería"],
+          ["Tema 13.docx", "Correo electrónico, agentes, SMTP, POP3, IMAP, MIME, DNS y Web"]
+        ]
+      }
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1. Redes de trabajo en grupo y recursos compartidos.** En una red local conviven servidores (equipos que ofrecen recursos), clientes (equipos que los usan), el medio de conexión y los recursos compartidos: archivos, impresoras y otros periféricos. Hay dos modelos. En el **trabajo en grupo (workgroup)** no hay servidores dedicados ni jerarquía: todos los equipos son iguales y actúan como cliente y servidor, cada usuario decide qué comparte, y resulta adecuado para grupos pequeños de hasta diez usuarios cuando la seguridad no es crítica. En la **red basada en servidor** hay servidores dedicados, optimizados para atender peticiones y garantizar la seguridad; existen servidores especializados de archivos e impresión, de aplicaciones, de correo, de fax, de comunicaciones y de servicios de directorio. El software cliente incorpora un **redirector** que envía las peticiones de recursos al servidor correspondiente y permite acceder a una unidad de red o a una impresora remota como si fueran locales. Los sistemas operativos de red gestionan usuarios y grupos, asignan permisos, controlan el acceso simultáneo y ofrecen herramientas de gestión y mensajería (avisos y alarmas).\n\n**4.2. La arquitectura del correo.** Un sistema de correo se organiza en cuatro agentes. El **MUA** (Mail User Agent) es el cliente con el que el usuario redacta, envía y recibe mensajes; usa SMTP para el envío y POP3 o IMAP para la recepción, y puede ser una aplicación de escritorio o un **webmail** (por ejemplo, squirrelmail). El **MTA** (Mail Transfer Agent) transfiere el mensaje entre servidores o desde el MUA hasta el servidor de destino; ejemplos son postfix, qmail, exim, cyrus y courier. El **MDA** (Mail Delivery Agent) recibe el mensaje del MTA y lo almacena en el buzón, pudiendo procesarlo con programas auxiliares (listas de correo, filtros); ejemplos son procmail y maildrop. El **MAA** (Mail Access Agent) hace accesible el buzón a los clientes remotos y su protocolo más usado es POP3; ejemplos son dovecot, uw y qpopper.\n\n**4.3. SMTP.** SMTP es el protocolo de **envío** de correo entre hosts TCP/IP; no recibe mensajes. El emisor abre una conexión TCP con el servidor de destino en el puerto **25**, espera el saludo 220 y comienza el diálogo: **HELO** (o EHLO, si se negocian extensiones) identifica al emisor; **MAIL FROM** indica el remitente; **RCPT TO** añade cada destinatario; **DATA** inicia el contenido y el final se marca con la secuencia de retorno de carro y línea en blanco; **QUIT** cierra la sesión (código 221). El servidor responde con códigos como 250 (aceptado), 354 (continuar con los datos) o 550 (buzón inexistente). SMTP solo admite texto en ASCII de 7 bits y líneas de hasta 1000 caracteres, por lo que se añadieron las **extensiones de servicio** y **MIME**: MIME codifica datos binarios y texto de otros idiomas sobre ASCII de 7 bits y permite adjuntos y contenido incrustado. Para localizar el servidor de correo de un dominio, el emisor consulta en DNS los registros **MX**, que incluyen una preferencia entre varios servidores.\n\n**4.4. POP3.** POP3 es un protocolo de **recepción** con funciones de cliente y servidor. El cliente abre una conexión TCP en el puerto **110** y pasa por tres estados: **autenticación** (USER y PASS, o APOP), **transacción** (STAT y LIST para consultar, RETR para recuperar, DELE para borrar) y **actualización** al enviar QUIT. POP3 está pensado para descargar los mensajes al equipo local y trabajar sin conexión; es eficiente en la recepción asíncrona, pero no está diseñado para sincronizar varios dispositivos.\n\n**4.5. IMAP4.** IMAP4 mejora la recepción: el servidor almacena los mensajes de varios usuarios y el cliente mantiene una **sincronización** entre el buzón del servidor y su copia local. Los mensajes permanecen en el servidor, se identifican con un **UID** y el cliente puede trabajar en modo desconectado y sincronizar los cambios al reconectarse. IMAP4 interpreta el contenido MIME multiparte, lo que permite descargar objetos sueltos de un mensaje. El cliente conecta por el puerto **143** y el servidor responde con marcas identificativas y códigos OK, NO o BAD.\n\n**4.6. Webmail, listas y colaboración.** El **webmail** es un MUA que se ejecuta en el navegador: el usuario accede a su buzón desde cualquier equipo sin instalar un cliente. La Web se basa en HTTP y HTML, y el término **Web 2.0** se asocia a aplicaciones que facilitan la compartición de información y los entornos colaborativos. En el correo, las **listas de correo** son una extensión de funcionalidad y el MDA puede procesar los mensajes para distribuirlos a los miembros; también existen filtros y respuestas automáticas. La colaboración en red se apoya además en recursos compartidos (carpetas, impresoras), directorios de usuarios y mensajería interna.\n\n**4.7. Seguridad del correo.** El correo nació sin cifrado ni autenticación y hoy se protege con **SSL/TLS**: SMTP seguro en el puerto **465**, POP3 seguro en el **995** e IMAP seguro en el **993**, además de las variantes con STARTTLS. El **SPF** (Sender Policy Framework) es un registro DNS que combate el spam: indica qué servidores están autorizados a enviar correo en nombre de un dominio y permite comparar la IP del emisor con esa lista. En el lado del usuario, la seguridad depende de contraseñas robustas, cuentas nominativas, permisos y de no abrir adjuntos sospechosos.\n\n**4.8. Administración y continuidad.** En una red basada en servidor, el administrador define la política de seguridad para todos los usuarios, programa copias de seguridad, aprovecha la redundancia de los servidores y puede atender a un número elevado de usuarios; en un workgroup cada usuario es su propio administrador y la seguridad es más difícil de controlar. El servidor de correo se comporta como un servidor de aplicaciones: el buzón y los mensajes residen en el servidor y el cliente recibe datos de forma selectiva. La monitorización y la gestión de la red permiten detectar problemas antes de que el servicio caiga.",
+      "table": {
+        "columns": ["Epígrafe", "Datos que hay que retener"],
+        "rows": [
+          ["Trabajo en grupo", "Sin servidores dedicados, equipos iguales, máximo 10 usuarios, seguridad débil"],
+          ["Red con servidor", "Servidores dedicados, administración centralizada, seguridad, copias y redundancia"],
+          ["Agentes", "MUA (cliente), MTA (transferencia), MDA (entrega al buzón), MAA (acceso)"],
+          ["SMTP", "Solo envío; puerto 25; HELO/EHLO, MAIL FROM, RCPT TO, DATA y QUIT"],
+          ["POP3", "Recepción; puerto 110; autenticación, transacción y actualización; descarga local"],
+          ["IMAP4", "Recepción sincronizada; puerto 143; mensajes en servidor y UID"],
+          ["Seguridad", "TLS en 465 (SMTP), 995 (POP3) y 993 (IMAP); SPF contra el spam"],
+          ["Colaboración", "Recursos compartidos, webmail, listas de correo, directorios y mensajería"]
+        ]
+      }
+    },
+    {
+      "heading": "5. Tabla comparativa: POP3 frente a IMAP",
+      "body": "La tabla resume la diferencia que más se pregunta: POP3 descarga y trabaja en local; IMAP mantiene el buzón en el servidor y sincroniza. De ahí se derivan el uso en varios dispositivos, el consumo de espacio y el modo de trabajo.",
+      "table": {
+        "columns": ["Aspecto", "POP3", "IMAP"],
+        "rows": [
+          ["Función", "Recepción de correo", "Recepción de correo"],
+          ["Puerto", "110; 995 con TLS", "143; 993 con TLS"],
+          ["Ubicación de los mensajes", "Se descargan al equipo local", "Permanecen en el servidor"],
+          ["Sincronización", "No sincroniza varios dispositivos", "Sincroniza el buzón entre dispositivos"],
+          ["Modo de trabajo", "Diferido, sin conexión permanente", "En línea o desconectado con sincronización"],
+          ["Uso típico", "Un único equipo y buzón pequeño", "Varios dispositivos y buzón grande"]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un organismo quiere dar correo a sus empleados y compartir documentación de trabajo. Dispone de un dominio propio y de servidores Linux. Los empleados usan el portátil y el móvil, y algunos acceden desde casa con el navegador.\n\n**Resolución.**\n\n- **Dominio y DNS:** se publica el registro **MX** del dominio, con preferencia, para que los servidores de otros dominios encuentren el servidor de correo del organismo.\n- **Envío:** se instala un **MTA** (por ejemplo, postfix) que recibe los mensajes del MUA y los transfiere al destino; se abre el puerto **25** para el intercambio entre servidores y se configura TLS.\n- **Recepción:** como los empleados leen el correo en varios dispositivos, se elige **IMAP** (puerto 143 o 993 con TLS) para que el buzón permanezca en el servidor y se sincronice; POP3 se reservaría para un buzón consultado desde un solo equipo.\n- **Webmail:** se habilita un **webmail** (por ejemplo, squirrelmail) para acceder desde el navegador sin instalar cliente.\n- **Colaboración:** se publican carpetas compartidas en el servidor de archivos y se usa el directorio de usuarios para autenticar y asignar permisos; el **redirector** de los clientes permite acceder a esas carpetas como unidades de red.\n- **Seguridad:** se activa TLS en SMTP, POP3 e IMAP, se publica un registro **SPF** que autoriza solo a los servidores del organismo a enviar correo en su nombre y se forma a los usuarios para no abrir adjuntos sospechosos.\n\n**Conclusión.** El correo funciona cuando DNS, SMTP, recepción, seguridad y administración están coordinados; la colaboración se apoya en recursos compartidos y en un directorio centralizado de usuarios.",
+      "table": {
+        "columns": ["Necesidad", "Solución", "Dato clave"],
+        "rows": [
+          ["Encontrar el servidor de correo", "Registro MX", "Preferencia entre servidores"],
+          ["Enviar correo", "SMTP en el puerto 25", "HELO, MAIL FROM, RCPT TO y DATA"],
+          ["Leer en varios dispositivos", "IMAP", "Buzón en el servidor y sincronización"],
+          ["Acceder desde el navegador", "Webmail", "MUA ejecutado en el navegador"],
+          ["Evitar spam", "Registro SPF", "Solo autoriza a los servidores del dominio"]
+        ]
+      }
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "Las confusiones más frecuentes de este tema son estas:\n\n- **Confundir los agentes**: el MUA es el cliente; el MTA transfiere entre servidores; el MDA entrega al buzón y el MAA da acceso al buzón.\n- **Creer que SMTP recibe correo**: SMTP solo envía; la recepción corresponde a POP3 o IMAP.\n- **Confundir POP3 e IMAP**: POP3 descarga y trabaja en local; IMAP mantiene el buzón en el servidor y sincroniza.\n- **Confundir los puertos**: SMTP 25 (y 465 con TLS), POP3 110 (995 con TLS), IMAP 143 (993 con TLS).\n- **Creer que MIME es un protocolo de transporte**: MIME es una extensión de formato que permite adjuntos y otros idiomas sobre ASCII de 7 bits.\n- **Olvidar el registro MX**: es el que indica a otros servidores dónde entregar el correo del dominio.\n- **Confundir workgroup con red basada en servidor**: el workgroup no tiene servidores dedicados y se limita a grupos pequeños; la red con servidor centraliza la administración y la seguridad.\n- **Creer que el webmail es un protocolo**: es un MUA que se ejecuta en el navegador.\n- **Confundir SPF con un sistema de cifrado**: SPF autoriza servidores emisores; el cifrado lo aporta TLS.",
+      "table": {
+        "columns": ["Confusión", "Lo correcto"],
+        "rows": [
+          ["SMTP recibe", "SMTP solo envía; POP3 e IMAP reciben"],
+          ["POP3 = IMAP", "POP3 descarga; IMAP sincroniza con el servidor"],
+          ["MIME = protocolo", "MIME es una extensión de formato"],
+          ["SPF = cifrado", "SPF autoriza emisores; TLS cifra"]
+        ]
+      }
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Trabajo en grupo.** Sin servidores dedicados, equipos iguales, máximo 10 usuarios, seguridad débil; red con servidor: administración centralizada, seguridad, copias y redundancia.\n\n**Agentes.** MUA (cliente), MTA (transferencia entre servidores), MDA (entrega al buzón) y MAA (acceso al buzón); ejemplos de MTA: postfix, qmail, exim; de MDA: procmail, maildrop; de MAA: dovecot, qpopper.\n\n**SMTP.** Solo envío; puerto 25; HELO/EHLO, MAIL FROM, RCPT TO, DATA, QUIT; códigos 220, 250, 354, 550 y 221; ASCII de 7 bits y 1000 caracteres; extensiones y MIME; DNS MX para localizar el destino.\n\n**POP3.** Puerto 110 (995 con TLS); estados de autenticación (USER/PASS/APOP), transacción (STAT, LIST, RETR, DELE) y actualización; descarga local y trabajo sin conexión.\n\n**IMAP4.** Puerto 143 (993 con TLS); buzón en el servidor, sincronización, UID, contenido MIME multiparte y trabajo desconectado.\n\n**Webmail y colaboración.** Webmail como MUA en el navegador; listas de correo; recursos compartidos, directorios de usuarios y mensajería.\n\n**Seguridad.** TLS en SMTP 465, POP3 995 e IMAP 993; SPF contra el spam; contraseñas robustas, cuentas nominativas y precaución con adjuntos."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos siguientes reproducen el estilo de pregunta del bloque II. Cada uno incluye la respuesta correcta y una explicación que recuerda el dato del temario; la referencia indica el epígrafe y la fuente donde está el contenido. Conviene contestarlos sin mirar la solución y revisar después solo los fallos."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "El tema se ha redactado a partir de `data/fuentes/II.16.txt`, que reúne el volcado de `Tema 9.docx` (administración de redes, trabajo en grupo, servidores, usuarios y recursos compartidos) y de `Tema 13.docx` (correo electrónico, agentes, SMTP, POP3, IMAP, MIME, DNS y Web). Las citas por apartado aparecen en la lista `sources` y en la referencia de cada caso tipo test. No se han copiado párrafos literales y no se han añadido datos que no figuren en esas fuentes; en particular, el volcado no desarrolla Teams, SharePoint, calendarios compartidos ni phishing, por lo que no se incluyen contenidos de esas materias."
+    }
+  ],
+  "testCases": [
+    {
+      "question": "En la arquitectura del correo, ¿qué es el MUA?",
+      "options": [
+        "El agente que transfiere mensajes entre servidores",
+        "El cliente con el que el usuario redacta, envía y recibe mensajes",
+        "El agente que entrega el mensaje al buzón",
+        "El agente que da acceso al buzón almacenado"
+      ],
+      "answer": "b",
+      "explanation": "El MUA (Mail User Agent) es el cliente de correo: la aplicación o webmail con la que el usuario redacta, envía y recibe mensajes. La transferencia corresponde al MTA, la entrega al MDA y el acceso al MAA.",
+      "reference": "Apdo. 4.2 · Tema 13.docx, agentes de correo"
+    },
+    {
+      "question": "¿Qué agente se encarga de transferir los mensajes entre servidores de correo?",
+      "options": ["MTA", "MUA", "MDA", "MAA"],
+      "answer": "a",
+      "explanation": "El MTA (Mail Transfer Agent) toma el mensaje de un MUA o de otro MTA y lo entrega a otro MTA o a un MDA. Ejemplos son postfix, qmail y exim.",
+      "reference": "Apdo. 4.2 · Tema 13.docx, agentes de correo"
+    },
+    {
+      "question": "¿Qué protocolo se dedica únicamente al envío de correo y no a la recepción?",
+      "options": ["POP3", "IMAP", "SMTP", "MIME"],
+      "answer": "c",
+      "explanation": "SMTP es el protocolo de envío entre hosts TCP/IP. La recepción corresponde a POP3 o IMAP; MIME es una extensión de formato, no un protocolo de transporte.",
+      "reference": "Apdo. 4.3 · Tema 13.docx, SMTP"
+    },
+    {
+      "question": "¿Qué puerto utiliza SMTP para el intercambio de correo entre servidores?",
+      "options": ["110", "143", "993", "25"],
+      "answer": "d",
+      "explanation": "SMTP usa el puerto 25 para el intercambio entre servidores. El 110 es POP3, el 143 es IMAP y el 993 es IMAP con TLS.",
+      "reference": "Apdo. 4.3 · Tema 13.docx, SMTP"
+    },
+    {
+      "question": "¿Qué puerto utiliza POP3 sin cifrar?",
+      "options": ["110", "995", "143", "25"],
+      "answer": "a",
+      "explanation": "POP3 usa el puerto 110; el 995 es POP3 con SSL/TLS (POP3S), el 143 es IMAP y el 25 es SMTP.",
+      "reference": "Apdo. 4.4 · Tema 13.docx, POP3"
+    },
+    {
+      "question": "¿Qué puerto utiliza IMAP con TLS (IMAPS)?",
+      "options": ["143", "993", "995", "465"],
+      "answer": "b",
+      "explanation": "IMAP sin cifrar usa el 143 y con TLS el 993. El 995 es POP3S y el 465 es SMTP con SSL/TLS.",
+      "reference": "Apdo. 4.5 · Tema 13.docx, IMAP y TLS"
+    },
+    {
+      "question": "¿Qué protocolo de recepción mantiene los mensajes en el servidor y sincroniza su estado entre varios dispositivos?",
+      "options": ["SMTP", "POP3", "IMAP", "MIME"],
+      "answer": "c",
+      "explanation": "IMAP4 mantiene los mensajes en el servidor y sincroniza la copia del cliente, por lo que el estado del buzón se conserva entre dispositivos. POP3 descarga los mensajes al equipo local.",
+      "reference": "Apdo. 4.5 · Tema 13.docx, IMAP4"
+    },
+    {
+      "question": "¿Qué hace POP3 por defecto con los mensajes cuando el cliente los descarga?",
+      "options": [
+        "Los mantiene siempre en el servidor",
+        "Solo los envía a otro servidor",
+        "Los sincroniza en todos los dispositivos",
+        "Los descarga al equipo local y los borra del servidor"
+      ],
+      "answer": "d",
+      "explanation": "POP3 está pensado para descargar los mensajes al equipo local y, por defecto, borrarlos del servidor; por eso no sincroniza varios dispositivos como IMAP.",
+      "reference": "Apdo. 4.4 · Tema 13.docx, POP3"
+    },
+    {
+      "question": "¿Para qué se creó MIME en el correo electrónico?",
+      "options": [
+        "Para codificar datos binarios, adjuntos y otros idiomas sobre el ASCII de 7 bits de SMTP",
+        "Para cifrar los mensajes con TLS",
+        "Para sustituir a SMTP en la recepción",
+        "Para traducir nombres de dominio a direcciones IP"
+      ],
+      "answer": "a",
+      "explanation": "SMTP solo admite ASCII de 7 bits y líneas de hasta 1000 caracteres; MIME permite codificar datos binarios, adjuntos y texto de otros idiomas sobre esa base. El cifrado lo aporta TLS y la resolución de nombres, DNS.",
+      "reference": "Apdo. 4.3 · Tema 13.docx, MIME"
+    },
+    {
+      "question": "¿Qué limitación de SMTP resuelven las extensiones de servicio y MIME?",
+      "options": [
+        "La falta de servidores de correo",
+        "El uso exclusivo de ASCII de 7 bits y el límite de 1000 caracteres",
+        "La inexistencia de direcciones de correo",
+        "La falta de clientes de correo"
+      ],
+      "answer": "b",
+      "explanation": "SMTP solo admite datos en ASCII de 7 bits y líneas de hasta 1000 caracteres; las extensiones de servicio permiten negociar otras codificaciones y tamaños, y MIME codifica datos binarios y adjuntos.",
+      "reference": "Apdo. 4.3 · Tema 13.docx, MIME y extensiones"
+    },
+    {
+      "question": "¿Qué registro DNS permite localizar el servidor de correo de un dominio?",
+      "options": ["A", "PTR", "MX", "SPF"],
+      "answer": "c",
+      "explanation": "El registro MX asocia el dominio con sus servidores de intercambio de correo e incluye una preferencia entre ellos. A resuelve a IPv4, PTR es la resolución inversa y SPF autoriza emisores contra el spam.",
+      "reference": "Apdo. 4.3 · Tema 13.docx, DNS y correo"
+    },
+    {
+      "question": "¿Qué función cumple el registro SPF de un dominio?",
+      "options": [
+        "Cifrar los mensajes que se envían desde el dominio",
+        "Sustituir al registro MX",
+        "Almacenar los buzones de los usuarios",
+        "Indicar qué servidores están autorizados a enviar correo en nombre del dominio"
+      ],
+      "answer": "d",
+      "explanation": "SPF (Sender Policy Framework) combate el spam: publica en DNS qué hosts pueden enviar correo con ese dominio y permite comparar la IP del emisor con esa lista. No cifra ni sustituye al MX.",
+      "reference": "Apdo. 4.7 · Tema 13.docx, registro SPF"
+    },
+    {
+      "question": "En una red de trabajo en grupo (workgroup), ¿cuál es el límite habitual de equipos y su característica principal?",
+      "options": [
+        "Hasta 10 usuarios; no hay servidores dedicados y los equipos son iguales",
+        "Cientos de usuarios; requiere un servidor dedicado",
+        "Sin límite; la administración es centralizada",
+        "Solo dos equipos; siempre usa Active Directory"
+      ],
+      "answer": "a",
+      "explanation": "El workgroup está pensado para grupos pequeños (máximo diez equipos), sin servidores dedicados ni jerarquía: cada equipo actúa como cliente y servidor. La red basada en servidor es la que centraliza la administración y admite más usuarios.",
+      "reference": "Apdo. 4.1 · Tema 9.docx, redes de trabajo en grupo"
+    },
+    {
+      "question": "¿Qué hace el redirector en un cliente de red?",
+      "options": [
+        "Entrega los mensajes al buzón del usuario",
+        "Envía al servidor las peticiones de recursos compartidos y las presenta como locales",
+        "Cifra el tráfico de correo",
+        "Traduce nombres de dominio a direcciones IP"
+      ],
+      "answer": "b",
+      "explanation": "El redirector intercepta las peticiones de recursos del cliente y las encamina al servidor correspondiente, de modo que una carpeta o impresora remota se usa como si fuera local. La entrega al buzón es del MDA.",
+      "reference": "Apdo. 4.1 · Tema 9.docx, software de cliente y redirector"
+    },
+    {
+      "question": "¿Qué trío de puertos corresponde al correo protegido con TLS en SMTP, POP3 e IMAP?",
+      "options": [
+        "25, 110 y 143",
+        "465, 995 y 993",
+        "587, 110 y 143",
+        "80, 443 y 8080"
+      ],
+      "answer": "b",
+      "explanation": "Con TLS, SMTP usa el 465, POP3 el 995 e IMAP el 993. Los puertos 25, 110 y 143 son las versiones sin cifrar, y 80, 443 y 8080 son puertos web.",
+      "reference": "Apdo. 4.7 · Tema 13.docx, SSL/TLS en correo"
+    }
+  ],
+  "sources": [
+    {
+      "file": "data/fuentes/II.16.txt",
+      "page": "líneas 1-448 (Tema 9) y 449-621 (Tema 13)",
+      "use": "texto consolidado del que se extrajeron los datos; las citas concretas se detallan en las entradas siguientes"
+    },
+    {
+      "file": "Tema 9.docx",
+      "page": "DOCX, apartados 1-3 (administración de redes locales, sistemas operativos de red y gestión de usuarios)",
+      "use": "trabajo en grupo, red basada en servidor, servidores especializados, redirector, recursos compartidos, usuarios y grupos, mensajería"
+    },
+    {
+      "file": "Tema 13.docx",
+      "page": "DOCX, apartados 2 y 4 (correo electrónico y DNS)",
+      "use": "agentes MUA/MTA/MDA/MAA, SMTP, POP3, IMAP4, MIME, puertos, SSL/TLS, registros MX y SPF"
+    }
+  ]
+}

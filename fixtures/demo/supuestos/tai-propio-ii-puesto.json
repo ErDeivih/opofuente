@@ -1,0 +1,250 @@
+{
+  "slug": "tai-propio-ii-puesto",
+  "year": 2026,
+  "conv": "Supuesto propio · OpoFuente 2026",
+  "block": "II",
+  "title": "Puesto de trabajo ofimático y correo",
+  "difficulty": "media",
+  "official": false,
+  "estimatedMinutes": 30,
+  "statement": "Una unidad municipal renueva 15 puestos ofimáticos y su correo. El equipo debe elegir suites, formatos, plantillas, accesibilidad, protocolo de correo y política de seguridad antes de desplegar.",
+  "steps": [
+    "1. Inventariar puestos y necesidades.",
+    "2. Elegir suite y formatos.",
+    "3. Diseñar plantillas y accesibilidad.",
+    "4. Configurar correo y colaboración.",
+    "5. Desplegar y documentar."
+  ],
+  "topics": [
+    "II.15",
+    "II.16",
+    "II.17"
+  ],
+  "source": {
+    "label": "Elaboración propia · OpoFuente",
+    "url": "https://erdeivih.github.io/opofuente-demo/",
+    "pages": "Material propio de la demo"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué formato es el nativo de LibreOffice Calc?",
+      "options": [
+        "ODS",
+        "DOCX",
+        "PPTX",
+        "PDF"
+      ],
+      "correct": "a",
+      "justification": "Calc usa ODS (OpenDocument Spreadsheet) como formato nativo; XLSX es el de Excel."
+    },
+    {
+      "stem": "¿Qué hace una referencia absoluta como `$A$1`?",
+      "options": [
+        "Cambia de fila al copiar",
+        "Mantiene la referencia al copiar la fórmula",
+        "Convierte el valor en texto",
+        "Elimina la fórmula"
+      ],
+      "correct": "b",
+      "justification": "Los signos `$` fijan columna y fila, de modo que la referencia no se desplaza al copiar la fórmula."
+    },
+    {
+      "stem": "¿Para qué sirve la función SUMA?",
+      "options": [
+        "Crear una tabla dinámica",
+        "Ordenar alfabéticamente",
+        "Sumar los valores de un rango",
+        "Cambiar el formato de una celda"
+      ],
+      "correct": "c",
+      "justification": "SUMA agrega los valores de las celdas o rangos indicados."
+    },
+    {
+      "stem": "¿Qué permite una tabla dinámica?",
+      "options": [
+        "Comprimir imágenes",
+        "Cambiar el idioma del documento",
+        "Firmar digitalmente un PDF",
+        "Resumir y agrupar datos por filas, columnas y valores"
+      ],
+      "correct": "d",
+      "justification": "Las tablas dinámicas resumen grandes conjuntos de datos y permiten analizarlos desde distintos puntos de vista."
+    },
+    {
+      "stem": "¿Por qué conviene usar estilos en un documento de texto?",
+      "options": [
+        "Para mantener coherencia, generar índices y mejorar la accesibilidad",
+        "Para que el documento ocupe más",
+        "Para impedir la edición",
+        "Para eliminar las tablas"
+      ],
+      "correct": "a",
+      "justification": "Los estilos aplican formato coherente y permiten índices automáticos y una estructura accesible."
+    },
+    {
+      "stem": "¿Qué formato se recomienda para conservar un documento final sin alterar su apariencia?",
+      "options": [
+        "TXT",
+        "PDF",
+        "CSV",
+        "ODP"
+      ],
+      "correct": "b",
+      "justification": "El PDF conserva la apariencia y es el formato habitual de distribución; PDF/A se usa para conservación a largo plazo."
+    },
+    {
+      "stem": "¿Qué hay que comprobar al importar un CSV en una hoja de cálculo?",
+      "options": [
+        "El número de diapositivas",
+        "El color de la primera fila",
+        "El separador y la codificación de caracteres",
+        "La firma digital"
+      ],
+      "correct": "c",
+      "justification": "Un CSV no guarda tipos ni formato; el separador y la codificación (por ejemplo, UTF-8) determinan si las columnas y acentos se leen bien."
+    },
+    {
+      "stem": "¿Qué es una plantilla maestra en una presentación?",
+      "options": [
+        "Una hoja de cálculo",
+        "Una diapositiva con una imagen",
+        "Un archivo PDF",
+        "Un patrón que define fondos, fuentes y estilos de las diapositivas"
+      ],
+      "correct": "d",
+      "justification": "La plantilla maestra da coherencia visual y evita repetir formato en cada diapositiva."
+    },
+    {
+      "stem": "¿Para qué sirve LibreOffice Base?",
+      "options": [
+        "Para crear bases de datos de escritorio, consultas e informes",
+        "Para editar vídeo",
+        "Para diseñar circuitos",
+        "Para navegar por internet"
+      ],
+      "correct": "a",
+      "justification": "Base es el componente de bases de datos de LibreOffice, útil para pequeñas aplicaciones locales."
+    },
+    {
+      "stem": "¿Qué mejora la accesibilidad de un documento ofimático?",
+      "options": [
+        "Usar solo imágenes escaneadas",
+        "Usar texto alternativo, estructura de encabezados y buen contraste",
+        "Eliminar los estilos",
+        "Guardar todo en CSV"
+      ],
+      "correct": "b",
+      "justification": "El texto alternativo, la jerarquía de encabezados y el contraste permiten que más personas y tecnologías de apoyo usen el documento."
+    },
+    {
+      "stem": "¿Qué protocolo se usa para enviar correo electrónico?",
+      "options": [
+        "POP3",
+        "SMTP",
+        "IMAP",
+        "CalDAV"
+      ],
+      "correct": "b",
+      "justification": "SMTP (Simple Mail Transfer Protocol) se usa para el envío entre cliente y servidor y entre servidores."
+    },
+    {
+      "stem": "¿Qué protocolo sincroniza carpetas y estados entre varios dispositivos?",
+      "options": [
+        "SMTP",
+        "POP3",
+        "IMAP",
+        "DNS"
+      ],
+      "correct": "c",
+      "justification": "IMAP mantiene el correo en el servidor y sincroniza carpetas, leídos y marcas entre dispositivos."
+    },
+    {
+      "stem": "¿Qué hace POP3 al descargar el correo?",
+      "options": [
+        "Cifra el disco del usuario",
+        "Sincroniza siempre todas las carpetas",
+        "Envía el correo a otro dominio",
+        "Puede descargar los mensajes y, según la configuración, borrarlos del servidor"
+      ],
+      "correct": "d",
+      "justification": "POP3 está orientado a descargar; según la configuración puede eliminar los mensajes del servidor, a diferencia de IMAP."
+    },
+    {
+      "stem": "¿Qué permite MIME en un mensaje?",
+      "options": [
+        "Incluir texto con acentos, HTML y adjuntos codificados",
+        "Comprimir el buzón",
+        "Firmar digitalmente el dominio",
+        "Cambiar la contraseña"
+      ],
+      "correct": "a",
+      "justification": "MIME define cómo codificar las distintas partes del mensaje (texto, HTML y adjuntos) para que se transmitan correctamente."
+    },
+    {
+      "stem": "¿Qué puerto es habitual para la sumisión de correo con autenticación?",
+      "options": [
+        "110",
+        "587",
+        "143",
+        "53"
+      ],
+      "correct": "b",
+      "justification": "El puerto 587 se usa para sumisión de correo autenticada; 465 es SMTPS y 25 el envío entre servidores."
+    },
+    {
+      "stem": "¿Qué protocolo usa el puerto 993?",
+      "options": [
+        "SMTP",
+        "POP3S",
+        "IMAPS",
+        "HTTP"
+      ],
+      "correct": "c",
+      "justification": "993 es el puerto seguro de IMAP (IMAPS); 995 es POP3S y 465 SMTPS."
+    },
+    {
+      "stem": "¿Qué es el phishing?",
+      "options": [
+        "Un tipo de firma digital",
+        "Un protocolo de correo",
+        "Un formato de adjunto",
+        "Un fraude que suplanta a una entidad para robar credenciales o datos"
+      ],
+      "correct": "d",
+      "justification": "El phishing suplanta a una entidad de confianza para que la víctima entregue datos o abra un adjunto malicioso."
+    },
+    {
+      "stem": "¿Cuál es una buena práctica de seguridad en el correo?",
+      "options": [
+        "Usar TLS, segundo factor y desconfiar de adjuntos inesperados",
+        "Compartir la contraseña con el equipo",
+        "Desactivar el filtro de spam",
+        "Abrir todos los enlaces para comprobar si funcionan"
+      ],
+      "correct": "a",
+      "justification": "TLS, segundo factor y prudencia con enlaces y adjuntos reducen el riesgo de interceptación y phishing."
+    },
+    {
+      "stem": "¿Qué ventaja tiene IMAP para un usuario con móvil, portátil y webmail?",
+      "options": [
+        "Ocupa menos en el servidor",
+        "Mantiene el mismo estado y carpetas en todos los dispositivos",
+        "No necesita contraseña",
+        "Envía el correo más rápido"
+      ],
+      "correct": "b",
+      "justification": "IMAP sincroniza el buzón en el servidor, por lo que el estado se ve igual desde todos los dispositivos."
+    },
+    {
+      "stem": "¿Qué documento no conviene enviar como adjunto masivo sin más?",
+      "options": [
+        "Un horario sin datos personales",
+        "Una convocatoria pública",
+        "Un documento con datos personales sensibles",
+        "Un cartel de un evento"
+      ],
+      "correct": "c",
+      "justification": "Los datos personales sensibles deben compartirse por canales aprobados, con cifrado y control de acceso, no como adjunto abierto."
+    }
+  ]
+}

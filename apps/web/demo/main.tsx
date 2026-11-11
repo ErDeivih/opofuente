@@ -1731,6 +1731,11 @@ function Temario({ initialFiltro = 'todos' }: { readonly initialFiltro?: Filtro 
           {data.curriculum.name}: {data.curriculum.blocks.length} bloques · {TOPIC_LIST.length} temas.
           Cada tema muestra el estado de sus apuntes y de su práctica.
         </p>
+        <div className="demo-actions">
+          <button className="button" type="button" onClick={() => { go('cobertura'); }}>
+            Ver cobertura de los 40
+          </button>
+        </div>
       </section>
       <ProgressCard />
       <section className="card demo-filters" aria-label="Buscar y filtrar el temario">

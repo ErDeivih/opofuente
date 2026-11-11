@@ -1,0 +1,279 @@
+{
+  "tema": "IV.33",
+  "title": "Informes y explotación de datos: consultas, agregación y formatos",
+  "difficulty": "media",
+  "topics": [
+    "IV.33",
+    "IV.28"
+  ],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema IV.33 · Informes y explotación de datos.** Bloque IV (Datos y desarrollo) del temario común de Técnicos Auxiliares de Informática. Se apoya en el tema IV.28 (SQL) y en el IV.27 (bases de datos relacionales): aquí no se diseñan las tablas, sino que se extrae información de ellas para decidir.\n\n**Objetivo de examen.** Distinguir el tratamiento operativo del analítico, escribir consultas de explotación con agregación, uniones y subconsultas, usar vistas, extraer y exportar datos en formatos habituales (CSV, JSON y XML), cuidar la calidad del dato y aplicar permisos y criterios de seguridad. Dificultad **media**: la sintaxis SQL se domina en IV.28; el reto es el enfoque de informe y los matices (WHERE/HAVING, NULL en agregados, vista no es copia).\n\n**Fuentes de este tema.** El consolidado data/fuentes/IV.33.txt, formado por Tema 7.docx (sistema gestor, informes, seguridad e índices) y Bloque 3 Actualizado 2026.docx (Tema 3, SQL: consultas, agregación, uniones, subconsultas, vistas, tipos y formatos CSV/JSON/XML). (Fuente: data/fuentes/IV.33.txt.)"
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "Este tema se ordena en diez apartados:\n\n1. Ficha oficial del tema: ubicación, objetivo, dificultad y fuentes.\n2. Índice de epígrafes: el mapa que está leyendo.\n3. Introducción y contexto: de los datos operativos a la información para decidir.\n4. Desarrollo por epígrafe: OLTP y OLAP, ETL, consultas de explotación, agregación, vistas, formatos de extracción, informes y BI, calidad del dato, seguridad y optimización.\n5. Tabla comparativa: OLTP frente a OLAP.\n6. Ejemplo práctico resuelto.\n7. Trampas típicas de examen.\n8. Resumen para memorizar.\n9. Casos tipo test comentados (15 preguntas).\n10. Fuentes citadas.\n\nLos epígrafes oficiales (OLTP/OLAP, ETL, consultas, agregación, informes, BI, calidad y exportación) se cubren en el apartado 4; los casos del apartado 9 coinciden con los quince testCases del fichero. (Fuente: data/fuentes/IV.33.txt.)"
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "Explotar datos es convertir registros en información útil para tomar decisiones. Una base de datos guarda el día a día (altas, modificaciones, bajas), pero un informe responde a preguntas distintas: cuántas solicitudes se resolvieron este mes, qué tipo de incidencias crece, qué unidad tarda más. Esa diferencia entre **registrar** y **analizar** separa dos mundos: el operativo y el analítico.\n\nLa fuente define los **informes** como el mecanismo que establece la presentación de los datos recuperados. No son una copia de la base de datos: son el resultado de una consulta, con un formato y un destinatario. Por eso el informe se apoya en SQL (selección, filtros, agrupación, uniones y subconsultas) y en un formato de salida (una tabla, un CSV, un JSON o un XML).\n\nEste tema añade a IV.28 la mirada de explotación: separar el sistema transaccional del analítico, extraer y transformar los datos, construir consultas agregadas, decidir cómo se presentan, comprobar que el dato es correcto y controlar quién puede verlo. Los conceptos de OLTP/OLAP, ETL y BI que la fuente no desarrolla se explican como estándar y se identifican como tales; las consultas, vistas, formatos y permisos sí están tomados de la fuente. (Fuentes: Tema 7.docx, apartados 1 y 1.1; Bloque 3 Actualizado 2026.docx, Tema 3.)"
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**1) OLTP y OLAP.** Un sistema **OLTP** (procesamiento de transacciones) registra operaciones unitarias y rápidas: insertar una solicitud, modificar un estado, consultar un expediente concreto. Está normalizado, recibe muchas escrituras y trabaja con datos actuales. Un sistema **OLAP** (procesamiento analítico) responde a consultas de agregación sobre grandes volúmenes: totales por mes, medias por unidad, comparaciones entre periodos. Está desnormalizado y se orienta a lectura. La fuente no usa estos términos; se explican como estándar porque el examen los pregunta junto a los informes.\n\n**2) ETL.** Para analizar sin castigar el sistema operativo se copian los datos a un almacén analítico. El proceso **ETL** tiene tres pasos: **extraer** de las fuentes, **transformar** (limpiar, unificar formatos, calcular campos) y **cargar** en el destino. La extracción se hace con consultas SQL o con exportaciones; la transformación resuelve duplicados, nulos y unidades; la carga alimenta el almacén o el modelo de informes.\n\n**3) Consultas de explotación.** La base es SELECT con la lista de columnas, FROM con la tabla y WHERE con la condición. ORDER BY ordena (ASC por defecto) y AS pone alias. Para acotar rangos y patrones se usan BETWEEN, LIKE (con % y _), IN y las combinaciones AND, OR y NOT. Para contar filas distintas se usa DISTINCT. Una consulta de informe no debe traer más datos de los necesarios: conviene elegir columnas concretas y filtrar.\n\n**4) Agregación.** GROUP BY agrupa filas con los mismos valores y las funciones COUNT, SUM, AVG, MIN y MAX resumen cada grupo. WHERE filtra filas antes de agrupar y HAVING filtra grupos después; se pueden combinar. Un ejemplo de informe: SELECT tipo, SUM(poder) FROM criatura GROUP BY tipo HAVING SUM(poder) > 500. Para tratar ausencias se usa IS NULL e IS NOT NULL.\n\n**5) Uniones y subconsultas.** INNER JOIN devuelve las filas con coincidencia en ambas tablas; LEFT JOIN conserva las de la izquierda y rellena con NULL la derecha. Las subconsultas permiten comparar con un resultado: SELECT nombre FROM empleado WHERE sueldo > (SELECT AVG(sueldo) FROM empleado);. Son la base de informes como «los que superan la media» o «los que no tienen ningún documento asociado».\n\n**6) Vistas.** Una vista se define con CREATE VIEW y una consulta AS; no guarda datos, guarda la consulta que se ejecuta al consultarla. Simplifica informes complejos, reutiliza la lógica y permite ocultar columnas o filas a determinados usuarios. Si cambian las tablas subyacentes, cambia el resultado de la vista.\n\n**7) Extracción y formatos.** Para entregar un informe se eligen formatos de intercambio. **CSV** es texto tabular con filas como registros y columnas como campos, separadas por coma o punto y coma; no está estandarizado y es habitual para pasar datos entre aplicaciones. **JSON** usa objetos (pares de clave y valor entre llaves) y arrays (listas entre corchetes), con valores de tipo cadena, número, booleano, array, objeto o null; se usa mucho en servicios y aplicaciones web. **XML** es un lenguaje de marcado con un elemento raíz, etiquetas bien anidadas y atributos entre comillas; admite validación con DTD o XML Schema. La fuente recoge los tres formatos y sus reglas básicas.\n\n**8) Informes y BI.** Un **informe** presenta los datos recuperados con un formato y un destinatario; puede ser una tabla, un listado o un documento exportado. La **inteligencia de negocio (BI)** agrupa las herramientas que explotan esos datos: consultas, informes, cuadros de mando y análisis. La fuente no desarrolla BI; se resume como estándar.\n\n**9) Calidad del dato.** Un informe solo es fiable si el dato lo es. La calidad se mide por exactitud (el dato coincide con la realidad), completitud (no faltan valores), consistencia (no hay contradicciones), unicidad (no hay duplicados) y actualidad. En la base se apoya en restricciones (PRIMARY KEY, UNIQUE, CHECK, FOREIGN KEY) y en la validación de las cargas; en el informe se revisan totales, nulos y duplicados antes de publicarlo.\n\n**10) Seguridad y optimización.** Los permisos se gestionan con GRANT y REVOKE (SELECT, INSERT, UPDATE, DELETE y otros privilegios), y las vistas ayudan a exponer solo lo necesario. Para que un informe no degrade el sistema conviene filtrar por índices, evitar traer columnas innecesarias y revisar las consultas; la fuente recuerda que el administrador define índices y optimiza consultas. (Fuentes: Bloque 3 Actualizado 2026.docx, Tema 3; Tema 7.docx, apartados 1, 1.1, 1.2 y 2.)"
+    },
+    {
+      "heading": "5. Tabla comparativa: OLTP frente a OLAP",
+      "body": "Comparación estándar entre el tratamiento operativo y el analítico; la fuente no usa las siglas, pero su diferencia aclara qué es un informe. (Fuentes: Tema 7.docx, apartado 1; Bloque 3 Actualizado 2026.docx, Tema 3.)",
+      "table": {
+        "columns": [
+          "Criterio",
+          "OLTP",
+          "OLAP"
+        ],
+        "rows": [
+          [
+            "Finalidad",
+            "Registrar operaciones del día a día",
+            "Analizar y resumir para decidir"
+          ],
+          [
+            "Operaciones",
+            "Muchas escrituras pequeñas",
+            "Lecturas y agregaciones sobre muchos datos"
+          ],
+          [
+            "Datos",
+            "Actuales y normalizados",
+            "Históricos y desnormalizados"
+          ],
+          [
+            "Ejemplo",
+            "Alta de una solicitud",
+            "Total de solicitudes por mes y estado"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Se quiere un informe mensual de solicitudes de beca por estado y la media de días de tramitación, y entregarlo también en CSV para otra aplicación.\n\n**Resolución.**\n\n- **Pregunta y fuentes:** se parte de las tablas SolicitudBeca (identificador, estado, fecha de presentación, días de tramitación) y Estado (código y descripción).\n- **Consulta agregada:** se agrupa por mes y estado, se cuenta cada grupo y se calcula la media: SELECT estado, COUNT(*) AS total, AVG(dias_tramitacion) AS media FROM solicitud GROUP BY estado;.\n- **Filtro de grupos:** si solo interesan los estados con volumen relevante, se añade HAVING COUNT(*) > 10.\n- **Unión con el catálogo:** para mostrar la descripción y no el código: SELECT estado.descripcion, COUNT(*) FROM solicitud INNER JOIN estado ON solicitud.estado = estado.codigo GROUP BY estado.descripcion;.\n- **Vista reutilizable:** CREATE VIEW informe_solicitudes AS SELECT estado, COUNT(*) AS total FROM solicitud GROUP BY estado; y después se consulta la vista.\n- **Exportación:** el resultado se vuelca a CSV con separador punto y coma o a JSON con un array de objetos, según lo espere el sistema destino; antes de enviarlo se comprueban totales y nulos.\n- **Seguridad:** se concede SELECT sobre la vista solo al equipo de planificación con GRANT SELECT ON informe_solicitudes TO planificacion;.\n\n**Qué se aprende.** Un informe es una consulta con un propósito, no un volcado de tablas: se eligen columnas, se agrega, se filtra después de agrupar, se reutiliza con una vista y se entrega en un formato acordado. (Fuentes: Bloque 3 Actualizado 2026.docx, Tema 3: SELECT, GROUP BY, HAVING, JOIN, vistas, GRANT; formatos CSV y JSON.)"
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "- **OLTP no es OLAP.** OLTP registra operaciones; OLAP analiza y agrega. Un informe es analítico, no una transacción.\n- **ETL no es una consulta.** Es un proceso con tres pasos: extraer, transformar y cargar.\n- **WHERE no es HAVING.** WHERE filtra filas antes de agrupar; HAVING filtra grupos después.\n- **COUNT(*) no siempre es COUNT(columna).** COUNT(*) cuenta filas; COUNT(columna) no cuenta los valores NULL de esa columna.\n- **SUM ignora los NULL.** Los agregados tratan las ausencias según la función; conviene comprobarlo antes de publicar el informe.\n- **Una vista no guarda datos.** Almacena la consulta y la ejecuta al consultarla; si cambian las tablas, cambia el resultado.\n- **CSV no está estandarizado.** El separador puede ser coma o punto y coma; no da formato ni tipos.\n- **JSON no es XML.** JSON usa objetos y arrays; XML usa etiquetas, atributos y un único elemento raíz.\n- **Traer todas las columnas no es un informe.** SELECT * no elige qué se necesita y encarece la consulta.\n- **Un índice no acelera todo.** Ayuda a filtrar y ordenar, pero puede penalizar las escrituras; no sustituye a una consulta bien escrita.\n- **Los permisos no son opcionales.** GRANT y REVOKE controlan qué puede ver cada usuario; una vista puede ocultar datos, pero no sustituye al control de acceso.\n\n(Fuentes: Bloque 3 Actualizado 2026.docx, Tema 3; Tema 7.docx, apartados 1, 1.1 y 2.)"
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "Lo que hay que retener:\n\n- Explotar datos es obtener información para decidir; el informe presenta los datos recuperados, no es una copia de la base.\n- OLTP: operaciones del día a día, normalizado y muchas escrituras. OLAP: análisis, agregación y datos históricos.\n- ETL: extraer de las fuentes, transformar (limpiar, unificar, calcular) y cargar en el destino.\n- Consultas: SELECT, WHERE, ORDER BY, AS, BETWEEN, LIKE (% y _), IN, AND/OR/NOT y DISTINCT.\n- Agregación: GROUP BY con COUNT, SUM, AVG, MIN y MAX; WHERE filtra filas y HAVING filtra grupos.\n- Uniones: INNER JOIN (coincidencias) y LEFT JOIN (conserva la izquierda); subconsultas para comparar con un resultado.\n- Vistas: CREATE VIEW ... AS, no guardan datos y simplifican los informes.\n- Formatos: CSV (tabular, separador coma o punto y coma, sin estandarizar), JSON (objetos y arrays) y XML (marcado con raíz y etiquetas).\n- Calidad del dato: exactitud, completitud, consistencia, unicidad y actualidad; apoyo en PRIMARY KEY, UNIQUE, CHECK y FOREIGN KEY.\n- Seguridad: GRANT y REVOKE; las vistas ocultan datos pero no sustituyen al control de acceso.\n- Optimización: filtrar, elegir columnas, usar índices y revisar las consultas.\n\n(Fuentes: Bloque 3 Actualizado 2026.docx, Tema 3; Tema 7.docx, apartados 1, 1.1 y 2.)"
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos del fichero, comentados y con su referencia:\n\n**1.** Diferencia entre OLTP y OLAP. **Respuesta: a)** OLTP registra operaciones y OLAP analiza y agrega (apartado 4, OLTP/OLAP).\n\n**2.** Pasos del proceso ETL. **Respuesta: b)** Extraer, transformar y cargar (apartado 4, ETL).\n\n**3.** Para qué sirve GROUP BY. **Respuesta: c)** Para agrupar filas con los mismos valores (apartado 4, agregación).\n\n**4.** Qué filtra HAVING. **Respuesta: d)** Los grupos ya formados (apartado 4, agregación).\n\n**5.** Función que calcula la media. **Respuesta: a)** AVG (apartado 4, agregación).\n\n**6.** Qué guarda una vista. **Respuesta: b)** La consulta, no los datos (apartado 4, vistas).\n\n**7.** Qué caracteriza al CSV. **Respuesta: c)** No está estandarizado y usa coma o punto y coma (apartado 4, formatos).\n\n**8.** Delimitadores de un objeto JSON. **Respuesta: d)** Las llaves {} (apartado 4, formatos).\n\n**9.** Diferencia entre COUNT(*) y COUNT(columna). **Respuesta: a)** COUNT(*) cuenta filas y COUNT(columna) no cuenta los NULL (apartado 7, trampas).\n\n**10.** Cómo trata SUM los valores NULL. **Respuesta: b)** Los ignora (apartado 7, trampas).\n\n**11.** Para qué sirve un JOIN en un informe. **Respuesta: c)** Para combinar filas de varias tablas por un campo común (apartado 4, uniones).\n\n**12.** Para qué sirve un índice. **Respuesta: d)** Para acelerar búsquedas y ordenaciones (apartado 4, optimización).\n\n**13.** Qué mide la calidad del dato. **Respuesta: a)** Exactitud, completitud, consistencia, unicidad y actualidad (apartado 4, calidad).\n\n**14.** Qué es un informe según la fuente. **Respuesta: b)** El mecanismo que define la presentación de los datos recuperados (apartado 4, informes).\n\n**15.** Qué sentencias controlan los permisos. **Respuesta: c)** GRANT y REVOKE (apartado 4, seguridad).\n\nCada caso incluye su explicación completa y la referencia de fuente en el campo reference de testCases. (Fuentes: Bloque 3 Actualizado 2026.docx, Tema 3; Tema 7.docx, apartados 1 y 2.)"
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "- **Bloque 3 Actualizado 2026.docx**, Tema 3 (SQL): SELECT, WHERE, BETWEEN, LIKE, IN, GROUP BY, HAVING, funciones de agregación, JOIN, UNION, subconsultas, vistas, tipos de dato, restricciones y formatos CSV/JSON/XML.\n- **Tema 7.docx**, apartados 1 y 1.1 (sistema gestor y funciones para el usuario final: consultas e informes), 1.2 (funciones del administrador: índices, optimización, seguridad con vistas y autorizaciones) y 2 (seguridad y permisos con GRANT/REVOKE).\n- **data/fuentes/IV.33.txt**: texto consolidado de las fuentes anteriores, utilizado para verificar las citas.\n\nAviso de alcance: la fuente no desarrolla OLTP/OLAP, ETL, BI ni la calidad del dato como metodologías; esos conceptos se resumen en el apartado 4 como estándar de explotación de datos y se identifican como tales. (Fuente: data/fuentes/IV.33.txt.)"
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Cuál es la diferencia esencial entre OLTP y OLAP?",
+      "options": [
+        "OLTP registra operaciones del día a día y OLAP analiza y agrega datos",
+        "OLTP analiza y OLAP registra transacciones",
+        "OLTP usa XML y OLAP usa CSV",
+        "OLTP guarda datos históricos y OLAP solo datos actuales"
+      ],
+      "answer": "a",
+      "explanation": "OLTP se orienta a las operaciones cotidianas (altas, modificaciones y consultas concretas) y OLAP al análisis y la agregación de grandes volúmenes. Los formatos y el tipo de dato no definen esos conceptos.",
+      "reference": "Apartado 4, OLTP/OLAP (concepto estándar); Tema 7.docx, apartado 1."
+    },
+    {
+      "question": "¿Cuál es el orden correcto de las fases de un proceso ETL?",
+      "options": [
+        "Transformar, extraer y cargar",
+        "Extraer, transformar y cargar",
+        "Cargar, extraer y transformar",
+        "Extraer, cargar y transformar"
+      ],
+      "answer": "b",
+      "explanation": "ETL significa Extract, Transform, Load: primero se extraen los datos de las fuentes, después se transforman (limpieza, unificación y cálculos) y por último se cargan en el destino.",
+      "reference": "Apartado 4, ETL (concepto estándar)."
+    },
+    {
+      "question": "¿Para qué se utiliza GROUP BY en una consulta de explotación?",
+      "options": [
+        "Para ordenar el resultado",
+        "Para eliminar filas duplicadas",
+        "Para agrupar filas que tienen los mismos valores",
+        "Para unir dos tablas"
+      ],
+      "answer": "c",
+      "explanation": "GROUP BY agrupa las filas que comparten los mismos valores para poder aplicar funciones de agregación a cada grupo. Ordenar es ORDER BY, eliminar duplicados es DISTINCT y unir tablas es JOIN.",
+      "reference": "Apartado 4, agregación; Bloque 3 Actualizado 2026.docx, Tema 3 (GROUP BY)."
+    },
+    {
+      "question": "¿Qué filtra la cláusula HAVING?",
+      "options": [
+        "Filas individuales antes de agrupar",
+        "Columnas del resultado",
+        "El orden de las filas",
+        "Los grupos ya formados, después de agrupar"
+      ],
+      "answer": "d",
+      "explanation": "HAVING filtra grupos después de GROUP BY y admite condiciones con funciones de agregado; WHERE filtra filas individuales antes de agrupar.",
+      "reference": "Apartado 4, agregación; Bloque 3 Actualizado 2026.docx, Tema 3 (HAVING)."
+    },
+    {
+      "question": "¿Qué función de agregado calcula la media de una columna numérica?",
+      "options": [
+        "AVG",
+        "SUM",
+        "COUNT",
+        "MAX"
+      ],
+      "answer": "a",
+      "explanation": "AVG calcula la media de los valores numéricos. SUM suma, COUNT cuenta filas y MAX devuelve el valor máximo.",
+      "reference": "Apartado 4, agregación; Bloque 3 Actualizado 2026.docx, Tema 3 (funciones de agregación)."
+    },
+    {
+      "question": "¿Qué almacena una vista en la base de datos?",
+      "options": [
+        "Una copia de los datos de las tablas",
+        "La consulta que la define, no los datos",
+        "Solo la estructura de las columnas",
+        "Un índice de la tabla base"
+      ],
+      "answer": "b",
+      "explanation": "La vista guarda la consulta y se ejecuta cada vez que se consulta; por eso refleja los cambios de las tablas subyacentes y no ocupa espacio con una copia de los datos.",
+      "reference": "Apartado 4, vistas; Bloque 3 Actualizado 2026.docx, Tema 3 (vistas)."
+    },
+    {
+      "question": "¿Qué afirmación es correcta sobre el formato CSV?",
+      "options": [
+        "Está estandarizado por el W3C",
+        "Solo admite coma como separador",
+        "No está estandarizado y admite coma o punto y coma",
+        "Es un formato binario"
+      ],
+      "answer": "c",
+      "explanation": "El CSV no está estandarizado: los campos se separan por coma o punto y coma y los registros por saltos de línea. No es binario ni una norma del W3C.",
+      "reference": "Apartado 4, formatos; Bloque 3 Actualizado 2026.docx, Tema 3 (CSV)."
+    },
+    {
+      "question": "¿Con qué delimitadores se escribe un objeto JSON?",
+      "options": [
+        "Corchetes []",
+        "Paréntesis ()",
+        "Etiquetas <>",
+        "Llaves {}"
+      ],
+      "answer": "d",
+      "explanation": "Un objeto JSON agrupa pares de clave y valor entre llaves; los arrays se escriben entre corchetes. Las etiquetas son propias de XML.",
+      "reference": "Apartado 4, formatos; Bloque 3 Actualizado 2026.docx, Tema 3 (JSON)."
+    },
+    {
+      "question": "¿Qué diferencia hay entre COUNT(*) y COUNT(columna)?",
+      "options": [
+        "COUNT(*) cuenta filas y COUNT(columna) no cuenta los NULL de esa columna",
+        "COUNT(*) cuenta columnas y COUNT(columna) cuenta filas",
+        "Son exactamente iguales",
+        "COUNT(columna) solo funciona con números"
+      ],
+      "answer": "a",
+      "explanation": "COUNT(*) cuenta todas las filas; COUNT(columna) cuenta los valores no nulos de esa columna, por lo que excluye los NULL. No son equivalentes cuando hay ausencias.",
+      "reference": "Apartado 7, trampas; Bloque 3 Actualizado 2026.docx, Tema 3 (agregación y NULL)."
+    },
+    {
+      "question": "¿Cómo trata la función SUM los valores NULL?",
+      "options": [
+        "Los suma como cero",
+        "Los ignora",
+        "Provoca un error",
+        "Los convierte en uno"
+      ],
+      "answer": "b",
+      "explanation": "SUM ignora los valores NULL y suma solo los valores presentes. Conviene comprobar las ausencias antes de publicar un informe para no interpretar mal los totales.",
+      "reference": "Apartado 7, trampas; Bloque 3 Actualizado 2026.docx, Tema 3 (agregación y NULL)."
+    },
+    {
+      "question": "¿Para qué sirve un JOIN en un informe?",
+      "options": [
+        "Para ordenar el resultado por una columna",
+        "Para calcular totales por grupo",
+        "Para combinar filas de varias tablas por un campo común",
+        "Para eliminar los valores nulos"
+      ],
+      "answer": "c",
+      "explanation": "JOIN combina filas de dos o más tablas a partir de un campo común, lo que permite mostrar descripciones de catálogos o completar datos de varias tablas. Ordenar es ORDER BY, agrupar es GROUP BY y eliminar nulos no es su función.",
+      "reference": "Apartado 4, uniones; Bloque 3 Actualizado 2026.docx, Tema 3 (JOIN)."
+    },
+    {
+      "question": "¿Para qué sirve un índice en una base de datos?",
+      "options": [
+        "Para guardar una copia de la tabla",
+        "Para controlar los permisos de los usuarios",
+        "Para cifrar los datos",
+        "Para acelerar búsquedas y ordenaciones"
+      ],
+      "answer": "d",
+      "explanation": "El índice es una estructura auxiliar que acelera la localización y ordenación de filas. No copia la tabla, no gestiona permisos y no cifra datos.",
+      "reference": "Apartado 4, optimización; Tema 7.docx, apartado 1.2 (índices y optimización)."
+    },
+    {
+      "question": "¿Qué dimensiones se usan para valorar la calidad de un dato?",
+      "options": [
+        "Exactitud, completitud, consistencia, unicidad y actualidad",
+        "Solo el tamaño del fichero",
+        "El color y el formato de la tabla",
+        "El número de tablas de la base de datos"
+      ],
+      "answer": "a",
+      "explanation": "La calidad del dato se valora por exactitud, completitud, consistencia, unicidad y actualidad; las restricciones de la base (PRIMARY KEY, UNIQUE, CHECK, FOREIGN KEY) ayudan a mantenerla.",
+      "reference": "Apartado 4, calidad (concepto estándar); Bloque 3 Actualizado 2026.docx, Tema 3 (restricciones)."
+    },
+    {
+      "question": "Según la fuente, ¿qué es un informe?",
+      "options": [
+        "Una copia de seguridad de la base de datos",
+        "El mecanismo que define la presentación de los datos recuperados",
+        "Un tipo de índice",
+        "Una tabla temporal"
+      ],
+      "answer": "b",
+      "explanation": "La fuente incluye los informes entre las funciones para el usuario final y los describe como la definición de la presentación para la edición de los datos recuperados.",
+      "reference": "Apartado 4, informes; Tema 7.docx, apartado 1.1."
+    },
+    {
+      "question": "¿Qué sentencias se usan para conceder y retirar permisos?",
+      "options": [
+        "COMMIT y ROLLBACK",
+        "CREATE y DROP",
+        "GRANT y REVOKE",
+        "SELECT y UPDATE"
+      ],
+      "answer": "c",
+      "explanation": "GRANT concede privilegios y REVOKE los retira. COMMIT y ROLLBACK controlan transacciones, CREATE y DROP definen objetos y SELECT y UPDATE son operaciones de datos.",
+      "reference": "Apartado 4, seguridad; Tema 7.docx, apartado 2 (GRANT y REVOKE)."
+    }
+  ],
+  "sources": [
+    {
+      "file": "Bloque 3 Actualizado 2026.docx",
+      "page": "Tema 3 (SQL)",
+      "use": "SELECT, filtros, agregación (GROUP BY, HAVING, COUNT, SUM, AVG, MIN, MAX), JOIN, subconsultas, vistas, restricciones, tipos de dato y formatos CSV/JSON/XML"
+    },
+    {
+      "file": "Tema 7.docx",
+      "page": "apartados 1, 1.1, 1.2 y 2",
+      "use": "Funciones del sistema gestor, informes como presentación de datos recuperados, índices y optimización de consultas, seguridad con vistas y autorizaciones, GRANT/REVOKE"
+    },
+    {
+      "file": "data/fuentes/IV.33.txt",
+      "page": "texto consolidado",
+      "use": "Verificación de las citas de los documentos anteriores"
+    }
+  ]
+}
