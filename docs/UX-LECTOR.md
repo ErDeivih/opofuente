@@ -50,17 +50,22 @@ oficial.
 Todos los temas muestran en la cabecera **«Vigente a 11/2026»**, junto a los sellos de apuntes,
 práctica y formato.
 
+## Botón de test
+
+En los temas largos, la cabecera tiene **«Test del tema»**. Un toque desplaza al bloque de test (15 preguntas) sin pasar por el índice. El índice y el test están, por tanto, a un toque cada uno.
+
 ## Capturas
 
 | Pantalla | Captura 390 px |
 |---|---|
 | Índice desplegado | [indice-tema-390](capturas/demo-pages/indice-tema-390.png) |
+| Test del tema | [test-tema-390](capturas/demo-pages/test-tema-390.png) |
 | Simulacro (reglas) | [simulacro-390](capturas/demo-pages/simulacro-390.png) |
 | Simulacro (resultado) | [simulacro-resultado-390](capturas/demo-pages/simulacro-resultado-390.png) |
 | Tema V.35 | [tema-v-35-390](capturas/demo-pages/tema-v-35-390.png) |
 
 ## Verificación
 
-**88/88** comprobaciones Playwright en la URL pública: índice, un solo resumen/fuentes, H2/cuerpo,
+**90/90** comprobaciones Playwright en la URL pública: índice, un solo resumen/fuentes, H2/cuerpo,
 sin scroll horizontal, continuar leyendo, simulacro 80+20 con nota y vigencia. 12/12 enlaces de
 convocatoria (200).

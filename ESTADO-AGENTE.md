@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 11/11: lector de temas con indice fijo, un solo resumen/fuentes, tipografia 22/18/16 px, continuar por epigrafe y vigencia 11/2026; simulacro TAI 80+20, 120 min, -1/3 y minimo 25/50 por parte; II.13 largo, 7 supuestos/140 preguntas; 88/88 comprobaciones.
+resumen: Sesion 11/11: indice fijo y boton Test del tema en los temas largos; II.13 con 10 apartados, 2.692 palabras y 15 test; 2 supuestos propios (II.13 y III.21) hasta 9 supuestos/180 preguntas; inventario de 124 fuentes con cola de revision. 90/90 comprobaciones.
 estado: completado
-tarea: lector, simulacro TAI y tanda de contenido
+tarea: lector, test, II.13 y supuestos propios
 nivel: 2
-siguiente: seguir con temas largos y supuestos; mantener criterios de lectura y medir capturas 390
+siguiente: seguir con temas largos y nuevos supuestos; mantener cola de revision de fuentes
 bloqueado: ninguno
 fecha: 2026-11-11

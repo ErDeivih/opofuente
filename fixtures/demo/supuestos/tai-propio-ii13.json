@@ -1,0 +1,249 @@
+{
+  "slug": "tai-propio-ii13",
+  "year": 2026,
+  "conv": "Supuesto propio · OpoFuente 2026",
+  "block": "II",
+  "title": "Caso propio: renovación de un aula de informática",
+  "difficulty": "media",
+  "official": false,
+  "estimatedMinutes": 30,
+  "statement": "Un centro público renueva 30 puestos con equipos nuevos y debe justificar la arquitectura, el rendimiento, la memoria, el almacenamiento y el mantenimiento. El equipo técnico revisa el pliego y debe responder a las cuestiones del tribunal.",
+  "steps": [
+    "1. Identificar los componentes y la arquitectura de los equipos.",
+    "2. Relacionar CPU, memoria, almacenamiento y periféricos.",
+    "3. Calcular y comparar prestaciones y capacidad.",
+    "4. Detectar las trampas del pliego y justificar cada elección.",
+    "5. Cerrar con la respuesta técnica y la fuente."
+  ],
+  "topics": [
+    "II.13",
+    "II.14"
+  ],
+  "source": {
+    "label": "Elaboración propia · OpoFuente",
+    "url": "https://erdeivih.github.io/opofuente-demo/",
+    "pages": "Material propio de la demo"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué comparten instrucciones y datos en la arquitectura de von Neumann?",
+      "options": [
+        "El mismo registro de instrucción",
+        "La misma caché L1",
+        "El mismo bus de E/S",
+        "El mismo espacio de memoria"
+      ],
+      "correct": "d",
+      "justification": "En von Neumann instrucciones y datos comparten memoria; por eso aparecen el cuello de botella y los ataques de escritura de código."
+    },
+    {
+      "stem": "¿Qué unidad de la CPU realiza las operaciones aritméticas y lógicas?",
+      "options": [
+        "La ALU",
+        "La unidad de control",
+        "La MMU",
+        "La TLB"
+      ],
+      "correct": "a",
+      "justification": "La unidad aritmético-lógica (ALU) ejecuta sumas, restas y operaciones lógicas."
+    },
+    {
+      "stem": "¿Cuál es el orden correcto del ciclo de instrucción?",
+      "options": [
+        "Decodificar, captar, ejecutar, escribir",
+        "Captar, decodificar, ejecutar, escribir",
+        "Captar, ejecutar, decodificar, escribir",
+        "Ejecutar, captar, escribir, decodificar"
+      ],
+      "correct": "b",
+      "justification": "El ciclo básico es fetch (captar), decode (decodificar), execute (ejecutar) y write-back (escribir el resultado)."
+    },
+    {
+      "stem": "¿Qué técnica solapa la ejecución de varias instrucciones en etapas?",
+      "options": [
+        "La memoria virtual",
+        "El DMA",
+        "La segmentación (pipeline)",
+        "El RAID"
+      ],
+      "correct": "c",
+      "justification": "El pipeline divide la ejecución en etapas y mantiene varias instrucciones en vuelo a la vez."
+    },
+    {
+      "stem": "¿Qué nivel de la jerarquía de memoria es el más rápido y pequeño?",
+      "options": [
+        "La memoria principal",
+        "La caché L3",
+        "El SSD",
+        "Los registros"
+      ],
+      "correct": "d",
+      "justification": "Los registros están dentro de la CPU y son el nivel más rápido y de menor capacidad."
+    },
+    {
+      "stem": "¿Qué memoria es volátil?",
+      "options": [
+        "La memoria RAM",
+        "El SSD",
+        "El HDD",
+        "La memoria flash"
+      ],
+      "correct": "a",
+      "justification": "La RAM pierde su contenido al cortar la alimentación; el almacenamiento secundario es no volátil."
+    },
+    {
+      "stem": "¿Qué componente traduce direcciones virtuales a físicas?",
+      "options": [
+        "La ALU",
+        "La MMU",
+        "El chipset",
+        "El bus de datos"
+      ],
+      "correct": "b",
+      "justification": "La unidad de gestión de memoria (MMU) traduce direcciones virtuales a físicas usando la tabla de páginas."
+    },
+    {
+      "stem": "¿Qué ventaja principal aporta el DMA?",
+      "options": [
+        "Aumenta la frecuencia del reloj",
+        "Duplica la caché L1",
+        "Libera a la CPU de copiar bloques de datos",
+        "Sustituye a la memoria virtual"
+      ],
+      "correct": "c",
+      "justification": "El acceso directo a memoria permite a un periférico transferir bloques sin que la CPU los copie uno a uno."
+    },
+    {
+      "stem": "¿Qué tecnología de almacenamiento tiene acceso aleatorio sin partes móviles?",
+      "options": [
+        "El HDD",
+        "El DVD-ROM",
+        "La cinta magnética",
+        "El SSD"
+      ],
+      "correct": "d",
+      "justification": "El SSD usa memoria flash: no tiene partes móviles y su acceso aleatorio es mucho más rápido que el de un HDD."
+    },
+    {
+      "stem": "¿Qué significa RAID 1?",
+      "options": [
+        "Espejo de dos discos",
+        "Striping sin paridad",
+        "Paridad distribuida",
+        "Copia de seguridad automática"
+      ],
+      "correct": "a",
+      "justification": "RAID 1 duplica los datos en dos discos (espejo); protege ante el fallo de uno, pero no sustituye a una copia de seguridad."
+    },
+    {
+      "stem": "¿Qué tres tipos de bus forman el bus del sistema?",
+      "options": [
+        "Control, direcciones y datos",
+        "Datos, energía y reloj",
+        "Instrucciones, datos y control",
+        "Serie, paralelo y USB"
+      ],
+      "correct": "a",
+      "justification": "El bus del sistema se compone de control (órdenes), direcciones (posiciones de memoria) y datos (contenido). Ref.: Tema 1, 3.1.3."
+    },
+    {
+      "stem": "En la arquitectura de Von Neumann, las instrucciones y los datos…",
+      "options": [
+        "Se guardan en memorias separadas",
+        "Solo las instrucciones están en memoria",
+        "Comparten una única memoria de lectura-escritura",
+        "Solo los datos están en memoria"
+      ],
+      "correct": "c",
+      "justification": "Von Neumann usa una sola memoria para datos e instrucciones, direccionadas por posición y ejecutadas instrucción a instrucción. Ref.: Tema 1, 3.1.2."
+    },
+    {
+      "stem": "¿Qué registro contiene la dirección de la siguiente instrucción que se va a ejecutar?",
+      "options": [
+        "IR",
+        "PC",
+        "MAR",
+        "MBR"
+      ],
+      "correct": "b",
+      "justification": "El Program Counter (PC) guarda la dirección de la siguiente instrucción; se incrementa con el INC tras cada lectura. Ref.: Tema 1, 3.1.6."
+    },
+    {
+      "stem": "¿Qué registro almacena la instrucción que se está ejecutando y permite analizar su código de operación?",
+      "options": [
+        "PC",
+        "MAR",
+        "MBR",
+        "IR"
+      ],
+      "correct": "d",
+      "justification": "El Instruction Register (IR) contiene la instrucción actual; allí se analiza el código de operación. Ref.: Tema 1, 3.1.6."
+    },
+    {
+      "stem": "¿Qué unidad de la CPU agrupa los componentes que realizan operaciones aritméticas y lógicas?",
+      "options": [
+        "La ALU",
+        "La unidad de control",
+        "La BIOS",
+        "El chipset"
+      ],
+      "correct": "a",
+      "justification": "La ALU manipula los datos (punto fijo, flotante y longitud variable); la unidad de control interpreta y coordina, no calcula. Ref.: Tema 1, 3.1.6."
+    },
+    {
+      "stem": "¿Qué arquitectura utiliza memorias y caminos separados para las instrucciones y para los datos?",
+      "options": [
+        "Von Neumann",
+        "CISC",
+        "Harvard",
+        "Flynn"
+      ],
+      "correct": "c",
+      "justification": "Harvard separa físicamente memorias y caminos de instrucciones y datos, lo que permite accesos simultáneos; Von Neumann comparte una única memoria. Ref.: Bloque 2, arquitectura Harvard."
+    },
+    {
+      "stem": "¿Qué tipo de memoria RAM se emplea habitualmente como caché por su baja latencia?",
+      "options": [
+        "DRAM",
+        "SDRAM",
+        "DDR5",
+        "SRAM"
+      ],
+      "correct": "d",
+      "justification": "La SRAM se basa en transistores, no necesita refresco y es más rápida y cara que la DRAM; por eso se usa en la caché. Ref.: Bloque 2, tipos de memoria RAM."
+    },
+    {
+      "stem": "¿Qué tipo de memoria pierde su contenido cuando se apaga el equipo?",
+      "options": [
+        "La RAM",
+        "La ROM",
+        "La EPROM",
+        "El SSD"
+      ],
+      "correct": "a",
+      "justification": "La RAM es volátil: pierde su contenido sin alimentación. La ROM y sus variantes son no volátiles, y el SSD conserva los datos. Ref.: Bloque 2, memoria RAM y ROM."
+    },
+    {
+      "stem": "¿Cuál es la caché más rápida y de menor tamaño?",
+      "options": [
+        "L3",
+        "L1",
+        "L2",
+        "La memoria principal"
+      ],
+      "correct": "b",
+      "justification": "L1 es la más rápida y pequeña, integrada en el núcleo; L2 es mayor y algo más lenta, y L3 es compartida, mayor y más lenta. Ref.: Bloque 2, caché L1, L2 y L3."
+    },
+    {
+      "stem": "¿Cuántos discos exige como mínimo RAID 5 y cuántos fallos de un disco tolera?",
+      "options": [
+        "Dos discos y ningún fallo",
+        "Dos discos y un fallo",
+        "Tres discos y un fallo",
+        "Cuatro discos y dos fallos"
+      ],
+      "correct": "c",
+      "justification": "RAID 5 distribuye la paridad entre los discos, requiere al menos tres discos y tolera el fallo de uno. Ref.: Tema 2, 1.5 y Bloque 2, RAID."
+    }
+  ]
+}

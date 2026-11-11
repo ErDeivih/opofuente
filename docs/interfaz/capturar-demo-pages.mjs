@@ -240,6 +240,12 @@ if (completo !== undefined) {
       scrollWidth: document.documentElement.scrollWidth,
     };
   });
+  check('el tema tiene botón de test', (await page.getByRole('button', { name: 'Test del tema' }).count()) > 0);
+  await page.getByRole('button', { name: 'Test del tema' }).click();
+  await page.waitForTimeout(1600);
+  const testTop = await page.evaluate(() => document.getElementById('demo-seccion-8')?.getBoundingClientRect().top ?? 999);
+  check('un toque lleva al test del tema', testTop < 300);
+  await page.screenshot({ path: path.join(OUT_DIR, 'test-tema-390.png'), fullPage: false });
   check('H2 a 22 px, cuerpo 16 px e interlineado 1,6', tipografia.h2 >= 22 && tipografia.body >= 16 && tipografia.lineHeight === '25.6px');
   check('sin scroll horizontal a 390 px', tipografia.scrollWidth <= 390);
   await page.screenshot({ path: path.join(OUT_DIR, 'indice-tema-390.png'), fullPage: false });

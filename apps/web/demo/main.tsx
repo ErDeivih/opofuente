@@ -1921,6 +1921,7 @@ function Tema({ path }: { path: string }) {
   const secciones = topic.longSections ?? topic.sections;
   const tieneResumen = secciones.some((section) => /resumen/i.test(section.heading));
   const tieneFuentes = secciones.some((section) => /fuentes/i.test(section.heading));
+  const testIndex = secciones.findIndex((section) => /test|casos tipo/i.test(section.heading));
   useEffect(() => {
     if (secciones[active] !== undefined) {
       saveReadingPosition(path, active, secciones[active].heading);
@@ -1944,6 +1945,11 @@ function Tema({ path }: { path: string }) {
           <FormatoBadge formato={topic.longSections !== undefined ? 'desarrollado' : 'esquema'} words={topic.longSections?.reduce((total, section) => total + (section.body ?? '').split(/\s+/).length, 0) ?? 0} />
         </p>
         <p className="hint demo-vigencia">Vigente a 11/2026</p>
+        {testIndex >= 0 && (
+          <button className="button button--link" type="button" onClick={() => { document.getElementById(`demo-seccion-${testIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setActive(testIndex); }}>
+            Test del tema
+          </button>
+        )}
         <p className="hint">
           Forma parte del temario común de las {data.convocatorias.total} convocatorias C1.{' '}
           <button

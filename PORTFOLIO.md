@@ -46,7 +46,7 @@ servidor.
 - **Lector de temas**: barra fija «Índice ▾ · epígrafe actual», un solo resumen y fuentes, H2 22 px/
   cuerpo 16 px y «Continuar en …» por epígrafe. Detalle en [UX-LECTOR.md](docs/UX-LECTOR.md).
 - **Simulacro TAI**: 80 + 20 preguntas, 120 min, −1/3 y mínimo 25/50 por parte.
-- **Supuestos oficiales**: 7 supuestos del INAP (2024-A-S1, 2024-B-S1, 2024-A-S2, 2023-L-S1, 2023-L-S2, 2019-L-S1 y 2019-L-S2), **140 preguntas**, resolución paso a paso, justificaciones y modo examen de 20 preguntas. Detalle en
+- **Supuestos resueltos**: 9 supuestos (7 oficiales del INAP + 2 propios de II.13 y III.21), **180 preguntas**, resolución paso a paso, justificaciones y modo examen de 20 preguntas. Detalle en
   [SUPUESTOS.md](docs/SUPUESTOS.md).
 - **Inventario de fuentes**: 124 PDF/DOCX con SHA-256, páginas y tabla tema → ficheros en [INVENTARIO-FUENTES-124.md](docs/INVENTARIO-FUENTES-124.md).
 - Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14,
@@ -136,7 +136,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **88/88** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **90/90** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -193,7 +193,7 @@ servidor.
 
 ## 9. Revisión final y qué queda
 
-- **88/88** comprobaciones, también a **390 px**; capturas nuevas en
+- **90/90** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
 - **40/40** temas completos: I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7.
@@ -201,4 +201,4 @@ servidor.
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 88/88 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 90/90 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

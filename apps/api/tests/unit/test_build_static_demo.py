@@ -39,15 +39,15 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
         "questions": counts["questions"],
         "cases": 5,
         "caseQuestions": 50,
-        "supuestos": 7,
-        "supuestoQuestions": 140,
+        "supuestos": 9,
+        "supuestoQuestions": 180,
         "convocatorias": 12,
     }
     assert data["convocatorias"]["total"] == 12
     assert len(data["cases"]) == 5
     assert sum(len(caso["questions"]) for caso in data["cases"]) == 50
-    assert len(data["supuestos"]) == 7
-    assert sum(len(item["questions"]) for item in data["supuestos"]) == 140
+    assert len(data["supuestos"]) == 9
+    assert sum(len(item["questions"]) for item in data["supuestos"]) == 180
     for supuesto in data["supuestos"]:
         assert len(supuesto["questions"]) == 20
         assert supuesto["source"]["url"].startswith("https://")
