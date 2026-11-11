@@ -133,6 +133,7 @@ await page.screenshot({ path: path.join(OUT_DIR, 'caso-practico-390.png'), fullP
 // Mapa de cobertura publicado: 40 filas con apuntes y práctica.
 const cobertura = await captura('cobertura', 'cobertura', 1280);
 check('el mapa de cobertura publica los 40 temas', /Mapa de cobertura/.test(cobertura));
+check('la app publica la cobertura por epígrafe', /Cobertura por epígrafe/.test(cobertura) && /Completo/.test(cobertura) && /Parcial/.test(cobertura) && /Ausente/.test(cobertura));
 check(
   'la tabla de cobertura tiene 40 filas',
   (await page.locator('.demo-cobertura tbody tr').count()) === 40,
@@ -154,13 +155,13 @@ check(
 );
 
 // Revisión de los dos temas de la tanda: contenido, tabla y 10 preguntas.
-for (const temaId of ['III.19', 'III.20', 'III.26', 'IV.30', 'V.40']) {
+for (const temaId of ['III.19', 'III.20', 'III.24', 'III.26', 'IV.30', 'V.40']) {
   const nombre = temaId.toLowerCase().replace('.', '-');
   const texto = await captura(`tema/${temaId}`, `tema-${nombre}`, 390);
   check(
     `${temaId} está completo y con 10 preguntas`,
     /Apuntes completos/.test(texto) &&
-      /Fuente:/.test(texto) &&
+      /Fuente:|Fuentes citadas/.test(texto) &&
       (await page.locator('main table').count()) >= 1 &&
       (await page.locator('ol.demo-questions li').count()) === 10,
   );

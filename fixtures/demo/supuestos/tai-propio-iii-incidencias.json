@@ -1,0 +1,250 @@
+{
+  "slug": "tai-propio-iii-incidencias",
+  "year": 2026,
+  "conv": "Supuesto propio · OpoFuente 2026",
+  "block": "III",
+  "title": "Gestión de una incidencia con monitorización",
+  "difficulty": "media",
+  "official": false,
+  "estimatedMinutes": 30,
+  "statement": "La web municipal deja de responder y el equipo de guardia debe usar métricas, logs y alertas para diagnosticar, comunicar y resolver la incidencia. Después debe documentar la causa y la prevención.",
+  "steps": [
+    "1. Confirmar el alcance y la severidad.",
+    "2. Revisar métricas, logs y alertas.",
+    "3. Aplicar contención y diagnóstico.",
+    "4. Resolver y verificar el servicio.",
+    "5. Documentar el postmortem."
+  ],
+  "topics": [
+    "III.24",
+    "III.18",
+    "III.23"
+  ],
+  "source": {
+    "label": "Elaboración propia · OpoFuente",
+    "url": "https://erdeivih.github.io/opofuente-demo/",
+    "pages": "Material propio de la demo"
+  },
+  "questions": [
+    {
+      "stem": "En la gestión de servicios, ¿qué es un incidente?",
+      "options": [
+        "Una solicitud habitual del usuario",
+        "Una interrupción no planificada o una reducción de la calidad del servicio",
+        "La causa raíz de varios fallos",
+        "Una modificación planificada de la infraestructura"
+      ],
+      "correct": "b",
+      "justification": "El incidente es la interrupción no planificada o la degradación del servicio; su objetivo es restaurar el servicio, no investigar la causa raíz."
+    },
+    {
+      "stem": "¿Qué persigue la gestión de problemas?",
+      "options": [
+        "Restaurar el servicio lo antes posible",
+        "Documentar las peticiones de los usuarios",
+        "Eliminar la causa raíz de los incidentes",
+        "Aprobar los cambios de infraestructura"
+      ],
+      "correct": "c",
+      "justification": "La gestión de problemas busca la causa raíz y su eliminación para evitar que los incidentes se repitan; restaurar el servicio es la gestión de incidentes."
+    },
+    {
+      "stem": "¿Cuál es la diferencia esencial entre un SLA y una OLA?",
+      "options": [
+        "El SLA solo mide la disponibilidad y la OLA los tiempos",
+        "El SLA es interno y la OLA es con el cliente",
+        "La OLA es un contrato con un proveedor externo",
+        "El SLA se firma con el cliente y la OLA es un acuerdo interno entre equipos"
+      ],
+      "correct": "d",
+      "justification": "El SLA es el acuerdo con el cliente; la OLA es un acuerdo operativo interno entre equipos de la organización que ayuda a cumplirlo. El contrato con un proveedor externo es el UC."
+    },
+    {
+      "stem": "¿Cómo se determina la prioridad de un ticket?",
+      "options": [
+        "Por el impacto y la urgencia",
+        "Por el orden de llegada",
+        "Por la antigüedad del ticket",
+        "Por el nivel del técnico asignado"
+      ],
+      "correct": "a",
+      "justification": "La prioridad se calcula combinando el impacto (a cuántos y con qué criticidad afecta) y la urgencia (cuánto empeora si se espera). La antigüedad no la define."
+    },
+    {
+      "stem": "¿Qué documento formaliza una petición de cambio?",
+      "options": [
+        "Una OLA",
+        "Una RFC",
+        "Un SLA",
+        "Un error conocido"
+      ],
+      "correct": "b",
+      "justification": "La petición de cambio (RFC) describe el cambio, su justificación, su evaluación de riesgo y su plan; la autoriza el comité de cambios (CAB)."
+    },
+    {
+      "stem": "¿Qué es un error conocido?",
+      "options": [
+        "Un incidente que todavía no se ha diagnosticado",
+        "Un cambio de emergencia ya aplicado",
+        "Un problema con causa raíz documentada y una solución temporal probada",
+        "Una petición de servicio rechazada"
+      ],
+      "correct": "c",
+      "justification": "Cuando un problema tiene la causa documentada y existe una solución temporal probada, se convierte en error conocido y el service desk puede aplicarla sin reiniciar la investigación."
+    },
+    {
+      "stem": "¿Qué mide el MTTR?",
+      "options": [
+        "El tiempo medio entre fallos",
+        "El número de tickets abiertos",
+        "El porcentaje de casos resueltos al primer contacto",
+        "El tiempo medio de reparación o restauración"
+      ],
+      "correct": "d",
+      "justification": "El MTTR (mean time to repair/restore) mide el tiempo medio que se tarda en restaurar el servicio tras un incidente."
+    },
+    {
+      "stem": "¿Cómo se calcula la disponibilidad a partir del MTBF y el MTTR?",
+      "options": [
+        "MTBF / (MTBF + MTTR) × 100",
+        "MTTR / (MTBF + MTTR) × 100",
+        "(MTBF + MTTR) / MTBF × 100",
+        "MTBF × MTTR / 100"
+      ],
+      "correct": "a",
+      "justification": "La disponibilidad es el tiempo en servicio (MTBF) dividido entre el tiempo total (MTBF + MTTR), expresado en porcentaje."
+    },
+    {
+      "stem": "¿Qué tipo de cambio se usa para resolver un incidente grave con la mínima aprobación previa?",
+      "options": [
+        "Cambio estándar",
+        "Cambio de emergencia",
+        "Cambio de alcance",
+        "Cambio normal"
+      ],
+      "correct": "b",
+      "justification": "El cambio de emergencia se aplica para resolver un incidente grave con aprobación mínima; después se documenta y se revisa."
+    },
+    {
+      "stem": "¿Qué debe hacer el primer nivel de soporte antes de escalar un caso?",
+      "options": [
+        "Cerrar el ticket sin más",
+        "Aplicar un cambio de emergencia",
+        "Comprobar los casos conocidos y descartar causas básicas",
+        "Modificar el SLA del cliente"
+      ],
+      "correct": "c",
+      "justification": "El primer nivel registra el caso, comprueba las soluciones conocidas y descarta causas básicas antes de escalar al segundo nivel."
+    },
+    {
+      "stem": "¿Qué servicio de Windows Server proporciona un directorio centralizado de usuarios y equipos?",
+      "options": [
+        "DHCP",
+        "IIS",
+        "Hyper-V",
+        "Active Directory Domain Services"
+      ],
+      "correct": "d",
+      "justification": "AD DS es el servicio de directorio que almacena usuarios, equipos y grupos y sirve de base a la autenticación del dominio."
+    },
+    {
+      "stem": "¿Qué protocolo usa AD para autenticar en el dominio?",
+      "options": [
+        "Kerberos",
+        "SMTP",
+        "SNMP",
+        "FTP"
+      ],
+      "correct": "a",
+      "justification": "Kerberos es el protocolo de autenticación usado por Active Directory."
+    },
+    {
+      "stem": "¿Para qué sirve DHCP en un servidor?",
+      "options": [
+        "Resolver nombres de dominio",
+        "Asignar direcciones IP y parámetros de red automáticamente",
+        "Cifrar discos",
+        "Servir páginas web"
+      ],
+      "correct": "b",
+      "justification": "DHCP entrega configuración de red (IP, máscara, puerta de enlace, DNS) a los clientes."
+    },
+    {
+      "stem": "¿Qué permite una directiva de grupo (GPO)?",
+      "options": [
+        "Crear copias de seguridad",
+        "Cambiar la contraseña de root",
+        "Aplicar configuración de forma centralizada a equipos y usuarios",
+        "Comprimir la base de datos"
+      ],
+      "correct": "c",
+      "justification": "Las GPO permiten configurar de forma centralizada el entorno de equipos y usuarios del dominio."
+    },
+    {
+      "stem": "¿Qué servicio se usa en Linux para gestionar servicios y unidades?",
+      "options": [
+        "PowerShell",
+        "IIS",
+        "AD DS",
+        "systemd"
+      ],
+      "correct": "d",
+      "justification": "systemd gestiona servicios, unidades y el arranque; se administra con systemctl."
+    },
+    {
+      "stem": "¿Qué protocolo se usa habitualmente para administrar un servidor Linux de forma remota?",
+      "options": [
+        "SSH",
+        "RDP",
+        "SMTP",
+        "SNMP"
+      ],
+      "correct": "a",
+      "justification": "SSH permite acceder a la shell remota de forma cifrada y autenticada."
+    },
+    {
+      "stem": "¿Qué permite Samba en Linux?",
+      "options": [
+        "Compilar el kernel",
+        "Compartir ficheros e imprimir con clientes Windows",
+        "Gestionar contenedores",
+        "Servir correo"
+      ],
+      "correct": "b",
+      "justification": "Samba implementa SMB/CIFS y permite compartir recursos con redes Windows, además de poder actuar como controlador de dominio."
+    },
+    {
+      "stem": "¿Qué es Hyper-V?",
+      "options": [
+        "Un protocolo de correo",
+        "Un servidor web",
+        "Un hipervisor de Microsoft para virtualización",
+        "Un sistema de ficheros"
+      ],
+      "correct": "c",
+      "justification": "Hyper-V es el hipervisor de Microsoft; permite crear y gestionar máquinas virtuales."
+    },
+    {
+      "stem": "¿Qué principio de seguridad debe aplicarse a las cuentas de administrador?",
+      "options": [
+        "Desactivar la auditoría",
+        "Compartir una única cuenta para todo el equipo",
+        "Usar la misma contraseña siempre",
+        "Mínimo privilegio y uso separado de la cuenta diaria"
+      ],
+      "correct": "d",
+      "justification": "El mínimo privilegio reduce el impacto de un error o robo de credenciales; las cuentas de administrador no deben usarse para tareas diarias."
+    },
+    {
+      "stem": "¿Qué debe acompañar a un servidor en producción además de instalarlo?",
+      "options": [
+        "Copias, monitorización y actualizaciones programadas",
+        "Solo un fondo de escritorio",
+        "Un segundo teclado",
+        "Desactivar los registros"
+      ],
+      "correct": "a",
+      "justification": "La operación incluye copias, monitorización, actualizaciones y revisión de logs; sin ello la disponibilidad no está garantizada."
+    }
+  ]
+}

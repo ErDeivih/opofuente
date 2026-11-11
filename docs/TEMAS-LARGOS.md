@@ -3,7 +3,7 @@
 **Fecha:** 11/11/2026 · **Objetivo:** que cada tema se pueda estudiar sin abrir otro PDF, con
 redacción propia y fuentes citadas.
 
-## Los dieciséis temas
+## Los diecinueve temas
 
 | Tema | Título | Palabras | Apartados | Test cases | Tablas | Diagrama |
 |---|---|---|---|---|---|---|
@@ -11,7 +11,10 @@ redacción propia y fuentes citadas.
 | II.13 | Arquitectura de ordenadores | **2.692** | 10 | 15 | 1 | SVG Von Neumann |
 | II.14 | Sistemas operativos de usuario | **2.082** | 10 | 15 | 6 | — |
 | III.18 | Sistemas operativos de servidor | **2.485** | 10 | 15 | 6 | — |
+| III.19 | Virtualización y contenedores | **2.454** | 10 | 15 | 6 | — |
+| III.20 | Almacenamiento y copias | **2.850** | 10 | 15 | 1 | — |
 | III.21 | Redes | **3.152** | 10 | 15 | 1 | SVG pila OSI |
+| III.24 | Monitorización e incidencias | **2.608** | 10 | 15 | 1 | — |
 | III.22 | Comunicaciones | **2.950** | 10 | 15 | 1 | — |
 | III.23 | Servicios de red | **2.528** | 10 | 15 | 6 | — |
 | IV.27 | Bases de datos relacionales | **3.006** | 12 | 14 | 2 | — |
@@ -24,10 +27,10 @@ redacción propia y fuentes citadas.
 | V.35 | ENS (RD 311/2022) | **2.488** | 12 | 14 | 3 | — |
 | V.39 | Administración electrónica práctica | **2.448** | 12 | 15 | 3 | — |
 
-**Media:** 2.617 palabras por tema · **236 casos tipo test** en total (10-15 por tema) · **40 tablas**
+**Media:** 2.620 palabras por tema · **281 casos tipo test** en total (10-15 por tema) · **48 tablas**
 comparativas · **4 diagramas SVG propios**.
 
-I.1, II.13, II.14, III.18, III.21, III.22, III.23, IV.28, IV.29, IV.30, IV.31 y IV.32 se han reescrito con la **estructura definitiva de 10 apartados**: ficha oficial, epígrafes,
+I.1, II.13, II.14, III.18, III.19, III.20, III.21, III.22, III.23, III.24, IV.28, IV.29, IV.30, IV.31 y IV.32 se han reescrito con la **estructura definitiva de 10 apartados**: ficha oficial, epígrafes,
 introducción, desarrollo por epígrafe con norma al artículo, tabla, ejemplo, trampas, resumen, test
 comentado y fuentes. Los demás temas siguen la misma idea y se irán adaptando a ese formato.
 

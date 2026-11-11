@@ -328,7 +328,7 @@ function FormatoBadge({ formato, words }: { readonly formato?: 'esquema' | 'desa
       </span>
     );
   }
-  return <span className="demo-status demo-status--apuntes-pendiente">Esquema</span>;
+  return <span className="demo-status demo-status--formato-esquema">Esquema</span>;
 }
 
 function SourceLine({ source, official = false }: { source: DemoSource; official?: boolean }) {
@@ -1614,6 +1614,10 @@ function Simulacro() {
 }
 
 function Cobertura() {
+  const todos = data.curriculum.blocks.flatMap((block) => block.topics);
+  const completos = todos.filter((topic) => topic.formato === 'desarrollado').length;
+  const parciales = todos.filter((topic) => topic.formato !== 'desarrollado' && topic.apuntesStatus !== 'pendiente').length;
+  const ausentes = todos.filter((topic) => topic.apuntesStatus === 'pendiente').length;
   return (
     <>
       <section className="page__header">
@@ -1624,6 +1628,22 @@ function Cobertura() {
         </p>
       </section>
       <ProgressCard />
+      <section className="card">
+        <h2>Cobertura por epígrafe</h2>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr><th scope="col">Estado</th><th scope="col">Temas</th><th scope="col">Criterio</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Completo</strong></td><td>{completos}</td><td>10 apartados + 15 test</td></tr>
+              <tr><td><strong>Parcial</strong></td><td>{parciales}</td><td>Ficha corta + práctica</td></tr>
+              <tr><td><strong>Ausente</strong></td><td>{ausentes}</td><td>Sin desarrollo</td></tr>
+              <tr><td><strong>Total</strong></td><td>{todos.length}</td><td>40 temas del temario común</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
       {data.curriculum.blocks.map((block) => (
         <section className="card" key={block.path}>
           <h2>
@@ -1642,6 +1662,7 @@ function Cobertura() {
                   <th scope="col">Tema</th>
                   <th scope="col">Apuntes</th>
                   <th scope="col">Práctica</th>
+                  <th scope="col">Formato</th>
                 </tr>
               </thead>
               <tbody>
@@ -1663,6 +1684,9 @@ function Cobertura() {
                     </td>
                     <td>
                       <PracticaBadge status={topic.practicaStatus} />
+                    </td>
+                    <td>
+                      <FormatoBadge formato={topic.formato ?? 'esquema'} words={topic.longWords ?? 0} />
                     </td>
                   </tr>
                 ))}

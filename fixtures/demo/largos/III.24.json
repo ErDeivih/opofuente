@@ -1,0 +1,294 @@
+{
+  "tema": "III.24",
+  "title": "Monitorización y gestión de incidencias: métricas, ITIL y respuesta",
+  "difficulty": "media",
+  "topics": [
+    "III.24",
+    "III.18"
+  ],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema III.24 · Monitorización y gestión de incidencias.** Bloque III (Sistemas, redes y comunicaciones) del temario común de Técnicos Auxiliares de Informática. Se relaciona con el tema III.18 (sistemas operativos de servidor) porque la monitorización de CPU, memoria y discos y el análisis de los logs son tareas diarias del administrador.\n\n**Objetivo de examen.** Distinguir monitorización proactiva y reactiva, reconocer los mecanismos de detección (IDS, SIV, LFM, logs), aplicar el ciclo de una incidencia y del plan de respuesta a incidentes de seguridad, y manejar el vocabulario de servicio (SLA, prioridad, MTTR, disponibilidad). Dificultad **media**: el proceso es sencillo de enumerar, pero el examen mezcla conceptos parecidos (incidente/problema, detección/contención, IDS/IPS).\n\n**Fuentes de este tema.** El consolidado data/fuentes/III.24.txt, formado por Tema 10.docx (sistemas de gestión de incidencias y CPD), Tema 14.docx (IDS, firewalls y monitorización de seguridad) y Bloque 4 Actualizado 2026.docx (administración de sistemas y redes, monitorización y auditoría). (Fuente: data/fuentes/III.24.txt.)"
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "Este tema se ordena en diez apartados:\n\n1. Ficha oficial del tema: ubicación, objetivo, dificultad y fuentes.\n2. Índice de epígrafes: el mapa que está leyendo.\n3. Introducción y contexto: qué se monitoriza y por qué la incidencia es el centro de la operación.\n4. Desarrollo por epígrafe: monitorización, logs, alertas, métricas, herramientas, gestión de servicios (ITIL y SLA), ciclo de la incidencia y respuesta a incidentes de seguridad.\n5. Tabla comparativa de las fases del plan de respuesta.\n6. Ejemplo práctico resuelto.\n7. Trampas típicas de examen.\n8. Resumen para memorizar.\n9. Casos tipo test comentados (15 preguntas).\n10. Fuentes citadas.\n\nLos epígrafes oficiales (métricas, logs, alertas, herramientas, SLA, ITIL, incidentes y postmortem) se cubren en el apartado 4; los casos del apartado 9 coinciden con los quince testCases del fichero. (Fuente: data/fuentes/III.24.txt.)"
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "Un sistema en producción no se termina cuando se instala: hay que vigilarlo, detectar a tiempo lo que va mal y responder con orden. La **monitorización** reúne las técnicas que observan el estado del sistema (rendimiento, disponibilidad, eventos) y la **gestión de incidencias** organiza la reacción cuando algo falla o se degrada.\n\nLa fuente de este tema enfoca la materia desde dos ángulos complementarios. El primero es la operación diaria: medir el rendimiento, revisar la auditoría de red y mantener la monitorización proactiva y reactiva. El segundo es la seguridad: un incidente de seguridad es un suceso que rompe o empeora un servicio o que pone en riesgo la confidencialidad o la integridad de la información, y para responder se implanta un plan de respuesta con equipos, procedimientos y documentación.\n\nConviene separar ambos planos. Un **incidente de servicio** (la aplicación no responde) se gestiona con un proceso de soporte y unos acuerdos de nivel de servicio; un **incidente de seguridad** (una intrusión o un malware) se gestiona con el plan de respuesta y el CSIRT. Muchos incidentes reales empiezan como una alerta técnica y acaban necesitando las dos visiones, y por eso este tema combina monitorización, métricas y respuesta. (Fuentes: Bloque 4 Actualizado 2026.docx, apartado de administración de redes; Tema 10.docx, apartado 10; Tema 14.docx, apartado 2.4.)"
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**1) Monitorización proactiva y reactiva.** La monitorización **proactiva** busca detectar problemas antes de que afecten al servicio (capacidad, tendencias, umbrales); la **reactiva** responde cuando el fallo ya ha ocurrido. La fuente cita además la **auditoría de red**, que revisa cómo se usa y cómo funciona la red para localizar fallos, incidencias o incumplimientos de la política. En el día a día del sistema operativo se supervisan CPU, memoria y uso de disco con herramientas como el Administrador de Tareas de Windows o htop en Linux.\n\n**2) Logs y evidencias.** Los **logs** son registros de lo que ocurre en servidores y dispositivos de red; su análisis permite reconstruir un incidente. La fuente describe dos mecanismos de vigilancia: los **verificadores de integridad del sistema (SIV)**, que comprueban si se han modificado archivos sensibles (por ejemplo, una entrada añadida al fichero de contraseñas), y los **monitores de registros (LFM)**, que revisan los ficheros de log buscando patrones de ataque. La integridad también se comprueba con un hash criptográfico calculado de antemano y comparado a intervalos regulares.\n\n**3) Detección: IDS, IPS y alarmas.** Un **IDS** (sistema de detección de intrusiones) es complementario al firewall y al proxy; no garantiza la seguridad, pero aporta información sobre los eventos. Cumple tres funciones: **monitorización** del tráfico, **detección** de actos sospechosos según políticas y **respuesta** limitada (por ejemplo, terminar sesiones TCP sospechosas o interactuar con el firewall mediante SNMP). Puede ser **basado en máquina** (analiza un único sistema) o **basado en red** (analiza un segmento, con port mirroring en el switch). Según cómo detecta, distingue entre **anomalías** (conoce el comportamiento normal y avisa de desviaciones) y **usos indebidos o firmas** (conoce los patrones anómalos). Los **IPS** complementan a los IDS porque además bloquean automáticamente. Otras fuentes de alerta son las alarmas del IDS, del cortafuegos y del antivirus, y el incremento anormal de entradas en los logs.\n\n**4) Alertas y umbrales.** Una alerta es el aviso que genera una regla cuando una métrica supera un umbral o un patrón coincide con una firma. Para que sean útiles deben tener contexto y prioridad; demasiadas alertas sin triaje producen **fatiga de alertas** y se ignoran las importantes. La fuente insiste en que la información del IDS y de los logs siempre queda disponible para determinar la naturaleza del incidente y su fuente.\n\n**5) Métricas.** La disponibilidad se calcula como tiempo operativo entre tiempo total (o MTBF / (MTBF + MTTR)); el **MTTR** es el tiempo medio de reparación o restauración y el **MTBF** el tiempo medio entre fallos. El **cumplimiento de SLA** es el porcentaje de incidencias resueltas dentro del plazo. La fuente de este tema no desarrolla estas fórmulas: se resumen aquí como conceptos estándar de gestión de servicios, y en el examen suelen preguntarse junto con la definición de SLA.\n\n**6) Herramientas.** Además de las citadas (Administrador de Tareas, htop, IDS/IPS, cortafuegos, antivirus, SIV y LFM), la operación usa monitorización de disponibilidad, registro centralizado y paneles de indicadores. La fuente nombra las primeras; las segundas son categorías generales, no productos concretos.\n\n**7) Gestión de servicios: ITIL y SLA.** En el marco de buenas prácticas **ITIL** (que la fuente no desarrolla; se resume como estándar) un **servicio** es una capacidad entregada al usuario, un **incidente** es una interrupción o degradación del servicio, un **problema** es su causa raíz y un **cambio** es una modificación controlada. El **service desk** es el punto único de contacto y el **ticket** el registro que sigue el ciclo: alta, clasificación, priorización (impacto × urgencia), diagnóstico, resolución y cierre. El **SLA** es el acuerdo con el cliente (horario, tiempos de respuesta y resolución, disponibilidad, penalizaciones); la **OLA** es el acuerdo interno entre equipos y el **UC** el contrato con el proveedor externo. El escalado puede ser funcional (pasa a un especialista) o jerárquico (avisa a un responsable).\n\n**8) Plan de respuesta a incidentes de seguridad.** La fuente describe el plan como el conjunto de tareas para responder: **equipo de respuesta (CSIRT)**, procedimientos, detección, análisis, corrección, erradicación y recuperación. La detección se apoya en indicadores: precursores (escaneos de puertos o vulnerabilidades), alarmas de IDS, cortafuegos o antivirus, incremento de logs, archivos o cuentas extrañas, caídas o fallos de servidores, cambios de configuración, herramientas no autorizadas, procesos extraños y tráfico anómalo. En el **análisis** se determina el alcance, el tipo de ataque y los daños, y se fijan prioridades. La **contención** puede ser rápida (aislar o apagar los equipos afectados) o retrasada (estudiar al atacante y reunir evidencias, con el riesgo de que el daño crezca). Después llegan la **erradicación** (eliminar la causa y sus secuelas) y la **recuperación** (restaurar el servicio y revisar la seguridad). La identificación del atacante se apoya en ping, traceroute o whois, sabiendo que puede haber IP spoofing, equipos de terceros, direcciones dinámicas o proxys con NAT.\n\n**9) Documentación y postmortem.** El plan exige documentar el incidente: tipo, hechos registrados en los logs, daños, decisiones y actuaciones del equipo, comunicaciones con terceros, evidencias, comentarios del personal y recomendaciones para evitar que se repita. Esa documentación es la base del **postmortem**: reconstruir la línea de tiempo, medir el impacto, identificar la causa y acordar acciones de mejora. (Fuentes: Bloque 4 Actualizado 2026.docx, administración de sistemas y redes; Tema 14.docx, apartado 2.4; Tema 10.docx, apartado 10.)"
+    },
+    {
+      "heading": "5. Tabla comparativa: fases del plan de respuesta a incidentes",
+      "body": "Resumen de las fases que recoge la fuente, con su objetivo y las acciones típicas. (Fuente: Tema 10.docx, apartado 10; Tema 14.docx, apartado 2.4.)",
+      "table": {
+        "columns": [
+          "Fase",
+          "Objetivo",
+          "Acciones clave"
+        ],
+        "rows": [
+          [
+            "Detección",
+            "Descubrir el incidente cuanto antes",
+            "Alarmas de IDS, cortafuegos y antivirus; revisión de logs; indicadores anómalos"
+          ],
+          [
+            "Análisis",
+            "Determinar alcance, tipo y daños",
+            "Matriz de diagnóstico, valoración de daños y orden de prioridades"
+          ],
+          [
+            "Contención",
+            "Evitar que el incidente se extienda",
+            "Aislar o apagar equipos afectados; o vigilar al atacante para reunir evidencias"
+          ],
+          [
+            "Erradicación",
+            "Eliminar la causa y sus secuelas",
+            "Quitar backdoors, rootkits y código malicioso; revisar sistemas relacionados"
+          ],
+          [
+            "Recuperación",
+            "Volver al funcionamiento normal",
+            "Reinstalar desde copia segura, cambiar contraseñas y revisar la seguridad"
+          ],
+          [
+            "Documentación",
+            "Dejar constancia y aprender",
+            "Hechos, daños, decisiones, evidencias y recomendaciones (postmortem)"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un lunes a las 09:00 el IDS de la red del organismo genera una alerta por tráfico anómalo hacia un servidor de aplicaciones. A las 09:25 el equipo aísla el servidor y a las 11:00 el servicio vuelve a estar disponible. El servicio estaba comprometido a 720 horas al mes.\n\n**Resolución.**\n\n- **Detección:** la alerta del IDS y el aumento de entradas en los logs del servidor confirman que hay actividad sospechosa; no se ignora por ser la primera alerta del día.\n- **Análisis:** se revisan los logs y el SIV para ver si se han modificado archivos; se determina el alcance y se comprueba si hay datos confidenciales afectados.\n- **Contención rápida:** se aísla el servidor de la red y se desactivan las cuentas comprometidas; se elige la contención rápida porque el servicio es crítico.\n- **Erradicación:** se elimina la puerta trasera y se revisan los sistemas que confiaban en el servidor.\n- **Recuperación:** se reinstala desde una copia segura, se cambian las contraseñas y se comprueba el funcionamiento.\n- **Documentación y postmortem:** se registra la línea de tiempo, los daños y las decisiones, y se proponen medidas (segmentación, revisión de logs, formación).\n\n**Cálculo.** El servicio estuvo 2 horas indisponible de 720 horas al mes: la disponibilidad del mes es 718 / 720 = 99,72 %. El MTTR de este incidente es de 2 horas (desde la detección hasta la recuperación). (Fuentes: Tema 10.docx, apartado 10; Tema 14.docx, apartado 2.4.)"
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "- **Proactiva no es reactiva.** La proactiva detecta antes de que el servicio se vea afectado; la reactiva actúa después de la incidencia.\n- **IDS no es IPS.** El IDS detecta y alerta (con respuestas limitadas); el IPS puede bloquear automáticamente.\n- **Un IDS no garantiza la seguridad.** Es complementario al firewall, al proxy y a la autenticación; aporta información, no protección total.\n- **Anomalías no son firmas.** La detección de anomalías conoce el comportamiento normal y avisa de desviaciones; la de firmas conoce los patrones de ataque.\n- **SIV no es LFM.** El SIV vigila la integridad de archivos; el LFM revisa los ficheros de log en busca de patrones.\n- **Incidente no es problema.** El incidente es la interrupción o degradación; el problema es su causa raíz.\n- **SLA no es OLA.** El SLA se acuerda con el cliente; la OLA es un acuerdo interno entre equipos; el UC es con el proveedor externo.\n- **Prioridad no es urgencia.** La prioridad combina impacto y urgencia; la urgencia sola no la determina.\n- **Detección no es contención.** Detectar es descubrir el incidente; contener es evitar que se propague.\n- **Contención rápida y retrasada tienen riesgos.** La rápida corta el daño; la retrasada permite estudiar al atacante pero puede agrandar las consecuencias.\n- **Logs no son métricas.** Los logs cuentan eventos; las métricas resumen valores (disponibilidad, MTTR).\n- **MTTR no es MTBF.** El MTTR mide la reparación; el MTBF, el tiempo entre fallos.\n- **La documentación no es opcional.** Sin hechos, evidencias y decisiones no hay postmortem ni mejora.\n- **Incidente de seguridad no es siempre incidente de servicio.** Una intrusión puede no degradar el servicio y aun así ser un incidente de seguridad.\n\n(Fuentes: Bloque 4 Actualizado 2026.docx; Tema 10.docx, apartado 10; Tema 14.docx, apartado 2.4.)"
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "Lo que hay que retener:\n\n- Monitorización proactiva (antes del fallo) y reactiva (después); auditoría de red para revisar uso, estado y cumplimiento.\n- Rendimiento: CPU, memoria y disco con Administrador de Tareas (Windows) y htop (Linux).\n- Logs: registros de servidores y dispositivos; SIV comprueba integridad de archivos; LFM revisa logs en busca de patrones.\n- IDS: monitoriza, detecta y responde de forma limitada; basado en máquina o en red; anomalías o firmas. IPS añade bloqueo.\n- Alertas con umbral y contexto; evitar la fatiga de alertas.\n- Métricas: disponibilidad = tiempo operativo / total; MTTR (reparación), MTBF (entre fallos), cumplimiento de SLA.\n- ITIL (marco estándar): servicio, incidente, problema, cambio, service desk y ticket; prioridad = impacto × urgencia; escalado funcional y jerárquico.\n- SLA con el cliente, OLA interna y UC con el proveedor.\n- Plan de respuesta: CSIRT, detección, análisis, contención (rápida o retrasada), erradicación, recuperación, identificación del atacante y comunicación.\n- Documentación del incidente y postmortem: hechos, logs, daños, decisiones, evidencias y recomendaciones.\n\n(Fuente: Bloque 4 Actualizado 2026.docx; Tema 10.docx, apartado 10; Tema 14.docx, apartado 2.4.)"
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos del fichero, comentados y con su referencia:\n\n**1.** Monitorización que detecta problemas antes de que afecten al servicio. **Respuesta: a)** Proactiva (apartado 4, monitorización).\n\n**2.** Sistema que detecta intrusiones y puede bloquear automáticamente. **Respuesta: b)** IPS (apartado 4, detección).\n\n**3.** Herramienta citada para supervisar CPU, memoria y disco en Linux. **Respuesta: c)** htop (apartado 4, monitorización).\n\n**4.** Mecanismo que revisa los ficheros de log en busca de patrones de ataque. **Respuesta: d)** LFM (apartado 4, logs).\n\n**5.** Mecanismo que comprueba la integridad de archivos sensibles. **Respuesta: a)** SIV (apartado 4, logs).\n\n**6.** Qué es un incidente de seguridad. **Respuesta: b)** Un evento que interrumpe o degrada servicios o afecta a confidencialidad o integridad (apartado 4, plan de respuesta).\n\n**7.** Equipo de respuesta a incidentes de seguridad informática. **Respuesta: c)** CSIRT (apartado 4, plan de respuesta).\n\n**8.** Fase que elimina la causa del incidente y sus secuelas. **Respuesta: d)** Erradicación (apartado 4, plan de respuesta).\n\n**9.** Contención que aísla de inmediato los equipos afectados. **Respuesta: a)** Contención rápida (apartado 4, plan de respuesta).\n\n**10.** Para qué sirve el postmortem. **Respuesta: b)** Para documentar hechos y acordar mejoras que eviten la repetición (apartado 4, documentación).\n\n**11.** Qué es un SLA. **Respuesta: c)** El acuerdo de nivel de servicio con el cliente (apartado 4, gestión de servicios).\n\n**12.** Qué es una OLA. **Respuesta: d)** Un acuerdo interno entre equipos de la organización (apartado 4, gestión de servicios).\n\n**13.** Cómo se determina la prioridad de un incidente. **Respuesta: a)** Combinando impacto y urgencia (apartado 4, gestión de servicios).\n\n**14.** Qué mide el MTTR. **Respuesta: b)** El tiempo medio de reparación o restauración (apartado 4, métricas).\n\n**15.** Fórmula de la disponibilidad con MTBF y MTTR. **Respuesta: c)** MTBF / (MTBF + MTTR) (apartado 4, métricas).\n\nCada caso incluye su explicación completa y la referencia de fuente en el campo reference de testCases. (Fuentes: Tema 10.docx, apartado 10; Tema 14.docx, apartado 2.4; Bloque 4 Actualizado 2026.docx.)"
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "- **Tema 10.docx**, apartado 10 (sistemas de gestión de incidencias): definición de incidente de seguridad, CSIRT, plan de respuesta, indicadores de detección, análisis, contención rápida y retrasada, erradicación, recuperación, identificación del atacante, comunicación y documentación. También el apartado 9 (infraestructura de un CPD) como contexto de disponibilidad.\n- **Tema 14.docx**, apartado 2.4 (sistemas detectores y preventores de intrusiones): IDS basado en máquina o en red, SIV, LFM, honeypots, detección de anomalías y de firmas, monitorización de objetivos concretos y respuesta del IDS.\n- **Bloque 4 Actualizado 2026.docx**, Tema 1 (administración del sistema operativo: monitorización del rendimiento con Administrador de Tareas y htop) y Tema 4 (administración de redes: monitorización proactiva y reactiva, auditoría de red).\n- **data/fuentes/III.24.txt**: texto consolidado de las fuentes anteriores, utilizado para verificar las citas.\n\nAviso de alcance: la fuente no desarrolla el marco ITIL, los acuerdos SLA/OLA ni las fórmulas de MTTR/MTBF; esos conceptos se resumen en el apartado 4 como estándar de gestión de servicios y se identifican como tales. (Fuente: data/fuentes/III.24.txt.)"
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Qué tipo de monitorización detecta problemas antes de que afecten al servicio?",
+      "options": [
+        "Proactiva",
+        "Reactiva",
+        "Correctiva",
+        "Pasiva"
+      ],
+      "answer": "a",
+      "explanation": "La monitorización proactiva busca detectar problemas antes de que afecten al servicio; la reactiva responde cuando el fallo ya ha ocurrido.",
+      "reference": "Apartado 4, monitorización; Bloque 4 Actualizado 2026.docx, Tema 4 (monitorización proactiva y reactiva)."
+    },
+    {
+      "question": "¿Qué sistema detecta intrusiones y además puede bloquear automáticamente el ataque?",
+      "options": [
+        "Un IDS basado en máquina",
+        "Un IPS",
+        "Un proxy",
+        "Un honeypot"
+      ],
+      "answer": "b",
+      "explanation": "El IPS complementa al IDS porque detecta actividad maliciosa y puede bloquearla en tiempo real. El IDS solo detecta y alerta; el proxy filtra y el honeypot simula servicios para observar al atacante.",
+      "reference": "Apartado 4, detección; Tema 14.docx, apartado 2.4."
+    },
+    {
+      "question": "¿Qué herramienta cita la fuente para supervisar CPU, memoria y uso de disco en Linux?",
+      "options": [
+        "Administrador de Tareas",
+        "LFM",
+        "htop",
+        "SIV"
+      ],
+      "answer": "c",
+      "explanation": "La fuente cita el Administrador de Tareas en Windows y htop en Linux para la monitorización del rendimiento. LFM revisa logs y SIV comprueba la integridad de archivos.",
+      "reference": "Apartado 4, monitorización; Bloque 4 Actualizado 2026.docx, Tema 1 (monitorización del rendimiento)."
+    },
+    {
+      "question": "¿Qué mecanismo monitoriza los ficheros de log en busca de patrones que indiquen un ataque?",
+      "options": [
+        "SIV",
+        "Honeypot",
+        "Proxy",
+        "LFM"
+      ],
+      "answer": "d",
+      "explanation": "El monitor de registros (LFM) revisa los logs generados por los programas buscando patrones de ataque. El SIV vigila la integridad de archivos y el honeypot simula servicios para observar al atacante.",
+      "reference": "Apartado 4, logs; Tema 14.docx, apartado 2.4 (LFM)."
+    },
+    {
+      "question": "¿Qué mecanismo comprueba si se han modificado archivos sensibles del sistema?",
+      "options": [
+        "SIV",
+        "LFM",
+        "IDS de red",
+        "IPS"
+      ],
+      "answer": "a",
+      "explanation": "El verificador de integridad del sistema (SIV) compara el estado de los archivos para detectar modificaciones no autorizadas, por ejemplo una entrada añadida al fichero de contraseñas.",
+      "reference": "Apartado 4, logs; Tema 14.docx, apartado 2.4 (SIV)."
+    },
+    {
+      "question": "¿Qué es un incidente de seguridad según la fuente?",
+      "options": [
+        "Un cambio planificado en la configuración.",
+        "Cualquier suceso capaz de interrumpir o degradar los servicios o de comprometer la confidencialidad o integridad de la información.",
+        "Una solicitud de servicio del usuario.",
+        "Un fallo de hardware sin impacto en los datos."
+      ],
+      "answer": "b",
+      "explanation": "La fuente describe el incidente de seguridad como un suceso capaz de interrumpir o degradar los servicios, o de comprometer la confidencialidad o la integridad de la información.",
+      "reference": "Apartado 4, plan de respuesta; Tema 10.docx, apartado 10."
+    },
+    {
+      "question": "¿Qué equipo se encarga de gestionar las incidencias y desastres que afectan a la seguridad informática?",
+      "options": [
+        "El service desk",
+        "El equipo de desarrollo",
+        "El CSIRT",
+        "El comité de cambios"
+      ],
+      "answer": "c",
+      "explanation": "El CSIRT (Computer Security Incident Response Team) reúne a las personas con experiencia y formación para actuar ante incidentes que afecten a la seguridad informática.",
+      "reference": "Apartado 4, plan de respuesta; Tema 10.docx, apartado 10."
+    },
+    {
+      "question": "¿En qué fase del plan se eliminan los agentes causantes del incidente y sus secuelas?",
+      "options": [
+        "Detección",
+        "Contención",
+        "Recuperación",
+        "Erradicación"
+      ],
+      "answer": "d",
+      "explanation": "La erradicación elimina la causa y sus secuelas (puertas traseras, rootkits u otro código maligno). La contención evita que se extienda y la recuperación devuelve el sistema a su funcionamiento normal.",
+      "reference": "Apartado 4, plan de respuesta; Tema 10.docx, apartado 10."
+    },
+    {
+      "question": "¿En qué consiste la contención rápida de un incidente?",
+      "options": [
+        "Aislar o apagar de inmediato los equipos afectados",
+        "Estudiar al atacante antes de actuar",
+        "Reinstalar el sistema operativo",
+        "Documentar el incidente sin tocar los equipos"
+      ],
+      "answer": "a",
+      "explanation": "La contención rápida actúa cuanto antes para evitar mayores consecuencias (apagar equipos, desconectarlos de la red o desactivar servicios). Retrasar la contención sirve para estudiar al atacante, pero puede agrandar el daño.",
+      "reference": "Apartado 4, plan de respuesta; Tema 10.docx, apartado 10."
+    },
+    {
+      "question": "¿Cuál es la finalidad del postmortem de un incidente?",
+      "options": [
+        "Repartir responsabilidades",
+        "Documentar hechos y acordar mejoras para evitar que se repita",
+        "Cerrar el ticket sin más",
+        "Renovar el SLA"
+      ],
+      "answer": "b",
+      "explanation": "La documentación del incidente recoge hechos, logs, daños, decisiones, evidencias y recomendaciones; el postmortem usa esa información para reconstruir lo ocurrido y acordar mejoras.",
+      "reference": "Apartado 4, documentación; Tema 10.docx, apartado 10."
+    },
+    {
+      "question": "¿Qué es un SLA?",
+      "options": [
+        "Un acuerdo interno entre equipos de la organización",
+        "El contrato con un proveedor externo",
+        "El acuerdo de nivel de servicio con el cliente",
+        "Una alerta del IDS"
+      ],
+      "answer": "c",
+      "explanation": "El SLA (Service Level Agreement) es el acuerdo con el cliente sobre el nivel de servicio. La OLA es el acuerdo interno y el UC el contrato con el proveedor externo.",
+      "reference": "Apartado 4, gestión de servicios (conceptos estándar de ITIL)."
+    },
+    {
+      "question": "¿Qué es una OLA?",
+      "options": [
+        "Un acuerdo con el cliente",
+        "Un contrato con un proveedor externo",
+        "Una métrica de disponibilidad",
+        "Un acuerdo interno entre equipos de la organización"
+      ],
+      "answer": "d",
+      "explanation": "La OLA (Operational Level Agreement) es un acuerdo interno entre equipos que ayuda a cumplir el SLA con el cliente; el UC es el contrato con el proveedor externo.",
+      "reference": "Apartado 4, gestión de servicios (conceptos estándar de ITIL)."
+    },
+    {
+      "question": "¿Cómo se determina la prioridad de una incidencia?",
+      "options": [
+        "Combinando impacto y urgencia",
+        "Solo por la antigüedad del ticket",
+        "Solo por el orden de llegada",
+        "Por el nivel del técnico"
+      ],
+      "answer": "a",
+      "explanation": "La prioridad se calcula a partir del impacto (a cuántos y con qué criticidad afecta) y de la urgencia (cuánto empeora si se espera). La antigüedad o el orden de llegada no la determinan.",
+      "reference": "Apartado 4, gestión de servicios (conceptos estándar de ITIL)."
+    },
+    {
+      "question": "¿Qué mide el MTTR?",
+      "options": [
+        "El tiempo entre fallos",
+        "El tiempo medio de reparación o restauración",
+        "El porcentaje de disponibilidad",
+        "El número de alertas"
+      ],
+      "answer": "b",
+      "explanation": "El MTTR (Mean Time To Repair) mide el tiempo medio de reparación o restauración; el MTBF mide el tiempo medio entre fallos.",
+      "reference": "Apartado 4, métricas (conceptos estándar de gestión de servicios)."
+    },
+    {
+      "question": "¿Cómo se calcula la disponibilidad a partir del MTBF y el MTTR?",
+      "options": [
+        "MTTR / (MTBF + MTTR)",
+        "MTBF × MTTR",
+        "MTBF / (MTBF + MTTR)",
+        "(MTBF + MTTR) / MTTR"
+      ],
+      "answer": "c",
+      "explanation": "La disponibilidad es el tiempo operativo dividido entre el tiempo total: MTBF / (MTBF + MTTR), expresado en porcentaje.",
+      "reference": "Apartado 4, métricas (conceptos estándar de gestión de servicios)."
+    }
+  ],
+  "sources": [
+    {
+      "file": "Tema 10.docx",
+      "page": "apartado 10 (sistemas de gestión de incidencias) y apartado 9 (infraestructura de CPD)",
+      "use": "Definición de incidente de seguridad, CSIRT, plan de respuesta, indicadores de detección, análisis, contención rápida y retrasada, erradicación, recuperación, identificación del atacante, comunicación y documentación; contexto de disponibilidad"
+    },
+    {
+      "file": "Tema 14.docx",
+      "page": "apartado 2.4 (IDS)",
+      "use": "IDS basado en máquina y en red, SIV, LFM, honeypots, detección de anomalías y de firmas y funciones de monitorización, detección y respuesta"
+    },
+    {
+      "file": "Bloque 4 Actualizado 2026.docx",
+      "page": "Tema 1 y Tema 4",
+      "use": "Monitorización del rendimiento (Administrador de Tareas y htop), monitorización proactiva y reactiva y auditoría de red"
+    },
+    {
+      "file": "data/fuentes/III.24.txt",
+      "page": "texto consolidado",
+      "use": "Verificación de las citas de los documentos anteriores"
+    }
+  ]
+}

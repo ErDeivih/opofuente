@@ -1,0 +1,272 @@
+{
+  "tema": "III.19",
+  "title": "Virtualización y contenedores",
+  "difficulty": "media",
+  "topics": ["III.19", "III.18"],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema:** III.19, «Virtualización y contenedores», del bloque III (Sistemas, redes y comunicaciones) del temario común de informática C1. **Materias que cubre:** concepto y tipos de virtualización, hipervisores, máquinas virtuales, virtualización de servidores y de puestos de usuario, almacenamiento (DAS, NAS, SAN y VSAN), contenedores (Docker, LXC, Podman), orquestación (Docker Swarm, Kubernetes, OpenShift), aprovisionamiento thick y thin, ventajas, riesgos y continuidad. **Relación con otros temas:** se apoya en III.18 (sistemas operativos de servidor) y en los temas de redes y cloud, y sirve de base a la administración de infraestructuras y a la seguridad. **Fuentes:** `Tema 7.docx` y `Bloque 4 Actualizado 2026.docx`, con el contexto de administración de `Tema 6.docx`, volcados en `data/fuentes/III.19.txt`.",
+      "table": {
+        "columns": ["Dato de la ficha", "Valor"],
+        "rows": [
+          ["Tema", "III.19 Virtualización y contenedores"],
+          ["Bloque", "III · Sistemas, redes y comunicaciones"],
+          ["Materias", "Hipervisores, VM, almacenamiento, contenedores, orquestación, VDI y ventajas/riesgos"],
+          ["Temas relacionados", "III.18 Sistemas operativos de servidor; redes y cloud"],
+          ["Fuente", "Tema 7.docx y Bloque 4 Actualizado 2026.docx"]
+        ]
+      }
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El desarrollo del tema se organiza en los epígrafes del apartado 4:\n\n- **4.1.** Qué es virtualizar: capa de abstracción y recursos virtualizables.\n- **4.2.** Hipervisores y técnicas de virtualización.\n- **4.3.** Máquinas virtuales y consolidación de servidores.\n- **4.4.** Almacenamiento en entornos virtualizados: DAS, NAS, SAN y VSAN.\n- **4.5.** Virtualización de sistema operativo y contenedores.\n- **4.6.** Docker, imágenes y orquestación.\n- **4.7.** Redes virtuales y virtualización de puestos de usuario (VDI).\n- **4.8.** Ventajas, riesgos y continuidad.\n\nCompletan el tema la tabla comparativa (apartado 5), el ejemplo práctico (6), las trampas de examen (7), el resumen para memorizar (8), los quince casos tipo test (9) y las fuentes citadas (10)."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "Virtualizar consiste en interponer una capa de abstracción entre el hardware físico y los sistemas que lo utilizan, de forma que un conjunto de recursos físicos se comporte como varios recursos lógicos. Esa capa permite ejecutar varios sistemas operativos y aplicaciones sobre un mismo servidor, aislados entre sí, y gestionar cada máquina virtual como si fuera un conjunto de ficheros que se puede copiar, mover o restaurar.\n\nLa virtualización nació para reducir el coste de tener un servidor dedicado por aplicación: hardware, licencias, energía, infraestructura y, sobre todo, gestión. Con la consolidación llegaron el aislamiento, la alta disponibilidad y la posibilidad de probar actualizaciones sin tocar producción. Después aparecieron los contenedores, que llevan la idea más lejos: en lugar de virtualizar el hardware, virtualizan el sistema operativo y empaquetan solo la aplicación y sus dependencias.\n\nEste tema ordena ambas tecnologías, sus tipos y sus herramientas, y las conecta con el almacenamiento, la red y la continuidad del servicio.",
+      "table": {
+        "columns": ["Fuente", "Qué aporta"],
+        "rows": [
+          ["Tema 7.docx", "Almacenamiento, VSAN, backups, virtualización de servidores y puestos de usuario"],
+          ["Bloque 4 Actualizado 2026.docx", "Hipervisores tipo I y II, VDI, thick/thin, contenedores, orquestación, cloud y clúster"],
+          ["Tema 6.docx", "Contexto de administración, tareas del administrador y gestión de servicios"]
+        ]
+      }
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1. Qué es virtualizar.** La virtualización separa el hardware físico del software que lo usa mediante una capa de abstracción. El software que la implementa es el sistema anfitrión (host) y los sistemas virtualizados son los invitados (guest); un anfitrión puede alojar varios invitados. Se puede virtualizar el **procesador** (coordinando el acceso de las máquinas virtuales), la **memoria** (compartiendo la memoria física sin que unos sistemas sobrescriban los datos de otros), la **red** (garantizando que cada máquina recibe y envía el tráfico correcto) y el **almacenamiento** (dando a cada máquina su espacio aislado). Las máquinas virtuales se gestionan como ficheros, lo que permite copiarlas, moverlas o restaurarlas con rapidez. Un caso particular es la **Java VM**, que virtualiza un proceso y le da un entorno de ejecución independiente de la plataforma y del sistema operativo.\n\n**4.2. Hipervisores y técnicas.** El software que crea y gestiona las máquinas virtuales se llama **hipervisor** o VMM (Virtual Machine Monitor). Hay dos tipos: el **nativo o bare-metal**, que se ejecuta directamente sobre el hardware y no necesita sistema anfitrión (VMware ESXi, Hyper-V, Citrix XenServer), y el **alojado (hosted)**, que se ejecuta como aplicación sobre un sistema operativo existente (VMware Workstation, VirtualBox, QEMU). Los hipervisores nativos son más eficientes y seguros por su acceso directo al hardware; los alojados pueden perder rendimiento por el sistema operativo adicional. En la virtualización de servidores destacan dos técnicas: la **virtualización completa o de hardware**, que permite ejecutar varios sistemas sin modificar al invitado y es la más usada, y la **paravirtualización**, en la que el hipervisor ofrece al invitado una interfaz especial y este accede a los recursos mediante **hypercalls**, lo que exige modificar el sistema invitado para que su núcleo no se ejecute en el anillo privilegiado y usar mecanismos como el *ring deprivileging* o el apoyo hardware de Intel VT-x y AMD-V.\n\n**4.3. Máquinas virtuales y consolidación.** El objetivo de la virtualización de servidores es ofrecer varios servidores virtuales con un único equipo físico. Frente al servidor dedicado, que resulta caro en hardware, licencias, energía y gestión, la consolidación aprovecha mejor el hardware (muchos servidores físicos trabajan a un 10-15 % de su capacidad), aísla las máquinas virtuales, facilita la alta disponibilidad (duplicar una VM y restaurarla en minutos), permite probar sistemas operativos y actualizaciones sin afectar a producción, mejora el aprovisionamiento y la administración y reduce el consumo energético. Las máquinas virtuales admiten **snapshots** para volver a un estado concreto en caso de error, y su gestión como ficheros simplifica las copias y los movimientos entre servidores.\n\n**4.4. Almacenamiento.** En virtualización, el almacenamiento condiciona el rendimiento y la continuidad. Las **cabinas de discos** agrupan controladoras (RAID, caché, copias), front-end de conectividad y back-end de discos, y organizan el espacio en *pools*. El acceso puede ser a nivel de bloque, con discos internos, **DAS** (conexión directa SCSI, FC o SAS) o **SAN** (red dedicada de bloques, con LUN como disco virtual y capas cliente, red y disco; puede ser FC, iSCSI o FCoE), o a nivel de fichero con **NAS** (el servidor monta un sistema de ficheros externo con NFS o CIFS). El almacenamiento interno tiene problemas de escalabilidad, protección e infrautilización; el externo dedicado mejora la escalabilidad y la redundancia, pero también puede infrautilizarse si no se comparte. La **VSAN** unifica el almacenamiento local de los servidores de un clúster y lo gestiona como una SAN compartida; se puede implementar en el servidor, en la red o en la cabina. En entornos virtuales, el aprovisionamiento puede ser **thick** (reserva toda la capacidad del disco virtual) o **thin** (consume solo lo necesario y crece con la demanda).\n\n**4.5. Virtualización de sistema operativo y contenedores.** La virtualización de sistema operativo hace que el anfitrión virtualice el hardware a nivel del propio sistema operativo, sin hipervisor: se crean entornos virtuales aislados que comparten el mismo sistema, las mismas librerías y los mismos binarios, pero con su propia estructura de directorios. El **contenedor** es la evolución de esa idea: un proceso para el sistema operativo que incluye las librerías, archivos y configuraciones que necesita la aplicación, sin un sistema operativo completo debajo. Frente a una máquina virtual, que necesita contener todo el sistema, el contenedor aprovecha el sistema operativo sobre el que se ejecuta. Sus ventajas son la **portabilidad** (se despliega en cualquier sistema que tenga Docker), la **flexibilidad** (arranca como un proceso, mucho más rápido que una VM) y la **ligereza** (solo lleva las dependencias necesarias). **LXC** es la tecnología de contenedores a nivel de sistema operativo que permite ejecutar varios entornos Linux aislados en un host, más ligera que las máquinas virtuales.\n\n**4.6. Docker y orquestación.** Docker es el conjunto de herramientas para crear, compartir y ejecutar aplicaciones en contenedores, con aislamiento y consistencia entre entornos. Cuando hay muchos contenedores y microservicios hace falta orquestación: **Docker Swarm** es la solución nativa de Docker para crear clústeres, desplegar, escalar y dar alta disponibilidad, más sencilla pero menos potente que Kubernetes; **Kubernetes** administra microservicios y aplicaciones a gran escala con implementación, escalado y operación automatizados; **OpenShift** es la plataforma basada en Kubernetes de Red Hat con capacidades empresariales; **CRI-O** es un runtime ligero para Kubernetes basado en OCI. **Podman** gestiona contenedores sin daemon centralizado, es compatible con OCI y aporta mayor seguridad y flexibilidad en producción.\n\n**4.7. Redes virtuales y puestos de usuario.** La virtualización de red garantiza que cada máquina virtual envíe y reciba el tráfico apropiado; la segmentación lógica con **VLAN 802.1Q** permite separar redes dentro de una red física, lo que resulta útil para aislar entornos virtuales. La **virtualización de puestos de usuario (VDI)** separa el escritorio del equipo que se maneja: el usuario se conecta a un servidor central donde se ejecutan sus aplicaciones, procesos y datos, y puede acceder desde cualquier dispositivo con el cliente adecuado. Sus componentes son el servidor de escritorios y aplicaciones, el equipo de acceso, la red de comunicaciones y los protocolos (RDP en Windows, X Windows en Linux, ICA, NX o VNC), con posibilidad de un servidor bróker. Los escritorios pueden ser **persistentes o estáticos** (mantienen la configuración del usuario) o **no persistentes o dinámicos** (parten de una imagen maestra y se clonan al iniciar sesión), y el modo de operación puede ser centralizado, alojado o remoto. Sus ventajas son la reducción de costes, la seguridad de centralizar los datos y el aprovisionamiento rápido; sus desventajas, la dependencia de la red y de los servidores, el peor soporte de algunos periféricos y la formación necesaria.\n\n**4.8. Ventajas, riesgos y continuidad.** La virtualización aporta consolidación, aislamiento, alta disponibilidad, pruebas seguras, mejor aprovisionamiento, snapshots y eficiencia energética. Los riesgos vienen de la propia concentración: si el anfitrión o el almacenamiento fallan, caen muchas máquinas a la vez; un hipervisor alojado añade una capa que puede penalizar el rendimiento; la VDI depende de la red y de los servidores; y en el modo remoto de VDI la pérdida del equipo puede suponer la pérdida de los datos. Por eso la continuidad exige redundancia (N, N+1, 2N), copias de las máquinas virtuales (replicación, snapshots en frío, plugins de copia en caliente) y un plan de recuperación probado. En la nube, la virtualización es la base de IaaS, PaaS y SaaS, y los clústeres aportan alta disponibilidad y balanceo, con automatización mediante Ansible, Puppet, Terraform o Salt.",
+      "table": {
+        "columns": ["Epígrafe", "Datos que hay que retener"],
+        "rows": [
+          ["Concepto", "Capa de abstracción; anfitrión e invitados; se virtualizan CPU, memoria, red y almacenamiento"],
+          ["Hipervisores", "Nativo (ESXi, Hyper-V, XenServer) y alojado (Workstation, VirtualBox, QEMU)"],
+          ["Técnicas", "Virtualización completa (sin modificar al invitado) y paravirtualización (hypercalls)"],
+          ["VM", "Consolidación, aislamiento, alta disponibilidad, snapshots y gestión como ficheros"],
+          ["Almacenamiento", "DAS, NAS (NFS/CIFS), SAN (LUN; FC, iSCSI, FCoE) y VSAN; thick y thin"],
+          ["Contenedores", "Docker, LXC y Podman; comparten el sistema operativo; portabilidad, flexibilidad y ligereza"],
+          ["Orquestación", "Docker Swarm, Kubernetes, OpenShift y CRI-O"],
+          ["VDI", "Servidor de escritorios, acceso, red y protocolos (RDP, X, ICA, NX, VNC); persistente o no persistente"]
+        ]
+      }
+    },
+    {
+      "heading": "5. Tabla comparativa: máquina virtual frente a contenedor",
+      "body": "La tabla resume la diferencia que más se pregunta: la máquina virtual incluye un sistema operativo completo y el contenedor aprovecha el del anfitrión. De ahí se derivan el tiempo de arranque, el peso y el aislamiento.",
+      "table": {
+        "columns": ["Aspecto", "Máquina virtual", "Contenedor"],
+        "rows": [
+          ["Sistema operativo", "Incluye un SO completo (invitado)", "Comparte el SO del anfitrión"],
+          ["Arranque", "Más lento: hay que iniciar el SO", "Como un proceso: mucho más rápido"],
+          ["Peso", "Mayor: SO, librerías y aplicación", "Menor: solo aplicación y dependencias"],
+          ["Aislamiento", "Fuerte: hardware virtual y SO propio", "A nivel de proceso y de sistema operativo"],
+          ["Herramientas", "Hipervisor (ESXi, Hyper-V, VirtualBox)", "Docker, LXC, Podman y orquestadores"],
+          ["Caso típico", "Sistemas completos, servidores y VDI", "Aplicaciones y microservicios"]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un ayuntamiento tiene diez servidores físicos infrautilizados: uno para la web, otro para la base de datos, otro para el correo y varios para aplicaciones antiguas. Quiere consolidarlos, mejorar la disponibilidad y dar escritorio a los usuarios de atención al público.\n\n**Resolución.**\n\n- **Consolidación:** se instala un hipervisor **nativo** (ESXi, Hyper-V o XenServer) directamente sobre dos servidores físicos y se crean máquinas virtuales independientes para cada servicio. La consolidación reduce hardware, licencias, energía y gestión, y el aislamiento evita que un servicio arrastre a los demás.\n- **Almacenamiento:** se monta una **SAN** con LUN para los discos de las máquinas virtuales, o una **VSAN** que unifique el almacenamiento local de los servidores del clúster; los datos menos críticos pueden ir en **NAS** (NFS o CIFS). El aprovisionamiento será **thin** para no reservar capacidad que no se usa, y **thick** en los discos que requieran rendimiento garantizado.\n- **Continuidad:** se configura un clúster con alta disponibilidad y se usan **snapshots** para recuperaciones rápidas y **plugins o replicación** para copias en caliente de las VM; los snapshots no sustituyen a las copias de seguridad completas.\n- **Aplicaciones nuevas:** la web municipal se empaqueta en **contenedores** con Docker y se despliega con **Kubernetes** o Docker Swarm, lo que agiliza las actualizaciones y el escalado; los contenedores arrancan como procesos, mucho más rápido que una VM.\n- **Puestos de usuario:** para atención al público se implanta **VDI** con un servidor de escritorios central, equipo de acceso y protocolo **RDP**; los escritorios no persistentes se clonan de una imagen maestra al iniciar sesión.\n\n**Conclusión.** No hay una tecnología mejor en abstracto: la VM encaja con sistemas completos y servicios que necesitan su propio SO; el contenedor, con aplicaciones empaquetadas y despliegues frecuentes; y la VDI, con puestos de usuario centralizados y controlados.",
+      "table": {
+        "columns": ["Necesidad", "Decisión", "Dato clave"],
+        "rows": [
+          ["Consolidar servidores", "Hipervisor nativo y VM", "Aislamiento y ahorro de recursos"],
+          ["Almacenamiento compartido", "SAN/VSAN y thick/thin", "LUN y aprovisionamiento según demanda"],
+          ["Aplicaciones nuevas", "Contenedores y Kubernetes", "Arranque rápido y escalado"],
+          ["Puestos de usuario", "VDI con RDP", "Escritorio centralizado y no persistente"]
+        ]
+      }
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "Las confusiones más frecuentes de este tema son estas:\n\n- **Confundir hipervisor nativo y alojado**: el nativo se ejecuta sobre el hardware; el alojado, sobre un sistema anfitrión.\n- **Confundir virtualización completa y paravirtualización**: la completa no modifica al invitado; la paravirtualización usa hypercalls y exige modificarlo.\n- **Confundir máquina virtual y contenedor**: la VM lleva un SO completo; el contenedor aprovecha el del anfitrión.\n- **Confundir Docker con un orquestador**: Docker crea y ejecuta contenedores; Swarm, Kubernetes y OpenShift los orquestan.\n- **Confundir Podman con Docker**: Podman funciona sin daemon centralizado y es compatible con OCI.\n- **Confundir LXC con Docker**: LXC virtualiza a nivel de sistema operativo; Docker empaqueta aplicaciones como contenedores.\n- **Confundir DAS, NAS y SAN**: DAS es conexión directa; NAS da acceso a ficheros (NFS/CIFS); SAN es una red dedicada de bloques con LUN.\n- **Confundir thick y thin**: thick reserva toda la capacidad; thin consume según la demanda.\n- **Creer que un snapshot es una copia de seguridad**: es una captura puntual para recuperación rápida y no sustituye a la copia.\n- **Confundir VDI persistente y no persistente**: el persistente mantiene la configuración del usuario; el no persistente vuelve a la imagen maestra.\n- **Confundir la Java VM con una máquina virtual de sistema**: la Java VM virtualiza un proceso, no un ordenador completo.",
+      "table": {
+        "columns": ["Confusión", "Lo correcto"],
+        "rows": [
+          ["Nativo = alojado", "Nativo sobre el hardware; alojado sobre un SO anfitrión"],
+          ["VM = contenedor", "La VM incluye SO completo; el contenedor comparte el del anfitrión"],
+          ["Docker = Kubernetes", "Docker ejecuta contenedores; Kubernetes los orquesta"],
+          ["Snapshot = backup", "El snapshot es puntual y no sustituye a la copia"]
+        ]
+      }
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Concepto.** Capa de abstracción entre hardware y sistemas; anfitrión (host) e invitados (guest); se virtualizan procesador, memoria, red y almacenamiento; las VM se gestionan como ficheros; la Java VM virtualiza un proceso.\n\n**Hipervisores.** Nativo o bare-metal (ESXi, Hyper-V, XenServer) y alojado (Workstation, VirtualBox, QEMU); los nativos son más eficientes y seguros.\n\n**Técnicas.** Virtualización completa (la más usada, sin modificar al invitado) y paravirtualización (hypercalls, modificación del invitado, ring deprivileging, VT-x y AMD-V).\n\n**Almacenamiento.** Cabinas con controladoras, pools, front-end y back-end; DAS (SCSI/FC/SAS), NAS (NFS/CIFS) y SAN (LUN; FC, iSCSI, FCoE); VSAN; aprovisionamiento thick y thin.\n\n**Contenedores.** Virtualización de sistema operativo; Docker (portabilidad, flexibilidad y ligereza), LXC y Podman; orquestación con Docker Swarm, Kubernetes, OpenShift y CRI-O.\n\n**VDI.** Escritorio separado del equipo; servidor de escritorios, acceso, red y protocolos (RDP, X Windows, ICA, NX, VNC); persistente o no persistente; modo centralizado, alojado o remoto.\n\n**Ventajas y riesgos.** Consolidación, aislamiento, alta disponibilidad, pruebas, snapshots y eficiencia energética; riesgo por concentración, dependencia de la red y del anfitrión, rendimiento del hipervisor alojado y seguridad del modo remoto."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos siguientes reproducen el estilo de pregunta del bloque III. Cada uno incluye la respuesta correcta y una explicación que recuerda el dato del temario; la referencia indica el epígrafe y la fuente donde está el contenido. Conviene contestarlos sin mirar la solución y revisar después solo los fallos."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "El tema se ha redactado a partir de `data/fuentes/III.19.txt`, que reúne el volcado de `Tema 7.docx` (almacenamiento, VSAN, copias y virtualización de servidores y puestos), `Bloque 4 Actualizado 2026.docx` (hipervisores, VDI, aprovisionamiento, contenedores, orquestación, cloud y clúster) y `Tema 6.docx` (contexto de administración). Las citas por apartado aparecen en la lista `sources` y en la referencia de cada caso tipo test. No se han copiado párrafos literales ni se han añadido datos que no figuren en esas fuentes."
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Cómo se ejecuta un hipervisor nativo o bare-metal?",
+      "options": [
+        "Como una aplicación sobre un sistema operativo anfitrión",
+        "Directamente sobre el hardware del servidor físico",
+        "Dentro de un contenedor Docker",
+        "Como un proceso de la máquina virtual"
+      ],
+      "answer": "b",
+      "explanation": "El hipervisor nativo (bare-metal) se ejecuta directamente sobre el hardware y no necesita un sistema operativo anfitrión; ejemplos son VMware ESXi, Hyper-V y Citrix XenServer.",
+      "reference": "Apdo. 4.2 · Tema 7.docx y Bloque 4, hipervisores"
+    },
+    {
+      "question": "¿Cuál de estos hipervisores es de tipo alojado (hosted)?",
+      "options": ["VMware Workstation o VirtualBox", "VMware ESXi", "Microsoft Hyper-V", "Citrix XenServer"],
+      "answer": "a",
+      "explanation": "Los hipervisores alojados se ejecutan como aplicación sobre un sistema operativo existente (VMware Workstation, VirtualBox, QEMU). ESXi, Hyper-V y XenServer son nativos o bare-metal.",
+      "reference": "Apdo. 4.2 · Tema 7.docx y Bloque 4, hipervisores"
+    },
+    {
+      "question": "¿Qué técnica de virtualización exige modificar el sistema operativo invitado y utiliza hypercalls?",
+      "options": ["La virtualización completa", "La emulación del ring 0", "La paravirtualización", "La virtualización de escritorios"],
+      "answer": "c",
+      "explanation": "En la paravirtualización el hipervisor ofrece al invitado una interfaz especial y este accede a los recursos mediante hypercalls; por eso hay que modificar el sistema invitado, que no puede ejecutar su núcleo en el anillo privilegiado.",
+      "reference": "Apdo. 4.2 · Tema 7.docx, virtualización completa y paravirtualización"
+    },
+    {
+      "question": "¿Qué diferencia esencial hay entre una máquina virtual y un contenedor?",
+      "options": [
+        "El contenedor incluye un sistema operativo completo y la VM no",
+        "La máquina virtual incluye un sistema operativo completo y el contenedor aprovecha el del anfitrión",
+        "Ambos incluyen un sistema operativo completo",
+        "El contenedor necesita un hipervisor y la VM no"
+      ],
+      "answer": "b",
+      "explanation": "La máquina virtual contiene todo el sistema operativo invitado; el contenedor empaqueta la aplicación y sus dependencias y aprovecha el sistema operativo sobre el que se ejecuta, por eso es más ligero y arranca como un proceso.",
+      "reference": "Apdo. 4.5 · Tema 7.docx, Docker y contenedores"
+    },
+    {
+      "question": "¿Qué plataforma se utiliza para la orquestación de contenedores y microservicios a gran escala?",
+      "options": ["Docker", "Podman", "LXC", "Kubernetes"],
+      "answer": "d",
+      "explanation": "Kubernetes administra múltiples microservicios y aplicaciones a gran escala con implementación, escalado y operación automatizados. Docker y Podman gestionan contenedores y LXC es una tecnología de contenedores de sistema operativo.",
+      "reference": "Apdo. 4.6 · Bloque 4 Actualizado 2026.docx, orquestación"
+    },
+    {
+      "question": "¿Qué herramienta de contenedores funciona sin un daemon centralizado y es compatible con OCI?",
+      "options": ["Podman", "Docker", "Docker Swarm", "OpenShift"],
+      "answer": "a",
+      "explanation": "Podman gestiona contenedores sin daemon centralizado, es compatible con OCI y aporta mayor seguridad y flexibilidad en producción. Docker usa un daemon, Swarm orquesta y OpenShift es una plataforma basada en Kubernetes.",
+      "reference": "Apdo. 4.6 · Bloque 4 Actualizado 2026.docx, contenedores"
+    },
+    {
+      "question": "¿Qué tecnología permite ejecutar varios entornos Linux aislados en un solo host a nivel de sistema operativo?",
+      "options": ["Docker", "Kubernetes", "LXC", "VSAN"],
+      "answer": "c",
+      "explanation": "LXC es la tecnología de contenedores a nivel de sistema operativo que permite ejecutar múltiples entornos Linux aislados en un solo host; es más ligera que las máquinas virtuales.",
+      "reference": "Apdo. 4.5 · Bloque 4 Actualizado 2026.docx, contenedores"
+    },
+    {
+      "question": "En una red SAN, ¿qué es una LUN?",
+      "options": [
+        "Un conmutador de fibra óptica",
+        "Un disco virtual proporcionado por la SAN",
+        "Un protocolo de acceso a ficheros",
+        "Una cabina de cintas"
+      ],
+      "answer": "b",
+      "explanation": "La unidad de almacenamiento que provee una SAN se denomina LUN (Logical Unit Number) y es un disco virtual proporcionado por la red de almacenamiento.",
+      "reference": "Apdo. 4.4 · Tema 7.docx, SAN"
+    },
+    {
+      "question": "¿Qué arquitectura de almacenamiento da acceso a nivel de fichero mediante protocolos como NFS o CIFS?",
+      "options": ["NAS", "SAN", "DAS", "VSAN"],
+      "answer": "a",
+      "explanation": "En NAS el sistema operativo del servidor monta un sistema de ficheros externo a través de protocolos como NFS o CIFS; DAS y SAN son acceso a nivel de bloque y VSAN virtualiza el almacenamiento de un clúster.",
+      "reference": "Apdo. 4.4 · Tema 7.docx, NAS"
+    },
+    {
+      "question": "¿Qué permite una VSAN en un clúster de servidores?",
+      "options": [
+        "Duplicar la memoria de las máquinas virtuales",
+        "Sustituir al hipervisor",
+        "Acelerar el arranque de los contenedores",
+        "Unificar el almacenamiento local de los servidores y gestionarlo como una SAN compartida"
+      ],
+      "answer": "d",
+      "explanation": "La VSAN unifica el almacenamiento local de todos los servidores de un clúster y lo gestiona como si fuera una SAN tradicional compartida; se puede implementar en el servidor, en la red o en la cabina.",
+      "reference": "Apdo. 4.4 · Tema 7.docx, VSAN"
+    },
+    {
+      "question": "En el aprovisionamiento thin de almacenamiento virtualizado, ¿qué ocurre?",
+      "options": [
+        "Se reserva toda la capacidad del disco virtual por adelantado",
+        "No se reserva capacidad y el disco no puede crecer",
+        "Solo se consume el espacio necesario y el disco crece según la demanda",
+        "Se duplica el espacio del disco virtual"
+      ],
+      "answer": "c",
+      "explanation": "Thin provisioning consume solo el espacio necesario inicialmente y crece con el tiempo según la demanda; thick provisioning asigna previamente toda la capacidad del disco virtual.",
+      "reference": "Apdo. 4.4 · Bloque 4 Actualizado 2026.docx, aprovisionamiento thick y thin"
+    },
+    {
+      "question": "En una infraestructura VDI, ¿qué caracteriza a un escritorio persistente?",
+      "options": [
+        "Vuelve siempre a la imagen maestra al cerrar sesión",
+        "Mantiene la configuración y los cambios del usuario",
+        "No permite personalizar la imagen",
+        "Solo funciona con protocolo X Windows"
+      ],
+      "answer": "b",
+      "explanation": "El escritorio persistente o estático se asigna a un usuario y mantiene su configuración al cerrar sesión; el no persistente o dinámico parte de una imagen maestra y se clona en cada inicio de sesión.",
+      "reference": "Apdo. 4.7 · Tema 7.docx, VDI"
+    },
+    {
+      "question": "¿Qué protocolo se utiliza habitualmente para los escritorios virtuales de Windows en una infraestructura VDI?",
+      "options": ["RDP", "NFS", "iSCSI", "FCoE"],
+      "answer": "a",
+      "explanation": "En VDI se usan protocolos como RDP para Windows, X Windows para Linux, e ICA, NX o VNC según el tipo de escritorio. NFS, iSCSI y FCoE son protocolos de almacenamiento.",
+      "reference": "Apdo. 4.7 · Tema 7.docx, protocolos de VDI"
+    },
+    {
+      "question": "¿Por qué un snapshot no sustituye a una copia de seguridad?",
+      "options": [
+        "Porque ocupa demasiado espacio",
+        "Porque solo funciona en máquinas físicas",
+        "Porque no se puede programar",
+        "Porque es una captura puntual para recuperación rápida y no garantiza la recuperación completa"
+      ],
+      "answer": "d",
+      "explanation": "El snapshot es una captura del estado en un momento concreto, útil para recuperaciones rápidas, pero no sustituye a los backups tradicionales ni garantiza la recuperación completa del servicio.",
+      "reference": "Apdo. 4.8 · Tema 7.docx y Bloque 4, copias y snapshots"
+    },
+    {
+      "question": "¿Cuál de estos es un hipervisor nativo?",
+      "options": ["Oracle VirtualBox", "VMware Workstation", "VMware ESXi", "Parallels Desktop"],
+      "answer": "c",
+      "explanation": "VMware ESXi es un hipervisor nativo que se ejecuta directamente sobre el hardware; VirtualBox, VMware Workstation y Parallels Desktop son hipervisores alojados que se ejecutan sobre un sistema operativo.",
+      "reference": "Apdo. 4.2 · Bloque 4 Actualizado 2026.docx, hipervisores tipo I y II"
+    }
+  ],
+  "sources": [
+    {
+      "file": "data/fuentes/III.19.txt",
+      "page": "líneas 1-192 (Tema 6), 193-474 (Tema 7) y 475-1550 (Bloque 4)",
+      "use": "texto consolidado del que se extrajeron los datos; las citas concretas se detallan en las entradas siguientes"
+    },
+    {
+      "file": "Tema 7.docx",
+      "page": "DOCX, apartados 3-6 (sistemas de almacenamiento y su virtualización, copias, virtualización de sistemas y puestos de usuario)",
+      "use": "cabinas, DAS, NAS, SAN, VSAN, backups, hipervisores nativo y alojado, virtualización completa y paravirtualización, Docker, LXC y VDI"
+    },
+    {
+      "file": "Bloque 4 Actualizado 2026.docx",
+      "page": "DOCX, apartados de virtualización, contenedores y orquestación, aprovisionamiento thick/thin, cloud y clúster",
+      "use": "hipervisores tipo I y II, VDI, thick y thin, Docker Swarm, Kubernetes, Podman, LXC, OpenShift, CRI-O y continuidad"
+    },
+    {
+      "file": "Tema 6.docx",
+      "page": "DOCX, apartados 1-4 (administración, gestión de incidencias y mantenimiento)",
+      "use": "contexto de administración de sistemas y gestión de servicios"
+    }
+  ]
+}

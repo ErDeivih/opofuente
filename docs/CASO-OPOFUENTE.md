@@ -13,12 +13,12 @@ casos prácticos y 40 prácticas**, publicado como demo estática, sin cuentas n
 | Temas con apuntes completos | **40/40 (100 %)** |
 | Preguntas razonadas | **400** (10 por tema) |
 | Casos prácticos | **5** casos · **50** preguntas |
-| Supuestos resueltos | **10** · **200** preguntas |
+| Supuestos resueltos | **13** · **260** preguntas |
 | Preguntas totales | **450** (400 de temario + 50 de casos) |
 | Prácticas | **40** (una por tema) |
 | Bloques | **5** (I-IV al 100 %; V 7/7) |
 | Convocatorias C1 | **12** (10 draft, 2 archivadas) |
-| Comprobaciones Playwright | **101/101** en la URL pública |
+| Comprobaciones Playwright | **103/103** en la URL pública |
 | Enlaces de convocatoria | **12/12** (HTTP 200) |
 | Pruebas | **517** unitarias backend · **225** web |
 | Capturas | 390 y 1280 px en `docs/capturas/demo-pages/` |

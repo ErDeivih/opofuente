@@ -2,16 +2,16 @@
 
 **Fecha:** 11/11/2026 · **Referencia:** `data/sources/temario-c1.md` (40 temas, 5 bloques). Estado calculado desde `data.json`:
 
-- **completo:** desarrollo largo con 10 apartados y 15 test (16 temas).
-- **parcial:** ficha corta de 6-7 apartados y práctica de 10 preguntas (24 temas).
+- **completo:** desarrollo largo con 10 apartados y 15 test (19 temas).
+- **parcial:** ficha corta de 6-7 apartados y práctica de 10 preguntas (21 temas).
 - **ausente:** sin contenido (0 temas).
 
 ## Resumen
 
 | Estado | Temas |
 |---|---|
-| Completo | **16** |
-| Parcial | **24** |
+| Completo | **19** |
+| Parcial | **21** |
 | Ausente | **0** |
 | **Total** | **40** |
 
@@ -37,12 +37,12 @@
 | II | II.16 | Correo electrónico y colaboración | **parcial** | 7 apartados cortos · 10 test |
 | II | II.17 | Licencias y software libre | **parcial** | 7 apartados cortos · 10 test |
 | III | III.18 | Sistemas operativos de servidor | **completo** | 10 apartados · 15 test |
-| III | III.19 | Virtualización y contenedores | **parcial** | 6 apartados cortos · 10 test |
-| III | III.20 | Almacenamiento y copias de seguridad | **parcial** | 6 apartados cortos · 10 test |
+| III | III.19 | Virtualización y contenedores | **completo** | 10 apartados · 15 test |
+| III | III.20 | Almacenamiento y copias de seguridad | **completo** | 10 apartados · 15 test |
 | III | III.21 | Redes | **completo** | 10 apartados · 15 test |
 | III | III.22 | Comunicaciones | **completo** | 10 apartados · 15 test |
 | III | III.23 | Servicios de red | **completo** | 10 apartados · 15 test |
-| III | III.24 | Monitorización y gestión de incidencias | **parcial** | 6 apartados cortos · 10 test |
+| III | III.24 | Monitorización y gestión de incidencias | **completo** | 10 apartados · 15 test |
 | III | III.25 | Cloud y centros de datos | **parcial** | 7 apartados cortos · 10 test |
 | III | III.26 | Soporte al puesto de trabajo | **parcial** | 6 apartados cortos · 10 test |
 | IV | IV.27 | Bases de datos relacionales | **completo** | 14 apartados · 15 test |
@@ -62,6 +62,6 @@
 
 ## Qué falta
 
-Los **24 temas parciales** tienen apuntes y práctica, pero no el desarrollo de 10 apartados con 15 test. La prioridad es aplicarlos la misma plantilla que I.1, II.13 y III.21. No hay ningún tema ausente: los 40 tienen contenido publicado.
+Los **21 temas parciales** tienen apuntes y práctica, pero no el desarrollo de 10 apartados con 15 test. La prioridad es aplicarlos la misma plantilla que I.1, II.13 y III.21. No hay ningún tema ausente: los 40 tienen contenido publicado.
 
-La cobertura de los 16 completos es: I.1, II.13, II.14, III.18, III.21, III.22, III.23, IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, V.34, V.35 y V.39.
+La cobertura de los 19 completos es: I.1, II.13, II.14, III.18, III.19, III.20, III.21, III.22, III.23, III.24, IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, V.34, V.35 y V.39.
