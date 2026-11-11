@@ -1,0 +1,250 @@
+{
+  "slug": "tai-propio-iv-bd",
+  "year": 2026,
+  "conv": "Supuesto propio · OpoFuente 2026",
+  "block": "IV",
+  "title": "Auditoría y recuperación de una base de datos",
+  "difficulty": "media",
+  "official": false,
+  "estimatedMinutes": 30,
+  "statement": "Una base de datos municipal ha sufrido un borrado accidental y el equipo debe revisar usuarios y privilegios, comprobar las copias, elegir el nivel de aislamiento y restaurar el servicio sin perder los datos confirmados. El tribunal pide justificar cada decisión con la norma o la técnica aplicable.",
+  "steps": [
+    "1. Revisar usuarios, roles y privilegios.",
+    "2. Identificar el tipo de copia y el punto de recuperación.",
+    "3. Elegir aislamiento y política de bloqueos.",
+    "4. Ejecutar la restauración y validar la integridad.",
+    "5. Documentar la causa y la prevención."
+  ],
+  "topics": [
+    "IV.27",
+    "IV.29",
+    "IV.28"
+  ],
+  "source": {
+    "label": "Elaboración propia · OpoFuente",
+    "url": "https://erdeivih.github.io/opofuente-demo/",
+    "pages": "Material propio de la demo"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué es una clave primaria?",
+      "options": [
+        "Una clave candidata elegida que identifica de forma única cada fila y no admite nulos",
+        "Una columna que puede repetirse y admite nulos",
+        "Cualquier columna de texto",
+        "Un índice opcional"
+      ],
+      "correct": "a",
+      "justification": "La clave primaria identifica cada fila de forma única y exige integridad de entidad: no puede ser nula."
+    },
+    {
+      "stem": "¿Qué garantiza una clave foránea?",
+      "options": [
+        "Que los valores de una columna no se repiten",
+        "La integridad referencial entre dos tablas",
+        "Que la tabla tenga al menos un índice",
+        "Que las transacciones sean atómicas"
+      ],
+      "correct": "b",
+      "justification": "La clave foránea referencia la clave primaria de otra tabla y evita referencias a filas inexistentes."
+    },
+    {
+      "stem": "¿Qué exige la primera forma normal (1FN)?",
+      "options": [
+        "Que todas las columnas sean numéricas",
+        "Que no haya claves foráneas",
+        "Valores atómicos y sin listas repetidas en una celda",
+        "Que exista una clave foránea en cada tabla"
+      ],
+      "correct": "c",
+      "justification": "La 1FN exige que cada celda contenga un valor atómico, sin grupos repetidos ni listas."
+    },
+    {
+      "stem": "¿Qué problema elimina la segunda forma normal (2FN)?",
+      "options": [
+        "Los valores nulos",
+        "Los índices duplicados",
+        "Las transacciones concurrentes",
+        "Las dependencias parciales de parte de la clave"
+      ],
+      "correct": "d",
+      "justification": "La 2FN exige 1FN y que ningún atributo no clave dependa solo de una parte de la clave compuesta."
+    },
+    {
+      "stem": "¿Qué elimina la tercera forma normal (3FN)?",
+      "options": [
+        "Las dependencias transitivas entre columnas no clave",
+        "Las claves primarias",
+        "Las claves foráneas",
+        "Los índices"
+      ],
+      "correct": "a",
+      "justification": "La 3FN exige 2FN y que los atributos no clave no dependan de otros atributos no clave."
+    },
+    {
+      "stem": "¿Qué significa la integridad de entidad?",
+      "options": [
+        "Que toda tabla debe tener una clave foránea",
+        "Que la clave primaria no puede ser nula",
+        "Que los datos deben estar normalizados",
+        "Que las transacciones deben ser duraderas"
+      ],
+      "correct": "b",
+      "justification": "La integridad de entidad exige que la clave primaria identifique la fila y no sea nula."
+    },
+    {
+      "stem": "¿Para qué sirve un índice?",
+      "options": [
+        "Para sustituir la clave primaria",
+        "Para garantizar la atomicidad",
+        "Para acelerar búsquedas y uniones",
+        "Para eliminar la necesidad de normalizar"
+      ],
+      "correct": "c",
+      "justification": "Los índices aceleran lecturas, aunque ocupan espacio y penalizan las escrituras; no sustituyen claves ni restricciones."
+    },
+    {
+      "stem": "¿Qué propiedad ACID garantiza que una transacción se aplique completa o no se aplique?",
+      "options": [
+        "Durabilidad",
+        "Consistencia",
+        "Aislamiento",
+        "Atomicidad"
+      ],
+      "correct": "d",
+      "justification": "La atomicidad trata la transacción como una unidad indivisible: todo o nada."
+    },
+    {
+      "stem": "¿Cuándo puede tener sentido desnormalizar?",
+      "options": [
+        "Cuando se prioriza el rendimiento de lectura y se asume el coste de duplicar datos",
+        "Siempre que haya claves foráneas",
+        "Cuando no hay clave primaria",
+        "Para evitar las restricciones CHECK"
+      ],
+      "correct": "a",
+      "justification": "La desnormalización puede mejorar lecturas, pero introduce redundancia y riesgo de incoherencia; es una decisión con coste."
+    },
+    {
+      "stem": "¿Qué restricción obliga a que un valor no se repita?",
+      "options": [
+        "PRIMARY KEY únicamente",
+        "UNIQUE",
+        "CHECK",
+        "DEFAULT"
+      ],
+      "correct": "b",
+      "justification": "UNIQUE impide valores repetidos; PRIMARY KEY también es única, pero además identifica la fila y no admite nulos."
+    },
+    {
+      "stem": "¿Qué es un SGBD?",
+      "options": [
+        "Un protocolo de red",
+        "Un lenguaje de programación",
+        "Un sistema que almacena, organiza y protege datos y ofrece acceso mediante un lenguaje",
+        "Un tipo de copia de seguridad"
+      ],
+      "correct": "c",
+      "justification": "El SGBD gestiona datos, usuarios, transacciones, copias y rendimiento, además de ejecutar consultas."
+    },
+    {
+      "stem": "¿Qué herramienta se usa en PostgreSQL para un volcado lógico?",
+      "options": [
+        "XtraBackup",
+        "RMAN",
+        "mysqldump",
+        "pg_dump"
+      ],
+      "correct": "d",
+      "justification": "pg_dump genera un volcado lógico de una base; pg_dumpall incluye roles y bases."
+    },
+    {
+      "stem": "¿Qué herramienta es característica de Oracle para copias y recuperación?",
+      "options": [
+        "RMAN",
+        "pg_dump",
+        "mysqldump",
+        "SQL Server Backup"
+      ],
+      "correct": "a",
+      "justification": "RMAN (Recovery Manager) es la herramienta de Oracle para copias y recuperación."
+    },
+    {
+      "stem": "¿Qué permite la recuperación a un punto en el tiempo (PITR)?",
+      "options": [
+        "Eliminar los índices",
+        "Volver a un instante concreto usando copias y registros de cambios",
+        "Cambiar el gestor de base de datos",
+        "Crear un usuario nuevo"
+      ],
+      "correct": "b",
+      "justification": "PITR combina una copia base con registros de transacciones (WAL en PostgreSQL) para restaurar hasta un momento."
+    },
+    {
+      "stem": "¿Qué es un esquema en una base de datos?",
+      "options": [
+        "Un tipo de índice",
+        "Una copia de seguridad",
+        "Un espacio que agrupa objetos como tablas, vistas y funciones",
+        "Un usuario administrador"
+      ],
+      "correct": "c",
+      "justification": "El esquema organiza objetos dentro de la base; no es lo mismo que la base de datos."
+    },
+    {
+      "stem": "¿Qué principio debe aplicarse a las cuentas de la aplicación?",
+      "options": [
+        "Desactivar la autenticación",
+        "Usar el usuario administrador para todo",
+        "Compartir una cuenta entre aplicaciones",
+        "Mínimo privilegio: solo los permisos necesarios"
+      ],
+      "correct": "d",
+      "justification": "La aplicación debe tener permisos limitados; el administrador se reserva para tareas de administración."
+    },
+    {
+      "stem": "¿Qué es una réplica de base de datos?",
+      "options": [
+        "Una copia mantenida en otro servidor para disponibilidad o lectura",
+        "Un índice temporal",
+        "Un procedimiento almacenado",
+        "Un tipo de tabla"
+      ],
+      "correct": "a",
+      "justification": "La réplica recibe cambios del primario y puede usarse para alta disponibilidad o para repartir lecturas."
+    },
+    {
+      "stem": "¿Qué hay que probar en una estrategia de alta disponibilidad?",
+      "options": [
+        "Solo el color del panel",
+        "El failover o conmutación ante la caída del primario",
+        "La velocidad de la impresora",
+        "El tamaño del disco"
+      ],
+      "correct": "b",
+      "justification": "Una conmutación no probada es una hipótesis; hay que medir tiempo y comprobar que la aplicación se recupera."
+    },
+    {
+      "stem": "¿Por qué las migraciones deben estar versionadas?",
+      "options": [
+        "Para eliminar las copias",
+        "Para que la base ocupe más",
+        "Para aplicar cambios de forma reproducible y poder revertirlos",
+        "Para que el usuario no vea los datos"
+      ],
+      "correct": "c",
+      "justification": "Las migraciones versionadas permiten revisar, reproducir y revertir cambios de esquema."
+    },
+    {
+      "stem": "¿Qué debe cumplir una copia de seguridad de base de datos?",
+      "options": [
+        "No cifrarse nunca",
+        "Estar solo en el mismo disco",
+        "No documentarse",
+        "Ser externa, cifrada, con retención y probada con restauraciones"
+      ],
+      "correct": "d",
+      "justification": "La copia solo es útil si se puede restaurar; debe estar protegida, fuera del servidor y probada."
+    }
+  ]
+}

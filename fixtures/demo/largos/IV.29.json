@@ -1,0 +1,189 @@
+{
+  "tema": "IV.29",
+  "title": "Gestores de bases de datos",
+  "difficulty": "media",
+  "topics": ["IV.29", "IV.27"],
+  "steps": [
+    "Leer la ficha oficial y situar el tema en el bloque IV, relacionándolo con el modelo relacional (IV.27) y con SQL (IV.28).",
+    "Recorrer los epígrafes en orden: funciones y usuarios del SGBD, seguridad y permisos, estructuras y almacenamiento, copias y recuperación, transacciones y concurrencia, rendimiento y alta disponibilidad, gestores y dialectos.",
+    "Dibujar de memoria la arquitectura lógica y física de Oracle (tablespace, segmento, extensión, bloque; datafile, redo log y control file).",
+    "Construir una tabla propia con los tipos de copia (completa, incremental, diferencial) y con los niveles de aislamiento y los fenómenos que evita cada uno.",
+    "Comparar los dialectos SQL que recoge el material (LIMIT, TOP y FETCH FIRST; AUTO_INCREMENT, IDENTITY y CREATE SEQUENCE).",
+    "Hacer los 15 testCases y anotar las trampas en las que se falla para el repaso final."
+  ],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema IV.29 — Gestores de bases de datos.** Bloque IV del temario común C1. Se estudia con tres fuentes: **Tema 7** (sistema gestor, seguridad, almacenamiento y copias), **Tema 5** (gestión de bases de datos relacionales, roles, ACID, NoSQL y teorema CAP) y **Bloque 3 Actualizado 2026** (TEMA 3, SQL y Oracle Database). Su núcleo es: funciones y usuarios del SGBD, **seguridad y permisos** (usuarios, roles, GRANT y REVOKE), **estructuras de almacenamiento** (en Oracle: tablespace, segmento, extensión y bloque; datafile, redo log y control file), **copias y recuperación** (física y lógica, en frío y en caliente, completa, incremental y diferencial; esquemas de rotación; redo logs), **transacciones y concurrencia** (ACID, niveles de aislamiento, bloqueos y deadlock), **rendimiento y alta disponibilidad** (índices, optimización, almacenamiento redundante) y las **diferencias de dialecto** entre Oracle, SQL Server, PostgreSQL y MySQL. Conecta con el tema **IV.27** (modelo relacional y diseño) y con **IV.28** (SQL)."
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El tema se estudia en este orden: (1) qué es un SGBD y qué funciones cumple; (2) usuarios y roles de una base de datos; (3) seguridad: autenticación, autorización, permisos de objeto y de sistema; (4) estructuras lógicas y físicas de almacenamiento, con Oracle como modelo; (5) almacenamiento externo y redundancia (cabinas, DAS, NAS, SAN y clústeres); (6) copias de seguridad: tipos, estrategias de rotación y ventana de copia; (7) recuperación: redo logs, recuperación de bloque y recuperación física; (8) transacciones: ACID, estados, COMMIT y ROLLBACK; (9) concurrencia: fenómenos, niveles de aislamiento, bloqueos y deadlock; (10) rendimiento y alta disponibilidad; (11) dialectos SQL y rasgos de Oracle, SQL Server, PostgreSQL y MySQL; (12) NoSQL, teorema CAP y ACID frente a BASE. Para el test pesan las **estructuras de Oracle**, los **tipos de copia**, los **niveles de aislamiento** y las **diferencias de dialecto**."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "Un gestor de bases de datos es el software que se sitúa entre el usuario y los datos: permite definirlos, construirlos y manipularlos, y se encarga de la seguridad, la concurrencia, la recuperación y el rendimiento. Sin ese intermediario, cada aplicación tendría que gestionar ficheros, permisos y fallos por su cuenta.\n\nEl tema se ordena por **responsabilidades**. Primero, qué hace el SGBD y quién lo usa (administrador, diseñadores, programadores y usuarios finales). Después, cómo protege la información (usuarios, roles y permisos) y cómo la almacena (estructuras lógicas y físicas). A continuación, cómo la conserva (copias y recuperación) y cómo garantiza que las operaciones simultáneas no la corrompan (transacciones y concurrencia). Por último, cómo se compara entre los gestores comerciales y de código abierto.\n\nEs un tema muy ligado a los dos anteriores: el modelo relacional (IV.27) explica cómo se organizan los datos y SQL (IV.28) cómo se consultan; aquí se estudia el **motor** que lo soporta y las decisiones de explotación que asume el administrador."
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1 Función, usuarios y ventajas del SGBD.** El SGBD actúa de interfaz entre el usuario y la información almacenada y cumple tres funciones esenciales (Tema 7, 1): **descripción** (definir los elementos de datos), **manipulación** (buscar, añadir, suprimir o modificar datos) y **utilización** (comunicarse con la base de datos). Sus usuarios típicos son el **administrador** (diseño, definición y control), los **programadores** (acceso desde lenguajes de alto nivel) y los **usuarios finales**, que necesitan medios sencillos; el Tema 5 añade diseñadores, analistas y varias categorías de usuario final (ocasionales, simples, avanzados y autónomos). Frente al tratamiento por ficheros, el enfoque de bases de datos aporta **control de la redundancia**, restricción de accesos no autorizados, independencia entre programas y datos, múltiples vistas, integridad, copias y recuperación y capacidad multiusuario, a cambio de costes de implantación y gestión.\n\n**4.2 Seguridad y permisos.** El DBMS incorpora un sistema de **autenticación y autorización** (Tema 7, 2). Los usuarios se crean con **CREATE USER**, se modifican con **ALTER USER** y se eliminan con **DROP USER** (la opción **CASCADE** borra también los objetos del usuario). Los permisos se conceden con **GRANT** y se retiran con **REVOKE**, y pueden ser **de objeto** (SELECT, INSERT, DELETE, UPDATE, ALTER, REFERENCES, INDEX, EXECUTE, ALL…) o **de sistema** (crear, modificar, borrar o consultar objetos, usuarios y roles). El propietario tiene todos los permisos sobre el objeto. La tendencia es agrupar permisos en **roles** para no asignarlos uno a uno: en Oracle la seguridad se gestiona con usuarios, roles y privilegios.\n\n**4.3 Estructuras de almacenamiento.** En Oracle (Bloque 3, TEMA 3) se separan estructuras **lógicas** y **físicas**. Lógicas: el **tablespace** agrupa segmentos relacionados; el **segmento** es un conjunto de extensiones que almacena un tipo de información (tablas, índices…); la **extensión** son bloques de datos contiguos; y el **bloque de datos** es la unidad mínima de almacenamiento. Físicas: los **datafiles** almacenan los datos de los tablespaces, los **redo log files** registran todos los cambios y son esenciales para la recuperación, y los **control files** contienen la estructura de la base, el estado de datafiles y redo logs y la información necesaria para el arranque y la recuperación. Esa separación aporta flexibilidad, escalabilidad y recuperación eficiente. Por debajo, el almacenamiento puede ser interno o externo: **DAS** (conexión directa), **NAS** (almacenamiento en red de ficheros) y **SAN** (red dedicada de bloques); las cabinas añaden controladoras, RAID, caché y copias instantáneas, y los clústeres permiten que varios servidores accedan coordinadamente a los mismos datos.\n\n**4.4 Copias y recuperación.** Planear y probar las copias es la única garantía frente a fallos; las causas pueden ser de **funcionamiento** (errores humanos, mala configuración o procedimientos mal planteados), de **hardware** o de **software**. Se distingue la copia **física** (se copian los ficheros que soportan la base) de la **lógica** (se extraen los datos con SQL mediante utilidades de exportación e importación). Entre las físicas: la copia del **sistema operativo** (sencilla pero lenta e inaccesible durante el proceso), la copia **en frío** (se para la base y se copian todos los ficheros) y la copia **en caliente** (la base sigue abierta en modo **archivelog**; se copian los ficheros de un tablespace, los redo log archivados y los ficheros de control). Para recuperar se usan los redo logs archivados: la **recuperación de bloque** reconstruye un bloque dañado y la **recuperación física** convierte los ficheros de copia en actuales aplicando los cambios perdidos. En la estrategia de copias (Tema 7, 4) hay una **ventana de copia** y tres tipos: **completa** (todo; recuperación más rápida), **incremental** (solo lo modificado desde la última copia) y **diferencial** (lo modificado desde la última copia completa; recuperar exige como máximo dos medios). Los esquemas de rotación clásicos son **hijo** (una cinta por día), **padre e hijo** (una semana más otra) y **padre, hijo y abuelo** (el más común: copias semanales y mensuales para conservar un año).\n\n**4.5 Transacciones y concurrencia.** Una **transacción** es una colección de operaciones que forman una unidad lógica de trabajo, delimitada por un inicio y un fin, y debe cumplir **ACID**: atomicidad (todo o nada), consistencia (no deja datos contradictorios), aislamiento (el resultado es como si se ejecutaran en serie) y durabilidad (lo confirmado permanece). Sus estados son activa, parcialmente comprometida, fallida y cometida. **COMMIT** confirma los cambios, los hace visibles y libera los bloqueos; **ROLLBACK** deshace hasta el último COMMIT y también libera bloqueos. El control de concurrencia evita tres fenómenos (Tema 7, 2.3): **lecturas sucias** (leer datos no confirmados), **lecturas no repetibles** (el mismo dato cambia entre dos lecturas) y **lecturas fantasma** (aparecen filas nuevas). Los cuatro niveles de aislamiento son **Read Uncommitted** (el más bajo y concurrente; no garantiza coherencia), **Read Committed** (evita lecturas sucias), **Repeatable Read** (evita las no repetibles, no las fantasma) y **Serializable** (el más estricto, bloquea también registros inexistentes y reduce la escalabilidad). Los bloqueos sostienen la consistencia; el **bloqueo de dos fases (2PL)** puede provocar un **deadlock** o abrazo mortal, que el DBMS resuelve con rollback de la transacción en la que tenga que deshacer menos.\n\n**4.6 Rendimiento, integridad y alta disponibilidad.** El administrador define la estructura física, crea **índices** y optimiza consultas para acelerar el acceso (Tema 7, 1.2). El DBMS garantiza las **restricciones de integridad** (tipos, relaciones, unicidad) y ofrece utilidades de control de rendimiento y de copia. La disponibilidad se apoya en el almacenamiento: RAID y controladoras redundantes en las cabinas, caché en espejo, replicación, clústeres de servidores y copias en caliente de máquinas virtuales con plugins y snapshots. Una copia que no se restaura no protege nada: la prueba de recuperación forma parte de la estrategia.\n\n**4.7 Gestores y dialectos SQL.** **Oracle Database** usa SQL y **PL/SQL** como lenguaje procedimental, separa estructuras lógicas y físicas, organiza la seguridad con usuarios, roles y privilegios y ofrece **RMAN** para copias y recuperaciones en línea y **Flashback** para recuperar datos modificados o eliminados; sus versiones se distinguen entre LTS (19c) e innovation (21c, 23ai, 26ai). En el resto de gestores, el material destaca diferencias de dialecto: para limitar filas, **PostgreSQL y MySQL** usan **LIMIT**, **SQL Server** usa **TOP** y **Oracle y ANSI SQL** usan **FETCH FIRST**; para el autoincremento, **MySQL** usa **AUTO_INCREMENT**, **SQL Server** usa **IDENTITY** y **Oracle-ANSI** usa **CREATE SEQUENCE**; **FULL JOIN** no es compatible con SQLite y MySQL; y en SQL Server hay sesiones almacenadas en una base de datos. En Java, la conexión se realiza con **JDBC**, cuyos drivers se clasifican en cuatro tipos: puente JDBC-ODBC (1), nativo (2), de red (3) y puro Java (4, el más usado por no requerir bibliotecas nativas)."
+    },
+    {
+      "heading": "5. Tabla comparativa: rasgos de los gestores",
+      "body": "Comparar los gestores por sus rasgos de dialecto evita el error de aplicar la sintaxis de uno a otro. Esta tabla recoge lo que el material destaca de cada uno.",
+      "table": {
+        "columns": ["Gestor", "Rasgo que recoge el material", "Cuidado en el test"],
+        "rows": [
+          ["Oracle Database", "PL/SQL, estructuras lógicas (tablespace, segmento, extensión) y físicas (datafiles, redo logs, control files); RMAN y Flashback", "No confundir tablespace (lógico) con datafile (físico)"],
+          ["SQL Server", "Usa TOP para limitar filas e IDENTITY para el autoincremento; sesiones almacenadas en una base de datos SQL Server", "TOP no es LIMIT"],
+          ["PostgreSQL", "Usa LIMIT para limitar filas y admite FULL JOIN", "El material no lo desarrolla en profundidad; no extrapolar rasgos de Oracle"],
+          ["MySQL", "Usa LIMIT y AUTO_INCREMENT; FULL JOIN no es compatible con MySQL", "AUTO_INCREMENT no es IDENTITY"]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Una administración va a explotar en Oracle una base de datos de expedientes. Debe definir usuarios y permisos, organizar el almacenamiento, diseñar las copias y fijar el nivel de aislamiento. Propón una solución razonada.\n\n**Resolución.** (1) **Usuarios y roles:** se crean cuentas distintas para la aplicación, la lectura y la administración con CREATE USER; los permisos se agrupan en roles y se conceden con GRANT (SELECT, INSERT, UPDATE sobre las tablas de la aplicación) y se retiran con REVOKE; la cuenta de administración es la única con permisos de sistema. (2) **Almacenamiento:** se crean tablespaces separados para datos, índices y datos temporales; cada tablespace se apoya en sus datafiles, y la base se configura en modo **archivelog** para que los redo logs archivados permitan recuperar. (3) **Copias:** copia **completa** semanal en frío o en caliente, **incremental** diaria y conservación mensual según el esquema **padre, hijo y abuelo**; la copia se prueba restaurando en un entorno aparte. (4) **Recuperación:** ante la pérdida de un datafile, se restaura la copia y se aplican los redo logs archivados; ante un borrado lógico, se valora **Flashback**. (5) **Concurrencia:** la aplicación trabaja con **Read Committed**; las operaciones críticas usan transacciones cortas con COMMIT y ROLLBACK para no mantener bloqueos. (6) **Rendimiento:** se indexan las columnas de búsqueda frecuente y se revisan las consultas lentas antes de añadir índices.\n\n**Conclusión.** Cada decisión se justifica por una característica del gestor: el rol por el principio de mínimo privilegio, el tablespace por la separación lógica, el modo archivelog por la recuperación y el nivel de aislamiento por el equilibrio entre consistencia y concurrencia."
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "- Confundir **copia física** (ficheros de la base) con **copia lógica** (Export/Import, extracción con SQL).\n- Confundir copia **en frío** (base parada) con **en caliente** (base abierta en modo archivelog).\n- Confundir **incremental** (desde la última copia, de cualquier tipo) con **diferencial** (desde la última copia completa).\n- Confundir **tablespace** (estructura lógica) con **datafile** (estructura física) y **redo log** (registro de cambios para recuperación) con **control file** (estructura y estado de la base).\n- Pensar que **COMMIT** deshace cambios: confirma, hace visibles los cambios y libera bloqueos; **ROLLBACK** es el que deshace hasta el último COMMIT.\n- Confundir **lectura sucia** (datos no confirmados) con **lectura no repetible** (el dato cambia entre dos lecturas) y con **lectura fantasma** (aparecen filas nuevas).\n- Decir que **Repeatable Read** evita las lecturas fantasma: no las evita; el nivel que las evita es **Serializable**.\n- Creer que 2PL impide los deadlocks: 2PL garantiza la legalidad del planificador, pero puede producir abrazos mortales, que el DBMS resuelve con rollback.\n- Confundir los dialectos: **LIMIT** (PostgreSQL y MySQL), **TOP** (SQL Server) y **FETCH FIRST** (Oracle y ANSI).\n- Confundir autoincremento: **AUTO_INCREMENT** (MySQL), **IDENTITY** (SQL Server) y **CREATE SEQUENCE** (Oracle-ANSI).\n- Confundir **DELETE** (borra filas y admite WHERE), **TRUNCATE** (vacía la tabla y es más rápido) y **DROP** (elimina la tabla y su estructura, sin deshacer).\n- Olvidar que el teorema **CAP** solo permite garantizar dos de las tres propiedades (consistencia, disponibilidad y tolerancia al particionado); las bases NoSQL renuncian a alguna y usan el modelo **BASE** frente a **ACID**."
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Lo que hay que memorizar.**\n\n1. **Funciones del SGBD**: describir, manipular y utilizar; usuarios: administrador, programadores y usuarios finales.\n2. **Seguridad**: CREATE/ALTER/DROP USER (CASCADE), GRANT y REVOKE; permisos de objeto (SELECT, INSERT, DELETE, UPDATE, ALTER, REFERENCES, INDEX, EXECUTE, ALL) y de sistema.\n3. **Oracle lógico**: tablespace, segmento, extensión y bloque. **Físico**: datafile, redo log y control file.\n4. **Almacenamiento externo**: DAS, NAS y SAN; cabinas con RAID, caché y copias instantáneas; clústeres.\n5. **Copias**: física y lógica; en frío y en caliente (archivelog); completa, incremental y diferencial; rotación hijo, padre-hijo y padre-hijo-abuelo.\n6. **Recuperación**: redo logs archivados, recuperación de bloque y recuperación física.\n7. **Transacciones**: ACID; estados activa, parcialmente comprometida, fallida y cometida; COMMIT y ROLLBACK.\n8. **Concurrencia**: lecturas sucias, no repetibles y fantasma; niveles Read Uncommitted, Read Committed, Repeatable Read y Serializable; bloqueos, 2PL y deadlock.\n9. **Dialectos**: LIMIT (PostgreSQL/MySQL), TOP (SQL Server), FETCH FIRST (Oracle/ANSI); AUTO_INCREMENT (MySQL), IDENTITY (SQL Server), CREATE SEQUENCE (Oracle-ANSI).\n10. **Oracle**: PL/SQL, RMAN y Flashback; versiones LTS (19c) e innovation. **NoSQL**: teorema CAP (dos de tres) y ACID frente a BASE."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "**1.** ¿Qué función del SGBD permite buscar, añadir, suprimir o modificar datos? **Respuesta: b)** La manipulación (Tema 7, 1).\n\n**2.** ¿Qué sentencia crea un usuario? **Respuesta: a)** CREATE USER (Tema 7, 2).\n\n**3.** ¿Qué sentencia retira permisos? **Respuesta: c)** REVOKE (Tema 7, 2).\n\n**4.** ¿Cómo se llama la copia que se hace con la base abierta en modo archivelog? **Respuesta: d)** En caliente (Tema 7, 2.1).\n\n**5.** ¿Qué utilidades realizan una copia lógica? **Respuesta: a)** Export/Import (Tema 7, 2.1).\n\n**6.** Una copia que incluye solo lo modificado desde la última copia (de cualquier tipo) es… **Respuesta: b)** Incremental (Tema 7, 4).\n\n**7.** ¿Qué esquema de rotación es el más común y conserva copias un año? **Respuesta: c)** Padre, hijo y abuelo (Tema 7, 4).\n\n**8.** En Oracle, ¿qué estructura lógica agrupa segmentos relacionados? **Respuesta: d)** El tablespace (Bloque 3, TEMA 3).\n\n**9.** ¿Qué fichero registra todos los cambios y es esencial para la recuperación? **Respuesta: a)** El redo log (Bloque 3, TEMA 3).\n\n**10.** ¿Qué hace COMMIT? **Respuesta: b)** Confirma los cambios, los hace visibles y libera los bloqueos (Tema 7, 2.2).\n\n**11.** ¿Qué nivel de aislamiento evita las lecturas no repetibles pero no las fantasma? **Respuesta: c)** Repeatable Read (Tema 7, 2.3).\n\n**12.** Leer datos escritos por otra transacción que aún no ha confirmado es… **Respuesta: d)** Una lectura sucia (Tema 7, 2.3).\n\n**13.** Ante un deadlock, ¿cómo actúa habitualmente el DBMS? **Respuesta: a)** Con rollback de la transacción en la que tenga que deshacer menos (Tema 7, 2.3).\n\n**14.** En SQL Server, ¿qué palabra limita el número de filas devueltas? **Respuesta: b)** TOP (Bloque 3, TEMA 3).\n\n**15.** ¿Qué usa MySQL para el autoincremento? **Respuesta: c)** AUTO_INCREMENT (Bloque 3, TEMA 3)."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "- **Tema 7.docx**, apartados 1 a 6: sistema gestor, usuarios, seguridad y permisos, copias y recuperación, transacciones y concurrencia, almacenamiento y virtualización (DOCX, sin paginación fija).\n- **Tema 5.docx**, apartados 1 a 8: bases de datos relacionales, roles, ACID, lenguajes del DBMS, clasificación de SGBD, objetos y NoSQL, teorema CAP y ACID frente a BASE.\n- **Bloque 3 Actualizado 2026.docx**, TEMA 3 (SQL): dialectos y diferencias entre gestores, transacciones y Oracle Database (estructuras, usuarios, RMAN y Flashback, JDBC).\n- **IV.29.txt**: texto consolidado de las fuentes anteriores (uso interno de trabajo).\n\nNo se copian párrafos literales; se sintetiza y se ordena el contenido, y los datos citados son los que aparecen en estas fuentes. El material desarrolla Oracle en profundidad y el resto de gestores a través de sus diferencias de dialecto, no de sus herramientas de copia."
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Qué función del SGBD permite a los usuarios buscar, añadir, suprimir o modificar los datos de la base de datos?",
+      "options": ["La función de descripción", "La función de manipulación", "La función de utilización", "La función de autenticación"],
+      "answer": "b",
+      "explanation": "La manipulación permite consultar, insertar, borrar y modificar datos; la descripción define los elementos y la utilización permite comunicarse con la base. Ref.: Tema 7, apartado 1."
+    },
+    {
+      "question": "¿Qué sentencia SQL se utiliza para crear un usuario en la base de datos?",
+      "options": ["CREATE USER", "ALTER USER", "DROP USER", "GRANT"],
+      "answer": "a",
+      "explanation": "CREATE USER crea el usuario, ALTER USER modifica su cuenta y DROP USER la elimina; GRANT concede permisos. Ref.: Tema 7, apartado 2."
+    },
+    {
+      "question": "¿Qué sentencia se utiliza para retirar permisos a un usuario?",
+      "options": ["GRANT", "CREATE USER", "REVOKE", "COMMIT"],
+      "answer": "c",
+      "explanation": "GRANT concede permisos y REVOKE los retira; COMMIT confirma transacciones y no gestiona permisos. Ref.: Tema 7, apartado 2."
+    },
+    {
+      "question": "¿Cómo se denomina la copia de seguridad que se realiza con la base de datos abierta y funcionando en modo archivelog?",
+      "options": ["Copia lógica", "Copia en frío", "Copia del sistema operativo", "Copia en caliente"],
+      "answer": "d",
+      "explanation": "La copia en caliente se hace con la base abierta en modo archivelog y copia los ficheros de un tablespace, los redo log archivados y los ficheros de control; la copia en frío exige parar la base. Ref.: Tema 7, apartado 2.1."
+    },
+    {
+      "question": "¿Qué utilidades permiten hacer una copia lógica de la base de datos?",
+      "options": ["Export/Import", "RMAN y Flashback", "redo log y control file", "GRANT y REVOKE"],
+      "answer": "a",
+      "explanation": "Las utilidades Export/Import extraen e importan datos mediante SQL (copia lógica); RMAN y Flashback son herramientas de Oracle para copia física y recuperación. Ref.: Tema 7, apartado 2.1."
+    },
+    {
+      "question": "Una copia que incluye solo los datos modificados desde la última copia, de cualquier tipo, es una copia…",
+      "options": ["Completa", "Incremental", "Diferencial", "En frío"],
+      "answer": "b",
+      "explanation": "La incremental recoge lo modificado desde la última copia; la diferencial recoge lo modificado desde la última copia completa. Ref.: Tema 7, apartado 4."
+    },
+    {
+      "question": "¿Qué esquema de rotación de copias es el más utilizado y permite conservar información durante un año?",
+      "options": ["Hijo", "Padre e hijo", "Padre, hijo y abuelo", "Copia única sin rotación"],
+      "answer": "c",
+      "explanation": "El esquema padre, hijo y abuelo mantiene copias semanales y mensuales para conservar un año; hijo es una cinta por día y padre e hijo añade una semana más. Ref.: Tema 7, apartado 4."
+    },
+    {
+      "question": "En Oracle, ¿qué estructura lógica agrupa segmentos relacionados?",
+      "options": ["El datafile", "El segmento", "El bloque de datos", "El tablespace"],
+      "answer": "d",
+      "explanation": "El tablespace es la unidad lógica que agrupa segmentos; el segmento agrupa extensiones, la extensión agrupa bloques y el datafile es la estructura física. Ref.: Bloque 3, TEMA 3."
+    },
+    {
+      "question": "¿Qué fichero de Oracle registra todos los cambios realizados en la base de datos y resulta esencial para la recuperación?",
+      "options": ["El redo log file", "El datafile", "El control file", "El tablespace"],
+      "answer": "a",
+      "explanation": "Los redo log files registran todos los cambios y permiten la recuperación; los control files contienen la estructura y el estado, y los datafiles almacenan los datos. Ref.: Bloque 3, TEMA 3."
+    },
+    {
+      "question": "¿Qué efecto tiene la sentencia COMMIT sobre una transacción?",
+      "options": [
+        "Deshace todos los cambios hasta el inicio de la transacción",
+        "Confirma los cambios, los hace visibles y libera los bloqueos",
+        "Crea un punto de control intermedio",
+        "Elimina la tabla y su estructura"
+      ],
+      "answer": "b",
+      "explanation": "COMMIT confirma la transacción, hace visibles los cambios y libera los bloqueos; ROLLBACK deshace hasta el último COMMIT y SAVEPOINT crea un punto intermedio. Ref.: Tema 7, apartado 2.2."
+    },
+    {
+      "question": "¿Qué nivel de aislamiento evita las lecturas no repetibles pero no resuelve el problema de las lecturas fantasma?",
+      "options": ["Read Uncommitted", "Read Committed", "Repeatable Read", "Serializable"],
+      "answer": "c",
+      "explanation": "Repeatable Read evita que un dato cambie entre dos lecturas, pero no impide que aparezcan filas nuevas (fantasmas); Serializable sí bloquea ese caso. Ref.: Tema 7, apartado 2.3."
+    },
+    {
+      "question": "¿Cómo se denomina el fenómeno de leer datos que han sido escritos por otra transacción que todavía no ha confirmado?",
+      "options": ["Lectura fantasma", "Lectura no repetible", "Lectura diferencial", "Lectura sucia"],
+      "answer": "d",
+      "explanation": "La lectura sucia (dirty read) lee datos no confirmados; la no repetible ocurre cuando el dato cambia entre dos lecturas y la fantasma cuando aparecen filas nuevas. Ref.: Tema 7, apartado 2.3."
+    },
+    {
+      "question": "Ante un deadlock o abrazo mortal, ¿cómo actúa habitualmente el DBMS?",
+      "options": [
+        "Ejecuta un rollback de la transacción en la que tenga que deshacer menos",
+        "Espera indefinidamente a que se libere el recurso",
+        "Reinicia el servidor de base de datos",
+        "Concede el recurso a la transacción más antigua sin deshacer nada"
+      ],
+      "answer": "a",
+      "explanation": "El DBMS detecta las transacciones en deadlock y resuelve con rollback, considerando primero aquellas en las que tenga que deshacer menos. Ref.: Tema 7, apartado 2.3."
+    },
+    {
+      "question": "En SQL Server, ¿qué palabra se utiliza para limitar el número de filas devueltas por una consulta?",
+      "options": ["LIMIT", "TOP", "FETCH FIRST", "ROWNUM"],
+      "answer": "b",
+      "explanation": "SQL Server usa TOP; LIMIT se usa en PostgreSQL, MySQL y SQLite, y FETCH FIRST en Oracle y ANSI SQL. Ref.: Bloque 3, TEMA 3."
+    },
+    {
+      "question": "¿Qué mecanismo utiliza MySQL para generar automáticamente un número único al insertar un registro?",
+      "options": ["IDENTITY", "CREATE SEQUENCE", "AUTO_INCREMENT", "FETCH FIRST"],
+      "answer": "c",
+      "explanation": "MySQL usa AUTO_INCREMENT; SQL Server usa IDENTITY y Oracle-ANSI emplea CREATE SEQUENCE. Ref.: Bloque 3, TEMA 3."
+    }
+  ],
+  "sources": [
+    {
+      "file": "Tema 7.docx",
+      "page": "apartados 1 a 6 (sistema gestor, seguridad, almacenamiento, copias, virtualización)",
+      "use": "funciones y usuarios del SGBD, permisos, copias y recuperación, transacciones, concurrencia y almacenamiento"
+    },
+    {
+      "file": "Tema 5.docx",
+      "page": "apartados 1 a 8 (gestión de bases de datos relacionales, roles, ACID, lenguajes, clasificación, NoSQL y CAP)",
+      "use": "roles, ventajas del DBMS, ACID, arquitectura de esquemas, NoSQL y teorema CAP"
+    },
+    {
+      "file": "Bloque 3 Actualizado 2026.docx",
+      "page": "TEMA 3 (SQL): dialectos, transacciones y Oracle Database",
+      "use": "diferencias LIMIT/TOP/FETCH FIRST, AUTO_INCREMENT/IDENTITY/CREATE SEQUENCE, estructuras de Oracle, RMAN, Flashback y JDBC"
+    },
+    {
+      "file": "IV.29.txt",
+      "page": "texto consolidado de las fuentes anteriores",
+      "use": "trabajo interno y contraste de datos"
+    }
+  ]
+}

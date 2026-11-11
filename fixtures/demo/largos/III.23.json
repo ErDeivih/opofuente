@@ -1,0 +1,255 @@
+{
+  "tema": "III.23",
+  "title": "Servicios de red",
+  "difficulty": "media",
+  "topics": ["III.23", "III.18"],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema:** III.23, «Servicios de red», del bloque III (Sistemas, redes y comunicaciones) del temario común de informática C1. **Materias que cubre:** DNS, organismos de asignación de direcciones y nombres, NTP, LDAP y Active Directory, servidores web y protocolos HTTP/HTTPS/TLS, correo electrónico (SMTP, POP3, IMAP y MIME), proxy y alta disponibilidad (CPD, clústeres y balanceo). **Relación con otros temas:** se apoya en III.21 (redes y direccionamiento) y III.18 (sistemas operativos de servidor), y sirve de base a los temas de seguridad y administración electrónica. **Fuentes:** `Tema 9.docx`, `Tema 13.docx` y `Bloque 4 Actualizado 2026.docx`, volcados en `data/fuentes/III.23.txt`.\n\n**Limitación de la fuente:** el volcado de III.23 no contiene un desarrollo del servicio DHCP; para no inventar datos, este tema no incluye un apartado específico de DHCP y se limita a la asignación de direcciones y nombres que sí documenta la fuente (IANA, ICANN y los RIR).",
+      "table": {
+        "columns": ["Dato de la ficha", "Valor"],
+        "rows": [
+          ["Tema", "III.23 Servicios de red"],
+          ["Bloque", "III · Sistemas, redes y comunicaciones"],
+          ["Materias", "DNS, NTP, LDAP/AD, web, correo, proxy y alta disponibilidad"],
+          ["Temas relacionados", "III.21 Redes; III.18 Sistemas operativos de servidor"],
+          ["Fuente", "Tema 9.docx, Tema 13.docx y Bloque 4 Actualizado 2026.docx"]
+        ]
+      }
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El desarrollo del tema se organiza en los epígrafes del apartado 4:\n\n- **4.1.** DNS: componentes, jerarquía, tipos de servidores, consultas y registros.\n- **4.2.** Organismos de Internet y asignación de direcciones y nombres.\n- **4.3.** NTP y la hora oficial.\n- **4.4.** LDAP y Active Directory: usuarios, grupos y dominios.\n- **4.5.** La web: HTTP, HTTPS y TLS.\n- **4.6.** El correo electrónico: agentes, SMTP, POP3 e IMAP.\n- **4.7.** Proxy y proxy inverso.\n- **4.8.** Alta disponibilidad: CPD, clústeres y balanceo.\n\nCompletan el tema la tabla de protocolos y puertos (apartado 5), el ejemplo práctico (6), las trampas de examen (7), el resumen para memorizar (8), los quince casos tipo test (9) y las fuentes citadas (10)."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "Los servicios de red son la capa que convierte una red de comunicaciones en una infraestructura útil: sin DNS no se encuentran los nombres, sin correo no circulan los mensajes, sin web no se publican los contenidos y sin una hora común no se pueden interpretar los registros ni validar certificados. Además, un organismo público no puede permitirse que esos servicios dependan de un único servidor: de ahí la importancia de la alta disponibilidad.\n\nEste tema estudia los servicios desde dentro: qué componente hace cada tarea, qué protocolo se usa, qué puerto se abre y qué registro o tipo de servidor hay que configurar. También repasa los organismos que coordinan Internet a escala global, porque son pregunta habitual (IETF, IANA, ICANN y los RIR).\n\nEl enfoque es práctico: se agrupan los servicios por función (resolver nombres, dar hora, autenticar usuarios, publicar web, mover correo, intermediar el tráfico y mantener el servicio) y se ordenan los datos que más se preguntan.",
+      "table": {
+        "columns": ["Fuente", "Qué aporta"],
+        "rows": [
+          ["Tema 9.docx", "Administración de redes, dominios, usuarios, grupos, LDAP y Kerberos"],
+          ["Tema 13.docx", "Internet, correo, Web, DNS y protocolos HTTP/HTTPS/TLS"],
+          ["Bloque 4 Actualizado 2026.docx", "Correo, LDAP, HTTP/TLS, proxy, CPD, NTP, clústeres y balanceo"]
+        ]
+      }
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1. DNS.** El sistema de nombres de dominio es una base de datos distribuida y jerárquica que asocia nombres legibles con direcciones IP y localiza, entre otros, los servidores de correo de cada dominio. Sus componentes son los clientes DNS, los servidores DNS y las zonas de autoridad, que son la parte del espacio de nombres de la que un servidor guarda los datos. Cada dominio tiene al menos un servidor autoritativo, y la jerarquía arranca en los servidores raíz, que conocen las direcciones de los servidores de los dominios de primer nivel (TLD).\n\nLos servidores pueden ser **primarios o preferidos** (autoritativos, permiten lectura y escritura), **secundarios o alternativos** (autoritativos de solo lectura, que se actualizan desde el primario mediante una transferencia de zona) y **locales o caché** (no autoritativos, guardan respuestas para acelerar consultas). Las consultas pueden ser **recursivas**, cuando el cliente pide una respuesta final autoritativa y el servidor encadena las consultas necesarias, o **iterativas**, cuando un servidor responde con la dirección de otro servidor. Las respuestas son **autoritativas** si proceden del servidor con autoridad sobre el dominio, y **no autoritativas** si solo indican otro servidor.\n\nLos registros principales son **A** (nombre a IPv4), **AAAA** (nombre a IPv6), **CNAME** (alias), **NS** (servidores de nombres de la zona), **MX** (servidor de correo del dominio, con preferencia), **PTR** (resolución inversa de IP a nombre), **SOA** (datos del servidor primario de la zona), **TXT** (texto libre para verificación y políticas), **HINFO**, **LOC**, **SRV** y **SPF** o **SPF/TXT** para autorizar emisores de correo.\n\n**4.2. Organismos de Internet.** La **IETF** es la comunidad que crea grupos de trabajo y publica las especificaciones y los RFC; la **IESG** hace avanzar las propuestas por las fases de aprobación hasta convertirlas en estándar; la **IAB** supervisa técnicamente y publica los RFC; la **ISOC** promociona la cooperación global, y la **IRTF** investiga en protocolos, aplicaciones y arquitectura. En la asignación de recursos, **IANA** coordina identificadores como nombres de dominio, números de sistema autónomo, direcciones IP, números de protocolo y puertos; **ICANN** asumió sus funciones y coordina el sistema de servidores raíz y la administración de DNS. El espacio de direcciones se delega jerárquicamente en los **RIR**: ARIN, RIPE NCC, APNIC, LACNIC y AFRINIC.\n\n**4.3. NTP.** En España la referencia de la hora oficial es el Real Instituto y Observatorio de la Armada, y los equipos sincronizan su reloj mediante el protocolo **NTP** (Network Time Protocol), que funciona sobre el puerto **123 UDP**. Una hora coherente es imprescindible para los registros, la autenticación y los certificados.\n\n**4.4. LDAP y Active Directory.** **LDAP** es el protocolo de directorio con el que se centraliza la administración de cuentas, grupos y permisos en una red corporativa. **Active Directory** es el servicio de directorio de Microsoft: en Windows Server, un dominio es una colección de equipos y usuarios que comparten políticas de seguridad y una base de datos común; se designa un controlador principal de dominio (PDC) que mantiene los servicios de directorio y autentica a los usuarios. Existen cuatro modelos de dominio (dominio único, maestro único, maestro múltiple y confianza completa) y cinco roles FSMO: maestro de esquema, maestro de nombres de dominio, maestro de identificadores relativos (RID), maestro emulador de PDC y maestro de infraestructuras. Los usuarios se agrupan en grupos globales, locales y universales; la autenticación moderna se apoya en **Kerberos** (basado en tickets) y NTLM queda como mecanismo heredado. Además, **WSUS** permite administrar y distribuir de forma centralizada las actualizaciones de Windows.\n\n**4.5. La web: HTTP, HTTPS y TLS.** **HTTP** es un protocolo de aplicación cliente-servidor, sin estado, que no proporciona cifrado, autenticación ni integridad y que usa el puerto **80**. En una petición se emplean métodos como GET (obtener), HEAD (igual que GET pero sin cuerpo), POST (enviar datos) y PUT (aceptar una entidad); la respuesta incluye un código de estado de las familias 1xx (informativo), 2xx (éxito), 3xx (redirección), 4xx (error del cliente) y 5xx (error del servidor), con ejemplos como 200 OK, 301, 400, 401, 403, 404, 500, 502, 503 y 504. **HTTPS** no es un protocolo nuevo: es HTTP sobre TLS, usa el puerto **443** y aporta confidencialidad, integridad y autenticación del servidor mediante certificados. **SSL** está obsoleto; el estándar actual es **TLS**, que además de HTTPS se usa en SMTP sobre TLS, IMAPS, POP3S, FTPS y DNS sobre TLS (DoT).\n\n**4.6. Correo electrónico.** El correo se organiza con agentes: **MUA** (cliente que envía y recibe con SMTP y POP3 o IMAP), **MTA** (transfiere el correo entre servidores), **MDA** (lo entrega en el buzón del usuario final) y **MSA** (recibe del MUA para el envío). **SMTP** solo envía: usa los puertos 25 (sin cifrado, en desuso), 465 (SMTPS, en desuso) y 587 (STARTTLS, recomendado), y sus comandos básicos son HELO/EHLO, MAIL FROM, RCPT TO, DATA y QUIT; el receptor contesta con códigos como 220, 250, 354 o 550. Para recepción se usan dos protocolos: **POP3** (puerto 110; 995 con TLS) descarga los mensajes del servidor al dispositivo, funciona en diferido y por defecto borra los mensajes del servidor, con comandos STAT, LIST, RETR, DELE, RSET, TOP y QUIT; **IMAP** (puerto 143; 993 con TLS) mantiene los mensajes en el servidor en tiempo real, sincroniza varios dispositivos y permite organizar carpetas, con comandos SELECT, FETCH, STORE, COPY, EXPUNGE y LOGOUT. **MIME** resuelve la limitación de SMTP (ASCII de 7 bits) y permite adjuntos, idiomas distintos y contenido incrustado; SMTP se apoya en los registros **MX** del DNS para localizar el servidor de destino.\n\n**4.7. Proxy.** Un proxy es un intermediario entre los puestos de una red e Internet: recibe sus peticiones web, las reenvía al servidor de destino y administra el tráfico, pero **no lo cifra**. Puede ser **transparente** (no requiere configuración y el usuario no lo nota), **anónimo** (oculta la IP pero puede revelar que se usa un proxy), **elite** (oculta la IP y la existencia del proxy) o **inverso** (se sitúa frente a servidores web, filtra solicitudes y mejora seguridad y rendimiento). Un proxy solo oculta la IP en tráfico HTTP/HTTPS; una VPN cifra todo el tráfico.\n\n**4.8. Alta disponibilidad.** Un **clúster** es un conjunto de computadoras interconectadas que trabajan como un único sistema, con nodos cercanos y homogéneos, administración centralizada, alta disponibilidad y balanceo de carga; una **grid** distribuye nodos geográficamente con recursos heterogéneos y se orienta al cálculo intensivo. En los centros de procesamiento de datos, el estándar ANSI/TIA-942 clasifica los CPD en cuatro **Tier**: I (básico, sin redundancia, 99,671 % y hasta 28,8 horas de inactividad anual), II (redundancia parcial, 99,741 % y hasta 22 horas), III (mantenimiento concurrente, 99,982 % y hasta 1,6 horas) y IV (tolerante a fallos, 99,995 % y hasta 26,3 minutos). La redundancia se mide como N (sin respaldo), N+1 (un componente adicional), 2N (duplicación completa) y 2N+1. Para las copias se usan objetivos como **RPO** (pérdida máxima de datos), **RTO** (tiempo máximo de restauración) y **MTD** (tiempo máximo tolerable de inactividad).",
+      "table": {
+        "columns": ["Epígrafe", "Datos que hay que retener"],
+        "rows": [
+          ["DNS", "Zonas, primario/secundario/caché, consultas recursiva e iterativa, registros A/AAAA/CNAME/NS/MX/PTR/SOA"],
+          ["Organismos", "IETF, IESG, IAB, ISOC, IRTF, IANA, ICANN y los cinco RIR"],
+          ["NTP", "Hora oficial de España, Real Instituto y Observatorio de la Armada, puerto 123 UDP"],
+          ["LDAP/AD", "Servicio de directorio, dominio, PDC, cuatro modelos de dominio y cinco roles FSMO"],
+          ["Web", "HTTP 80 sin cifrado; HTTPS 443 con TLS; familias de códigos 1xx a 5xx"],
+          ["Correo", "MUA/MTA/MDA/MSA; SMTP 25/465/587; POP3 110/995; IMAP 143/993; MIME"],
+          ["Proxy", "Transparente, anónimo, elite e inverso; no cifra; la VPN sí cifra"],
+          ["Alta disponibilidad", "Clúster frente a grid; Tier I-IV; N, N+1, 2N y 2N+1; RPO, RTO y MTD"]
+        ]
+      }
+    },
+    {
+      "heading": "5. Tabla comparativa: servicios, protocolos y puertos",
+      "body": "La tabla reúne los puertos que la fuente asocia a cada servicio. Conviene memorizarlos por parejas (servicio sin cifrar y con TLS) porque las preguntas suelen mezclarlos.",
+      "table": {
+        "columns": ["Servicio", "Protocolo", "Puerto"],
+        "rows": [
+          ["Web", "HTTP", "80 TCP"],
+          ["Web segura", "HTTPS (HTTP sobre TLS)", "443 TCP"],
+          ["Correo, envío", "SMTP", "25 TCP"],
+          ["Correo, envío con STARTTLS", "SMTP", "587 TCP"],
+          ["Correo, envío seguro", "SMTPS", "465 TCP"],
+          ["Correo, recepción", "POP3", "110 TCP"],
+          ["Correo, recepción segura", "POP3S", "995 TCP"],
+          ["Correo, recepción", "IMAP", "143 TCP"],
+          ["Correo, recepción segura", "IMAPS", "993 TCP"],
+          ["Hora", "NTP", "123 UDP"],
+          ["Transferencia de ficheros", "FTP", "21 TCP"],
+          ["Transferencia trivial", "TFTP", "69 UDP"],
+          ["Terminal remoto seguro", "SSH", "22 TCP"],
+          ["Terminal remoto sin cifrar", "Telnet", "23 TCP"]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un ayuntamiento quiere publicar el portal `sede.ayuntamiento.es`, gestionar el correo de sus empleados y mantener el servicio disponible aunque falle un servidor. El dominio ya está registrado y el CPD es de nivel III.\n\n**Resolución.**\n\n- **DNS:** se crea la zona del dominio con un registro **A** para el servidor web y un registro **MX** que apunte al servidor de correo; si se quiere que un alias `www` apunte al mismo equipo, se usa un **CNAME**. Los servidores secundarios se configuran como autoritativos de solo lectura y se actualizan desde el primario por transferencia de zona.\n- **Web:** el portal se publica en **HTTPS** (443) con un certificado válido para el dominio, porque TLS aporta confidencialidad, integridad y autenticación; el HTTP (80) queda como puerto de entrada sin cifrar y no debe usarse para datos personales.\n- **Correo:** los usuarios se conectan con su **MUA** al servidor de envío por el puerto **587** con STARTTLS y reciben por **IMAP** (143 o 993 con TLS), de modo que el buzón se sincroniza entre varios dispositivos; el **MTA** entrega los mensajes a otros dominios consultando el registro MX del destino.\n- **Hora:** todos los servidores sincronizan su reloj con **NTP** (123 UDP) para que los registros y los certificados sean coherentes.\n- **Salida a Internet:** se coloca un **proxy** para el tráfico web de los puestos y un **proxy inverso** delante del portal; el proxy no cifra, así que la confidencialidad la aporta TLS.\n- **Alta disponibilidad:** se monta un **clúster** con balanceo de carga; al ser un CPD **Tier III** se puede hacer mantenimiento concurrente sin cortar el servicio, y los sistemas críticos se duplican (2N o 2N+1).\n\n**Conclusión.** Cada servicio necesita su registro o su puerto, y la disponibilidad se diseña con redundancia y con objetivos medibles (RPO y RTO), no solo con buenos servidores.",
+      "table": {
+        "columns": ["Necesidad", "Servicio", "Dato clave"],
+        "rows": [
+          ["Publicar el portal", "DNS + HTTPS", "Registro A y puerto 443 con TLS"],
+          ["Correo de empleados", "SMTP + IMAP", "587 con STARTTLS y 993 con TLS"],
+          ["Hora coherente", "NTP", "123 UDP"],
+          ["Alta disponibilidad", "Clúster y CPD Tier III", "Mantenimiento concurrente y redundancia 2N"]
+        ]
+      }
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "Las confusiones más frecuentes de este tema son estas:\n\n- **Confundir los registros DNS**: A es IPv4, AAAA es IPv6, MX es correo, CNAME es alias y PTR es la resolución inversa.\n- **Confundir los tipos de servidor DNS**: el primario permite lectura y escritura; el secundario es de solo lectura y se actualiza por transferencia de zona; el de caché no es autoritativo.\n- **Confundir consulta recursiva e iterativa**: la recursiva la hace el cliente y pide una respuesta final autoritativa; la iterativa se responde con la dirección de otro servidor.\n- **Creer que HTTPS es un protocolo nuevo**: es HTTP sobre TLS; el puerto es 443 y el certificado autentica al servidor.\n- **Confundir SSL con TLS**: SSL está obsoleto; el estándar actual es TLS.\n- **Creer que SMTP recibe correo**: SMTP solo envía; la recepción corresponde a POP3 o IMAP, y MIME solo permite adjuntos y otros idiomas.\n- **Confundir POP3 con IMAP**: POP3 descarga y por defecto borra del servidor; IMAP mantiene y sincroniza el buzón en el servidor.\n- **Creer que el proxy cifra**: el proxy no cifra; la VPN sí cifra todo el tráfico.\n- **Confundir proxy inverso con proxy de salida**: el inverso se sitúa delante de los servidores web.\n- **Confundir clúster con grid**: el clúster es cercano, homogéneo y centralizado; la grid es distribuida y heterogénea.\n- **Confundir los Tier del CPD**: el III permite mantenimiento concurrente; el IV es tolerante a fallos.",
+      "table": {
+        "columns": ["Confusión", "Lo correcto"],
+        "rows": [
+          ["A = correo", "MX es correo; A es IPv4 y AAAA es IPv6"],
+          ["HTTPS es un protocolo nuevo", "HTTPS es HTTP sobre TLS, puerto 443"],
+          ["SMTP recibe correo", "SMTP solo envía; POP3 e IMAP reciben"],
+          ["El proxy cifra", "El proxy no cifra; la VPN sí"]
+        ]
+      }
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**DNS.** Base de datos jerárquica y distribuida; zonas de autoridad; servidores primarios (lectura y escritura), secundarios (solo lectura, transferencia de zona) y de caché; consultas recursivas (cliente, respuesta final) e iterativas (otro servidor); respuestas autoritativas y no autoritativas; registros A, AAAA, CNAME, NS, MX, PTR, SOA, TXT, SRV y SPF.\n\n**Organismos.** IETF, IESG, IAB, ISOC e IRTF en la estandarización; IANA e ICANN en la asignación de nombres y direcciones; RIR: ARIN, RIPE NCC, APNIC, LACNIC y AFRINIC.\n\n**NTP.** Hora oficial de España con el Real Instituto y Observatorio de la Armada; puerto 123 UDP.\n\n**LDAP/Active Directory.** LDAP gestiona de forma centralizada usuarios, grupos y permisos; Active Directory organiza dominios, con PDC, cuatro modelos de dominio y cinco roles FSMO; Kerberos es la autenticación moderna y WSUS distribuye actualizaciones.\n\n**Web.** HTTP: puerto 80, sin estado y sin cifrado; métodos GET, HEAD, POST y PUT; códigos 1xx a 5xx. HTTPS: HTTP sobre TLS, puerto 443, confidencialidad, integridad y autenticación; SSL obsoleto.\n\n**Correo.** MUA, MTA, MDA y MSA; SMTP 25/465/587 para enviar; POP3 110/995 y IMAP 143/993 para recibir; MIME para adjuntos e idiomas; el destino se localiza con el registro MX.\n\n**Proxy.** Transparente, anónimo, elite e inverso; no cifra el tráfico; la VPN cifra todo.\n\n**Alta disponibilidad.** Clúster (cercano, homogéneo, centralizado) frente a grid (distribuida, heterogénea); CPD Tier I a IV (III: mantenimiento concurrente, 99,982 %); redundancia N, N+1, 2N y 2N+1; RPO, RTO y MTD."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos siguientes reproducen el estilo de pregunta del bloque III. Cada uno incluye la respuesta correcta y una explicación que recuerda el dato del temario; la referencia indica el epígrafe y la fuente donde está el contenido. Conviene contestarlos sin mirar la solución y revisar después solo los fallos."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "El tema se ha redactado a partir de `data/fuentes/III.23.txt`, que reúne el volcado de `Tema 9.docx` (administración de redes, dominios y usuarios), `Tema 13.docx` (Internet, correo, web, DNS y TLS) y `Bloque 4 Actualizado 2026.docx` (correo, LDAP, HTTP/TLS, proxy, CPD, NTP, clústeres y balanceo). Las citas por apartado aparecen en la lista `sources` y en la referencia de cada caso tipo test. No se han copiado párrafos literales y no se han añadido datos que no figuren en esas fuentes; en particular, el volcado no desarrolla DHCP, por lo que no se incluyen contenidos de ese servicio."
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Qué organización coordina a escala global el sistema de nombres de dominio y la asignación de direcciones IP a través de IANA?",
+      "options": ["IETF", "ICANN", "IRTF", "ISOC"],
+      "answer": "b",
+      "explanation": "ICANN asumió las funciones de IANA y es responsable de la coordinación global del DNS y de la asignación de direcciones IP, que delega en los RIR. IETF e IRTF se ocupan de estandarizar e investigar, e ISOC promociona la cooperación.",
+      "reference": "Apdo. 4.2 · Tema 13.docx y Bloque 4 Actualizado 2026.docx, organismos de Internet"
+    },
+    {
+      "question": "¿Qué registro DNS asocia un nombre de dominio con su servidor de correo?",
+      "options": ["A", "CNAME", "MX", "PTR"],
+      "answer": "c",
+      "explanation": "MX (Mail Exchange) indica el servidor de intercambio de correo del dominio y admite valores de preferencia. A traduce a IPv4, CNAME crea un alias y PTR hace la resolución inversa.",
+      "reference": "Apdo. 4.1 · Tema 13.docx, tipos de registros DNS"
+    },
+    {
+      "question": "¿Qué registro DNS se utiliza para la resolución inversa, es decir, para pasar de una IP a un nombre?",
+      "options": ["PTR", "A", "AAAA", "SOA"],
+      "answer": "a",
+      "explanation": "PTR es el registro de puntero que traduce direcciones IP en nombres de host o dominio. A y AAAA resuelven nombres a IPv4 e IPv6, y SOA describe el servidor primario de la zona.",
+      "reference": "Apdo. 4.1 · Tema 13.docx, tipos de registros DNS"
+    },
+    {
+      "question": "¿Qué diferencia hay entre un servidor DNS primario y uno secundario?",
+      "options": [
+        "El primario es de solo lectura y el secundario permite escritura",
+        "Ambos son de solo lectura y no se actualizan",
+        "El primario permite lectura y escritura; el secundario es de solo lectura y se actualiza por transferencia de zona",
+        "El secundario no es autoritativo de ningún dominio"
+      ],
+      "answer": "c",
+      "explanation": "El servidor primario es autoritativo y permite lectura y escritura; el secundario también es autoritativo, pero de solo lectura, y obtiene los datos del primario mediante una transferencia de zona. El que no es autoritativo es el servidor de caché.",
+      "reference": "Apdo. 4.1 · Tema 13.docx, tipos de servidores DNS"
+    },
+    {
+      "question": "En una consulta DNS recursiva, ¿qué hace el servidor consultado?",
+      "options": [
+        "Devuelve al cliente la dirección de otro servidor para que siga preguntando",
+        "Realiza las consultas intermedias necesarias hasta obtener una respuesta final autoritativa",
+        "Solo responde con los datos que tenga en caché",
+        "Responde siempre con una respuesta no autoritativa"
+      ],
+      "answer": "b",
+      "explanation": "La consulta recursiva es la que hacen los equipos cliente: el servidor encadena las consultas necesarias hasta localizar al servidor autoritativo y devuelve la respuesta final. La iterativa es la que se responde indicando otro servidor.",
+      "reference": "Apdo. 4.1 · Tema 13.docx, consultas recursivas e iterativas"
+    },
+    {
+      "question": "¿Qué puerto utiliza HTTPS y qué aporta frente a HTTP?",
+      "options": ["80 y autenticación sin cifrado", "8080 y compresión", "443 y cifrado con TLS", "443 y solo redirección"],
+      "answer": "c",
+      "explanation": "HTTPS usa el puerto 443 y consiste en HTTP sobre TLS, que aporta confidencialidad, integridad y autenticación mediante certificados. HTTP usa el puerto 80 y no proporciona cifrado.",
+      "reference": "Apdo. 4.5 · Tema 13.docx y Bloque 4, HTTP y HTTPS"
+    },
+    {
+      "question": "¿Qué código de estado HTTP indica que el servidor no puede atender la petición de forma temporal?",
+      "options": ["404", "503", "403", "500"],
+      "answer": "b",
+      "explanation": "503 Service Unavailable indica que el servidor no puede atender la petición temporalmente. 404 es recurso no encontrado, 403 acceso prohibido y 500 un error interno genérico.",
+      "reference": "Apdo. 4.5 · Bloque 4 Actualizado 2026.docx, códigos de estado HTTP"
+    },
+    {
+      "question": "¿Qué protocolo se encarga únicamente del envío de correo y no de su recepción?",
+      "options": ["SMTP", "POP3", "IMAP", "MIME"],
+      "answer": "a",
+      "explanation": "SMTP solo transmite mensajes entre servidores o desde el cliente al servidor; la recepción corresponde a POP3 o IMAP. MIME es una extensión de formato, no un protocolo de transporte.",
+      "reference": "Apdo. 4.6 · Bloque 4 Actualizado 2026.docx, SMTP"
+    },
+    {
+      "question": "En la arquitectura del correo, ¿qué agente transfiere los mensajes entre servidores?",
+      "options": ["MUA", "MDA", "MSA", "MTA"],
+      "answer": "d",
+      "explanation": "El MTA (Mail Transfer Agent) toma el mensaje de un MUA o de otro MTA y lo entrega a otro MTA o a un MDA. El MUA es el cliente, el MDA entrega al buzón y el MSA recibe del MUA para el envío.",
+      "reference": "Apdo. 4.6 · Tema 13.docx y Bloque 4, agentes de correo"
+    },
+    {
+      "question": "¿Qué protocolo de recepción de correo mantiene los mensajes en el servidor y sincroniza varios dispositivos?",
+      "options": ["POP3", "IMAP", "SMTP", "SMTPS"],
+      "answer": "b",
+      "explanation": "IMAP mantiene el buzón en el servidor y sincroniza los cambios entre dispositivos. POP3 descarga los mensajes y por defecto los borra del servidor, por lo que no sincroniza el estado entre equipos.",
+      "reference": "Apdo. 4.6 · Bloque 4 Actualizado 2026.docx, IMAP y POP3"
+    },
+    {
+      "question": "¿Qué puerto usa IMAP cuando se protege con TLS (IMAPS)?",
+      "options": ["143", "993", "995", "587"],
+      "answer": "b",
+      "explanation": "IMAP sin cifrar usa el 143 y con TLS el 993. El 995 es POP3S y el 587 es SMTP con STARTTLS.",
+      "reference": "Apdo. 4.6 · Bloque 4 Actualizado 2026.docx, puertos de correo"
+    },
+    {
+      "question": "¿Sobre qué protocolo y puerto funciona NTP, que en España se coordina con el Real Instituto y Observatorio de la Armada?",
+      "options": ["123 UDP", "123 TCP", "161 UDP", "53 UDP"],
+      "answer": "a",
+      "explanation": "NTP se ejecuta sobre el puerto 123 UDP para sincronizar la hora oficial. El 161 es SNMP y el 53 se asocia a DNS.",
+      "reference": "Apdo. 4.3 · Bloque 4 Actualizado 2026.docx, hora de España y NTP"
+    },
+    {
+      "question": "¿Qué tipo de proxy se sitúa frente a los servidores web para filtrar las solicitudes y mejorar seguridad y rendimiento?",
+      "options": ["Proxy transparente", "Proxy anónimo", "Proxy elite", "Proxy inverso"],
+      "answer": "d",
+      "explanation": "El proxy inverso se coloca delante de los servidores web y filtra las peticiones. El transparente no se nota, el anónimo oculta la IP y el elite oculta también la existencia del proxy.",
+      "reference": "Apdo. 4.7 · Bloque 4 Actualizado 2026.docx, tipos de proxy"
+    },
+    {
+      "question": "¿Qué protocolo se utiliza para la gestión centralizada de usuarios, grupos y permisos en redes corporativas?",
+      "options": ["NTLM", "LDAP", "Kerberos", "WSUS"],
+      "answer": "b",
+      "explanation": "LDAP es el protocolo de directorio para gestionar de forma centralizada usuarios, grupos y permisos. NTLM y Kerberos son mecanismos de autenticación, y WSUS distribuye actualizaciones de Windows.",
+      "reference": "Apdo. 4.4 · Bloque 4 Actualizado 2026.docx, LDAP"
+    },
+    {
+      "question": "Según ANSI/TIA-942, ¿qué nivel de CPD permite el mantenimiento concurrente sin interrumpir el servicio y tiene una disponibilidad aproximada del 99,982 %?",
+      "options": ["Tier I", "Tier II", "Tier III", "Tier IV"],
+      "answer": "c",
+      "explanation": "El Tier III se define como de mantenimiento concurrente: permite tareas de mantenimiento sin cortar el servicio gracias a la redundancia de los sistemas críticos, con una disponibilidad del 99,982 % y hasta 1,6 horas de inactividad anual.",
+      "reference": "Apdo. 4.8 · Bloque 4 Actualizado 2026.docx, CPD y tiers"
+    }
+  ],
+  "sources": [
+    {
+      "file": "data/fuentes/III.23.txt",
+      "page": "líneas 1-448 (Tema 9), 449-621 (Tema 13) y 622-1697 (Bloque 4)",
+      "use": "texto consolidado del que se extrajeron los datos; las citas concretas se detallan en las entradas siguientes"
+    },
+    {
+      "file": "Tema 9.docx",
+      "page": "DOCX, apartados de sistemas operativos de red, gestión de usuarios, dominios y recursos compartidos",
+      "use": "Active Directory, dominios, controlador principal, grupos, perfiles y autenticación"
+    },
+    {
+      "file": "Tema 13.docx",
+      "page": "DOCX, apartados 1-5 (arquitectura de Internet, correo, Web, DNS y HTTP/SSL/TLS)",
+      "use": "organismos de Internet, IANA/ICANN/RIR, agentes de correo, SMTP, POP3, IMAP, MIME, DNS, registros y HTTP/HTTPS/TLS"
+    },
+    {
+      "file": "Bloque 4 Actualizado 2026.docx",
+      "page": "DOCX, temas de administración de redes, correo, LDAP, HTTP/HTTPS/TLS, proxy, CPD y alta disponibilidad",
+      "use": "puertos de correo, comandos, HTTP y códigos de estado, TLS, proxy, NTP, Tier de CPD, redundancia, clústeres y balanceo"
+    }
+  ]
+}

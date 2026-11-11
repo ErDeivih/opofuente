@@ -1,6 +1,6 @@
 # Revisión final de la demo — 10/11/2026
 
-**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **94/94** comprobaciones con
+**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **98/98** comprobaciones con
 Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 
 ## Qué se ha revisado
@@ -62,7 +62,7 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 - **Corrección al elegir** sin «Comprobar», **estados vacíos con acción** y **resultado con revisión primero**.
 - **Lector**: índice fijo, resumen/fuentes únicos, tipografía 22/16 px, continuar por epígrafe y vigencia.
 - **Simulacro TAI** 80+20 con 120 min, −1/3 y mínimo 25/50 por parte.
-- **Temas largos** I.1/III.21/IV.27/V.34/V.35 con SVG, test cases y fuentes; 94/94 comprobaciones.
+- **Temas largos** I.1/III.21/IV.27/V.34/V.35 con SVG, test cases y fuentes; 98/98 comprobaciones.
 - Pruebas: 517 unitarias de backend, 225 de web, typecheck, eslint, ruff, mypy y build.
 
 ## Temario completo
