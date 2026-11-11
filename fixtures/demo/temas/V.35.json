@@ -184,5 +184,145 @@
     "Confundir las categorías básica, media y alta con baja, media y alta, o creer que la categoría la elige el proveedor a su gusto.",
     "Confundir el Anexo II (medidas que deben aplicarse) con la declaración de aplicabilidad (justifica qué medidas se aplican y por qué)."
   ],
-  "reviewedAt": "2026-11-10"
+  "reviewedAt": "2026-11-10",
+  "longSections": [
+    {
+      "heading": "1. Introducción y contexto",
+      "body": "El **Esquema Nacional de Seguridad (ENS)** es el marco común de seguridad de la información para el sector público español. No es un catálogo de buenas prácticas voluntarias: nace de la **Ley 40/2015**, cuyo artículo 156 lo configura como instrumento fundamental para garantizar la interoperabilidad y la seguridad de los sistemas y soluciones que usan las administraciones, y se desarrolla por el **Real Decreto 311/2022, de 3 de mayo**, que sustituye al Real Decreto 3/2010.\n\nLa norma persigue que los sistemas que prestan servicios públicos custoden la información y la mantengan disponible sin interrupciones ni alteraciones no autorizadas. Su objeto es doble: fijar los **principios básicos** de actuación y los **requisitos mínimos** que deben cumplir las entidades de su ámbito. La idea de fondo es que la seguridad no es un producto que se compra, sino un proceso que se planifica, se ejecuta, se audita y se revisa.\n\nEl ENS convive con otros marcos. La protección de datos personales se rige por el RGPD y la LOPDGDD; la interoperabilidad, por el ENI; y la seguridad de las redes y sistemas tiene su propia normativa (Real Decreto-ley 12/2018). El ENS no los sustituye: establece un nivel mínimo y exige que, cuando otra norma imponga medidas más estrictas, prevalezcan estas.\n\n*(Fuente: Real Decreto 311/2022, preámbulo y arts. 1-3.)*"
+    },
+    {
+      "heading": "2. Marco normativo y ámbito de aplicación",
+      "body": "El **ámbito de aplicación** es amplio. El ENS obliga a todo el **sector público** en el sentido del artículo 2 de la Ley 40/2015 —Administración General del Estado, comunidades autónomas, entidades locales y su sector público institucional— y se aplica también a los sistemas que tratan **información clasificada**, sin perjuicio de la Ley de Secretos Oficiales y de las medidas adicionales que exijan los compromisos internacionales.\n\nLa extensión al **sector privado** es una de las claves prácticas: la norma alcanza a los sistemas de las entidades privadas que, en virtud de una relación contractual y de la normativa aplicable, **presten servicios o provean soluciones** a las entidades del sector público para el ejercicio de sus competencias y potestades administrativas. Esas empresas deben disponer de la política de seguridad exigida por el artículo 12, y los pliegos de los contratos deben incorporar los requisitos necesarios para asegurar la conformidad con el ENS, incluidas las **declaraciones o certificaciones de conformidad**. La exigencia puede extenderse a la **cadena de suministro** cuando el análisis de riesgos lo justifique.\n\nCuando un sistema trate **datos personales**, se aplican además el RGPD y la LOPDGDD: el responsable realizará el análisis de riesgos y, cuando proceda, la evaluación de impacto, y si de ellos resultan medidas más exigentes que las del ENS, prevalecen las más estrictas. Existen además reglas específicas para el despliegue de **redes 5G** (Real Decreto-ley 7/2022).\n\n*(Fuente: Real Decreto 311/2022, arts. 2-3 y preámbulo.)*"
+    },
+    {
+      "heading": "3. Los siete principios básicos",
+      "body": "El artículo 5 del Real Decreto 311/2022 enumera **siete principios básicos** que orientan todo el esquema:\n\n1. **Seguridad como proceso integral**: abarca elementos humanos, materiales, técnicos, jurídicos y organizativos; excluye actuaciones puntuales y exige concienciación.\n2. **Gestión de la seguridad basada en los riesgos**: el análisis y la gestión de riesgos son continuos y las medidas se dimensionan de forma proporcionada.\n3. **Prevención, detección, respuesta y conservación**: hay que evitar el incidente, detectarlo si ocurre, responder para restaurar y conservar la información y el patrimonio digital.\n4. **Existencia de líneas de defensa**: varias capas organizativas, físicas y lógicas para que el fallo de una no comprometa todo el sistema.\n5. **Vigilancia continua**: detección de comportamientos anómalos y medición permanente del estado de la seguridad.\n6. **Reevaluación periódica**: las medidas se revisan y actualizan según cambian los riesgos y la tecnología.\n7. **Diferenciación de responsabilidades**: los cuatro responsables del sistema no se confunden entre sí y la responsabilidad de la seguridad se separa de la explotación.\n\nConviene memorizar la lista completa, porque es frecuente que un test pregunte por el principio que falta o por el número total. Algunos resúmenes de estudio agrupan o incluso omiten la vigilancia continua; el texto vigente enumera siete, y ese es el dato que debe fijarse.\n\n*(Fuente: Real Decreto 311/2022, arts. 5-11; Bloque 1 Actualizado 2026.docx, apartado «Esquema nacional de seguridad (ENS)».)*"
+    },
+    {
+      "heading": "4. Las cinco dimensiones de seguridad (DICAT)",
+      "body": "Las **dimensiones de seguridad** son las cinco propiedades que hay que proteger y valorar. Se resumen con la sigla **DICAT**: disponibilidad, integridad, confidencialidad, autenticidad y trazabilidad. Cada una se define por lo que garantiza:\n\n- **Disponibilidad**: los procesos autorizados acceden al activo cuando lo requieren.\n- **Integridad**: el activo no ha sido alterado de forma no autorizada.\n- **Confidencialidad**: la información no se pone a disposición ni se revela a quien no está autorizado.\n- **Autenticidad**: una entidad es quien dice ser o se garantiza la fuente de la que proceden los datos.\n- **Trazabilidad**: puede rastrearse a posteriori quién accedió a la información o la modificó.\n\nUn mismo incidente puede afectar a varias dimensiones a la vez: una caída de la sede electrónica afecta sobre todo a la disponibilidad; un cambio no autorizado en un expediente, a la integridad; una filtración de datos, a la confidencialidad; una suplantación de identidad, a la autenticidad; y la imposibilidad de reconstruir quién hizo qué, a la trazabilidad.",
+      "table": {
+        "columns": [
+          "Dimensión",
+          "Qué protege",
+          "Ejemplo de incidente"
+        ],
+        "rows": [
+          [
+            "Disponibilidad",
+            "Que el sistema y sus datos estén accesibles cuando se necesitan",
+            "Caída del servidor de la sede electrónica"
+          ],
+          [
+            "Integridad",
+            "Que la información no se altere sin autorización",
+            "Modificación de un expediente sin dejar rastro"
+          ],
+          [
+            "Confidencialidad",
+            "Que solo acceda quien está autorizado",
+            "Filtración de datos personales de solicitantes"
+          ],
+          [
+            "Autenticidad",
+            "Que la identidad o la fuente de los datos sea la que dice ser",
+            "Suplantación de un usuario o de un certificado"
+          ],
+          [
+            "Trazabilidad",
+            "Que quede registro de quién hizo qué y cuándo",
+            "Imposibilidad de saber quién consultó un expediente"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "5. Niveles de seguridad y categorización del sistema",
+      "body": "Para cada dimensión se valora un **nivel de seguridad**: **bajo**, **medio** o **alto**, según el perjuicio que causaría un incidente. El resumen de estudio lo describe así: un perjuicio limitado corresponde al nivel bajo; uno grave, al medio; y uno muy grave, al alto. Esta valoración no es un trámite: condiciona las medidas exigibles y el esfuerzo de auditoría.\n\nDe la combinación de niveles se obtiene la **categoría del sistema**, que puede ser **básica**, **media** o **alta**. La lógica es la del nivel más alto: si alguna dimensión exige nivel alto, el sistema es de categoría alta; si no hay ningún alto pero alguna dimensión es media, la categoría es media; y si todas las dimensiones son de nivel bajo, la categoría es básica. El **anexo I** desarrolla la secuencia de actuaciones para determinarla y el artículo 40 es la referencia legal de las categorías.\n\nLa categoría no la elige el proveedor ni se hereda de una plantilla: se justifica con el análisis de riesgos y se documenta. Un sistema de nóminas y un portal informativo municipal no tienen el mismo impacto, aunque ambos presten servicios públicos.\n\n*(Fuente: Real Decreto 311/2022, art. 40 y anexo I; Bloque 1 Actualizado 2026.docx, apartado ENS.)*",
+      "table": {
+        "columns": [
+          "Nivel",
+          "Perjuicio de un incidente",
+          "Efecto en el sistema"
+        ],
+        "rows": [
+          [
+            "Bajo",
+            "Limitado",
+            "Medidas básicas del anexo II y controles proporcionados al riesgo"
+          ],
+          [
+            "Medio",
+            "Grave",
+            "Mayor exigencia de medidas y de control sobre las dimensiones afectadas"
+          ],
+          [
+            "Alto",
+            "Muy grave",
+            "Máxima exigencia; la auditoría puede acordar la suspensión del servicio si hay deficiencias graves"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "6. Las medidas del anexo II: tres marcos",
+      "body": "El **anexo II** contiene las medidas de seguridad que cada entidad debe seleccionar e implantar. La fuente de estudio las agrupa en **tres marcos** y las cifra en **75 medidas**:\n\n- **Marco organizativo**: medidas relacionadas con la organización global de la seguridad (política, roles, documentación, gestión de riesgos y concienciación).\n- **Marco operacional**: medidas para proteger la operación del sistema como conjunto integral de componentes para un fin (control de accesos, incidentes, copias y continuidad).\n- **Medidas de protección**: controles sobre activos concretos, según su naturaleza y la calidad exigida por el nivel de seguridad de las dimensiones afectadas.\n\nLas medidas no se eligen a gusto: se seleccionan en función de los activos, de la categoría del sistema y de las decisiones de tratamiento de riesgos. El resultado se formaliza en la **Declaración de Aplicabilidad**, firmada por el responsable de la seguridad (artículo 28). Además, una medida puede sustituirse por otra **compensatoria** si se documenta que protege igual o mejor del riesgo y se indica la correspondencia entre ambas.\n\n*(Fuente: Real Decreto 311/2022, arts. 28 y 30 y anexo II; Bloque 1 Actualizado 2026.docx, apartado ENS.)*",
+      "table": {
+        "columns": [
+          "Marco",
+          "Qué cubre",
+          "Ejemplos de medidas"
+        ],
+        "rows": [
+          [
+            "Organizativo",
+            "Gobierno y organización global de la seguridad",
+            "Política de seguridad, roles, análisis de riesgos, concienciación"
+          ],
+          [
+            "Operacional",
+            "Funcionamiento del sistema en su conjunto",
+            "Control de accesos, gestión de incidentes, copias, continuidad"
+          ],
+          [
+            "De protección",
+            "Activos concretos y su nivel de seguridad",
+            "Protección de comunicaciones, soportes, equipos y aplicaciones"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "7. Política de seguridad y requisitos mínimos",
+      "body": "La **política de seguridad** es el conjunto de directrices con las que la organización gestiona y protege la información. Debe aprobarse formalmente por el órgano competente y contener, como mínimo (artículo 12): objetivos o misión; marco regulatorio; roles y responsabilidades; estructura y composición de los comités de seguridad; directrices para la documentación de seguridad; y los riesgos derivados del tratamiento de datos personales.\n\nSobre esa política se despliegan **quince requisitos mínimos**: organización e implantación del proceso; análisis y gestión de riesgos; gestión de personal; profesionalidad; autorización y control de accesos; protección de las instalaciones; adquisición de productos y servicios de seguridad; mínimo privilegio; integridad y actualización; protección de la información almacenada y en tránsito; prevención ante sistemas interconectados; registro de actividad y detección de código dañino; incidentes; continuidad de la actividad; y mejora continua.\n\nEl requisito de **mínimo privilegio** (artículo 20) es el más rentable de explicar: el sistema debe ofrecer solo la funcionalidad imprescindible, las funciones de administración deben ser las mínimas y ejercerse por personas autorizadas, y las funciones innecesarias se eliminan o desactivan mediante la configuración. La **seguridad por defecto** se apoya en la misma idea: la configuración de partida debe ser la segura, de modo que una utilización insegura exija un acto consciente del usuario.\n\n*(Fuente: Real Decreto 311/2022, arts. 12 y 20; Bloque 1 Actualizado 2026.docx, apartado ENS.)*"
+    },
+    {
+      "heading": "8. Gobernanza: los cuatro responsables",
+      "body": "El ENS exige **diferenciar responsabilidades** (artículo 11) y concreta cuatro figuras (artículo 13):\n\n- **Responsable de la información**: determina los requisitos de la información tratada.\n- **Responsable del servicio**: determina los requisitos de los servicios prestados.\n- **Responsable de la seguridad**: decide cómo satisfacer los requisitos, supervisa la implantación y reporta sobre ella.\n- **Responsable del sistema**: implanta la seguridad en el sistema y supervisa la operación diaria, pudiendo delegar en administradores u operadores bajo su responsabilidad.\n\nEl responsable de la **seguridad** debe ser distinto del responsable del **sistema** y no puede existir dependencia jerárquica entre ambos. Si una situación excepcional obliga a concentrar ambas funciones, deben aplicarse medidas compensatorias. En los servicios externalizados, la empresa proveedora designa un **POC** (punto o persona de contacto) de seguridad, sin que ello traslade la responsabilidad última, que sigue correspondiendo a la entidad pública.\n\n*(Fuente: Real Decreto 311/2022, arts. 11 y 13.)*"
+    },
+    {
+      "heading": "9. Auditoría de la seguridad y conformidad",
+      "body": "El **artículo 31** exige una **auditoría regular ordinaria al menos cada dos años** para verificar el cumplimiento de los requerimientos del ENS. Además, debe realizarse una **auditoría extraordinaria** cuando se produzcan modificaciones sustanciales en los sistemas que puedan repercutir en las medidas; esa auditoría extraordinaria reinicia el cómputo de los dos años. El plazo puede ampliarse tres meses cuando concurran impedimentos de fuerza mayor no imputables a la entidad.\n\nLa auditoría se realiza en función de la categoría y del perfil de cumplimiento específico, conforme a los anexos I y III y a la Instrucción Técnica de Seguridad de Auditoría. El **informe** debe dictaminar sobre el grado de cumplimiento, identificar los hallazgos de cumplimiento e incumplimiento y describir los criterios metodológicos, el alcance, el objetivo y las evidencias. Se presenta a los responsables del sistema y de la seguridad; el responsable de la seguridad analiza las conclusiones y las traslada para que se adopten las medidas correctoras. En los sistemas de **categoría alta**, si las deficiencias son graves, el responsable del sistema puede **suspender temporalmente** el tratamiento, la prestación del servicio o la operación del sistema hasta su subsanación.\n\nLa conformidad se completa con el **informe del estado de la seguridad** (artículo 32) y con la **respuesta a incidentes**, articulada por el CCN a través del **CCN-CERT** (artículos 33-34). Las entidades del sector público notifican al CCN-CERT los incidentes de impacto significativo; las organizaciones privadas que prestan servicios a entidades públicas notifican a través de **INCIBE-CERT**, que lo pone en conocimiento del CCN-CERT.\n\n*(Fuente: Real Decreto 311/2022, arts. 31-34.)*"
+    },
+    {
+      "heading": "10. Ejemplos prácticos de categorización",
+      "body": "**Caso 1. Sede electrónica de un ayuntamiento.** Permite presentar solicitudes y consultar expedientes con datos personales. La disponibilidad es crítica —sin sede no hay presentación electrónica—, la integridad y la autenticidad son altas por la firma y el registro, la confidencialidad es media y la trazabilidad, alta. Si alguna dimensión se valora como alta, la categoría resultante es **alta**; si el análisis justifica rebajarla (por ejemplo, por el alcance limitado del servicio y la existencia de canales alternativos), puede fundamentarse **media**. El error típico es categorizar por el tamaño del municipio: la categoría se decide por el impacto, no por la plantilla.\n\n**Caso 2. Portal informativo municipal.** Solo publica noticias, bandos y ordenanzas, sin datos personales ni trámites. La dimensión dominante es la disponibilidad; la integridad y la autenticidad se protegen con copias y control de cambios; la confidencialidad, con acceso de solo lectura. Si todas las dimensiones quedan en nivel bajo, el sistema es de categoría **básica**. Aun así debe tener política de seguridad, análisis de riesgos, las medidas del anexo II acordes y su Declaración de Aplicabilidad.\n\n**Lección práctica.** Un mismo ayuntamiento puede tener sistemas de categorías distintas. La categorización se hace **por sistema de información**, no por organismo, y debe revisarse cuando cambie el sistema, sus datos o su entorno."
+    },
+    {
+      "heading": "11. Resumen: lo que hay que memorizar",
+      "body": "**Lo que hay que memorizar.**\n\n- Norma vigente: **Real Decreto 311/2022** (sustituye al Real Decreto 3/2010); desarrolla el artículo 156 de la Ley 40/2015.\n- **7 principios** básicos: proceso integral, gestión basada en riesgos, prevención/detección/respuesta/conservación, líneas de defensa, vigilancia continua, reevaluación periódica y diferenciación de responsabilidades.\n- **5 dimensiones** (DICAT): disponibilidad, integridad, confidencialidad, autenticidad y trazabilidad.\n- **3 niveles** por dimensión: bajo, medio y alto (perjuicio limitado, grave o muy grave).\n- **3 categorías** del sistema: básica, media y alta; manda el nivel más alto de sus dimensiones.\n- **3 marcos** de medidas del anexo II: organizativo, operacional y de protección; la fuente de estudio las cifra en **75 medidas**.\n- **15 requisitos mínimos** y obligación de **Declaración de Aplicabilidad** firmada por el responsable de la seguridad.\n- **4 responsables**: información, servicio, seguridad y sistema; seguridad y sistema separados y sin dependencia jerárquica.\n- **Auditoría** ordinaria al menos cada **2 años** y extraordinaria por cambios sustanciales; el informe dictamina hallazgos y en categoría alta cabe suspender el servicio.\n- **CCN-CERT** como referencia de respuesta a incidentes del sector público; **INCIBE-CERT** para las organizaciones privadas que prestan servicios al sector público.\n- Plazo de adecuación de los sistemas preexistentes: **24 meses** (disposición transitoria única)."
+    },
+    {
+      "heading": "12. Fuentes, alcance y limitaciones",
+      "body": "Este tema se ha redactado a partir del apartado sobre el ENS del **Bloque 1 Actualizado 2026.docx** (resumen de estudio) y del texto consolidado del **Real Decreto 311/2022** consultado en el BOE. El fichero consolidado de fuentes del tema recoge ese apartado del DOCX y las marcas de dos PDF que no aportan texto.\n\n**Limitaciones.** Los ficheros **ENS.hellcito.pdf** y **Como Categorizar un Sistema en el ENS_V.04.pdf** son escaneados sin texto extraíble: no se han usado como fuente ni se citan como leídos. El resumen del DOCX enumera seis principios y omite la vigilancia continua, mientras que el artículo 5 de la norma vigente enumera siete: en caso de discrepancia se ha seguido la norma. Los detalles de ámbito, categorías, Declaración de Aplicabilidad y auditoría no aparecen desarrollados en el resumen de estudio y se han tomado del texto oficial del real decreto, no de su resumen.\n\n**Fuentes citadas:** Bloque 1 Actualizado 2026.docx (apartado «Esquema nacional de seguridad (ENS)»); Real Decreto 311/2022, arts. 1-3, 5-14, 20, 28 y 30-34, y anexos I-III; V.35.txt (apartado ENS del texto consolidado)."
+    },
+    {
+      "heading": "Casos tipo test (respuestas razonadas)",
+      "body": "**1. ¿Qué norma regula actualmente el Esquema Nacional de Seguridad?**\n\na) El Real Decreto 3/2010, de 8 de enero · b) El Real Decreto 311/2022, de 3 de mayo · c) La Ley 39/2015, de 1 de octubre · d) El Real Decreto 203/2021, de 30 de marzo\n\n**Respuesta: b.** El ENS se regula por el Real Decreto 311/2022, de 3 de mayo, cuya disposición derogatoria suprime el Real Decreto 3/2010.\n\n**2. ¿De qué ley deriva el ENS como instrumento para la seguridad de los sistemas del sector público?**\n\na) De la Ley 40/2015, de Régimen Jurídico del Sector Público (artículo 156) · b) De la Ley 39/2015, del Procedimiento Administrativo Común · c) De la Ley Orgánica 3/2018, de Protección de Datos Personales · d) De la Ley 9/2017, de Contratos del Sector Público\n\n**Respuesta: a.** El artículo 1 del real decreto señala que el ENS está establecido en el artículo 156.2 de la Ley 40/2015, de Régimen Jurídico del Sector Público.\n\n**3. ¿Cuántos principios básicos enumera el artículo 5 del Real Decreto 311/2022?**\n\na) Cinco · b) Seis · c) Siete · d) Ocho\n\n**Respuesta: c.** Son siete: seguridad como proceso integral; gestión basada en riesgos; prevención, detección, respuesta y conservación; líneas de defensa; vigilancia continua; reevaluación periódica; y diferenciación de responsabilidades. Algunos resúmenes omiten la vigilancia continua.\n\n**4. ¿Cuál de las siguientes NO es una de las cinco dimensiones de seguridad del ENS?**\n\na) Disponibilidad · b) Integridad · c) Escalabilidad · d) Trazabilidad\n\n**Respuesta: c.** Las dimensiones son disponibilidad, integridad, confidencialidad, autenticidad y trazabilidad (DICAT). La escalabilidad es una propiedad de la arquitectura, no una dimensión de seguridad del esquema.\n\n**5. ¿Qué principio exige que la seguridad se apoye en un análisis continuo y proporcionado de los riesgos?**\n\na) Seguridad como proceso integral · b) Existencia de líneas de defensa · c) Reevaluación periódica · d) Gestión de la seguridad basada en los riesgos\n\n**Respuesta: d.** El principio de gestión de la seguridad basada en los riesgos considera el análisis y la gestión de riesgos una actividad continua, con medidas proporcionadas a la naturaleza de la información y de los servicios.\n\n**6. Un incidente en una dimensión causaría un perjuicio muy grave. ¿Qué nivel de seguridad le corresponde?**\n\na) Alto · b) Medio · c) Bajo · d) Crítico\n\n**Respuesta: a.** El nivel alto corresponde a un perjuicio muy grave; el medio, a un perjuicio grave; y el bajo, a un perjuicio limitado.\n\n**7. Si una dimensión de un sistema se valora en nivel alto, ¿qué categoría tiene el sistema?**\n\na) Básica · b) Media · c) Alta · d) Depende del presupuesto disponible\n\n**Respuesta: c.** La categoría sigue el nivel más alto de las dimensiones: si alguna es de nivel alto, el sistema es de categoría alta; si no hay altos pero alguno es medio, la categoría es media; si todas son bajas, básica.\n\n**8. ¿Cuántos marcos o grupos de medidas distingue el anexo II del ENS?**\n\na) Dos · b) Tres · c) Cuatro · d) Cinco\n\n**Respuesta: b.** Tres: el marco organizativo, el marco operacional y las medidas de protección. La fuente de estudio las cifra en 75 medidas.\n\n**9. ¿Cómo se llama el documento que recoge las medidas de seguridad seleccionadas y que firma el responsable de la seguridad?**\n\na) La política de seguridad · b) El análisis de riesgos · c) El informe de auditoría · d) La Declaración de Aplicabilidad\n\n**Respuesta: d.** El artículo 28.2 exige formalizar la relación de medidas seleccionadas en la Declaración de Aplicabilidad, firmada por el responsable de la seguridad.\n\n**10. ¿Con qué periodicidad mínima debe realizarse la auditoría regular ordinaria del ENS?**\n\na) Cada año · b) Cada dos años · c) Cada tres años · d) Cada cinco años\n\n**Respuesta: b.** El artículo 31 exige una auditoría regular ordinaria al menos cada dos años, y una extraordinaria cuando se produzcan modificaciones sustanciales en los sistemas.\n\n**11. ¿Cuándo debe realizarse una auditoría extraordinaria del ENS?**\n\na) Cuando se produzcan modificaciones sustanciales en los sistemas que puedan repercutir en las medidas de seguridad · b) Cuando cambie el responsable de seguridad de la organización · c) Cada vez que se produzca cualquier incidente leve · d) Solo cuando lo solicite el CCN\n\n**Respuesta: a.** El artículo 31 prevé la auditoría extraordinaria ante modificaciones sustanciales de los sistemas; además, esa auditoría reinicia el cómputo de los dos años para la siguiente auditoría ordinaria.\n\n**12. ¿A qué entidades privadas se aplica el ENS?**\n\na) Solo a las que tratan datos de salud · b) A todas las empresas españolas, con independencia de su actividad · c) Solo a las que cotizan en bolsa · d) A las que prestan servicios o proveen soluciones al sector público en virtud de una relación contractual\n\n**Respuesta: d.** El artículo 2.3 extiende el ENS a los sistemas de las entidades privadas que, por relación contractual y conforme a la normativa aplicable, presten servicios o provean soluciones a las entidades del sector público para el ejercicio de sus competencias.\n\n**13. ¿Qué organismo articula la respuesta a los incidentes de seguridad del sector público en el marco del ENS?**\n\na) INCIBE-CERT · b) CCN-CERT · c) La Agencia Española de Protección de Datos · d) La CNMC\n\n**Respuesta: b.** El artículo 33 articula la respuesta en torno al CCN-CERT, sin perjuicio de las capacidades de respuesta de cada administración. Las organizaciones privadas que prestan servicios al sector público notifican a INCIBE-CERT, que informa al CCN-CERT.\n\n**14. ¿Qué responsable determina los requisitos de la información tratada por el sistema?**\n\na) El responsable de la información · b) El responsable del servicio · c) El responsable de la seguridad · d) El responsable del sistema\n\n**Respuesta: a.** Según el artículo 13, el responsable de la información determina los requisitos de la información; el del servicio, los de los servicios; el de la seguridad decide cómo satisfacerlos y supervisa; y el del sistema implanta y supervisa la operación diaria."
+    },
+    {
+      "heading": "Fuentes citadas",
+      "body": "- **Bloque 1 Actualizado 2026.docx** — apartado «Esquema nacional de seguridad (ENS)» (TAI I.8). los principios básicos resumidos, los tres grupos de medidas y la cifra de 75, así como las definiciones de las cinco dimensiones y de los niveles de impacto\n- **V.35.txt** — apartado «Esquema nacional de seguridad (ENS)» del texto consolidado de fuentes. contraste del mismo apartado del DOCX; no contiene desarrollo de ámbito, categorías, anexos ni auditoría\n- **Real Decreto 311/2022 (BOE-A-2022-7191)** — arts. 1-3, 5-14, 20, 28 y 30-34; anexos I-III. ámbito de aplicación, siete principios, requisitos mínimos, Declaración de Aplicabilidad, auditoría y categorías, tomados del texto oficial consolidado del BOE"
+    }
+  ]
 }
