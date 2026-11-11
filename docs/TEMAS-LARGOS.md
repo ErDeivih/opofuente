@@ -3,11 +3,12 @@
 **Fecha:** 11/11/2026 · **Objetivo:** que cada tema se pueda estudiar sin abrir otro PDF, con
 redacción propia y fuentes citadas.
 
-## Los veinticinco temas
+## Los treinta temas
 
 | Tema | Título | Palabras | Apartados | Test cases | Tablas | Diagrama |
 |---|---|---|---|---|---|---|
 | I.1 | La Constitución Española de 1978 | **1.543** | 10 | 15 | 1 | SVG de estructura |
+| I.12 | Transparencia y protección de datos | **2.952** | 10 | 15 | 1 | — |
 | II.13 | Arquitectura de ordenadores | **2.692** | 10 | 15 | 1 | SVG Von Neumann |
 | II.14 | Sistemas operativos de usuario | **2.082** | 10 | 15 | 6 | — |
 | II.15 | Ofimática | **1.923** | 10 | 15 | 6 | — |
@@ -31,9 +32,13 @@ redacción propia y fuentes citadas.
 | IV.33 | Informes y explotación de datos | **2.349** | 10 | 15 | 1 | — |
 | V.34 | Seguridad de la información | **3.064** | 12 | 13 | 5 | SVG triada CIA |
 | V.35 | ENS (RD 311/2022) | **2.488** | 12 | 14 | 3 | — |
+| V.36 | Criptografía y firma electrónica | **2.143** | 10 | 15 | 6 | — |
+| V.37 | Protección de datos aplicada | **2.475** | 10 | 15 | 6 | — |
+| V.38 | Ciberseguridad | **2.881** | 10 | 15 | 1 | — |
 | V.39 | Administración electrónica práctica | **2.448** | 12 | 15 | 3 | — |
+| V.40 | Accesibilidad y usabilidad | **2.371** | 10 | 15 | 1 | — |
 
-**Media:** 2.569 palabras por tema · **371 casos tipo test** en total (10-15 por tema) · **69 tablas**
+**Media:** 2.568 palabras por tema · **446 casos tipo test** en total (10-15 por tema) · **84 tablas**
 comparativas · **4 diagramas SVG propios**.
 
 I.1, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26, IV.28, IV.29, IV.30, IV.31, IV.32 y IV.33 se han reescrito con la **estructura definitiva de 10 apartados**: ficha oficial, epígrafes,
@@ -45,6 +50,7 @@ comentado y fuentes. Los demás temas siguen la misma idea y se irán adaptando 
 | Tema | Fuentes principales | Citas |
 |---|---|---|
 | I.1 | `Bloque 1 Actualizado 2026.docx`, `Constitución española.resumen.docx` y tests de la CE | 6 entradas, con apartados y líneas del consolidado |
+| I.12 | Transparencia y protección de datos | **2.952** | 10 | 15 | 1 | — |
 | III.21 | `Tema 9.docx`, `Tema 11.docx`, `Tema 12.docx`, `Bloque 4 Actualizado 2026.docx`, `Modelo.OSI.Resumen.docx`, `IEEE.802.11...docx` | 5 entradas; discrepancias entre fuentes señaladas en el texto |
 | IV.27 | `Tema 5.docx`, `Tema 7.docx`, `Bloque 3 Actualizado 2026.docx` | 8 entradas |
 | V.34 | `Tema 10.docx`, `Tema 14.docx`, `Bloque 4 Actualizado 2026.docx`, `temario-c1.md` | 17 entradas |

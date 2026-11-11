@@ -1,0 +1,250 @@
+{
+  "slug": "tai-propio-v-crypto",
+  "year": 2026,
+  "conv": "Supuesto propio · OpoFuente 2026",
+  "block": "V",
+  "title": "Firma y cifrado de expedientes electrónicos",
+  "difficulty": "media",
+  "official": false,
+  "estimatedMinutes": 30,
+  "statement": "Una sede electrónica debe firmar expedientes, cifrar documentos sensibles y verificar certificados. El equipo revisa algoritmos, PKI, sellos de tiempo y validez de la firma antes de poner el servicio en producción.",
+  "steps": [
+    "1. Clasificar documentos y firmas.",
+    "2. Elegir algoritmos y formato.",
+    "3. Validar certificados y cadena.",
+    "4. Verificar sellos y conservación.",
+    "5. Documentar la evidencia."
+  ],
+  "topics": [
+    "V.36",
+    "V.34",
+    "V.35"
+  ],
+  "source": {
+    "label": "Elaboración propia · OpoFuente",
+    "url": "https://erdeivih.github.io/opofuente-demo/",
+    "pages": "Material propio de la demo"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué usa la criptografía simétrica?",
+      "options": [
+        "Una clave pública y otra privada",
+        "La misma clave para cifrar y descifrar",
+        "Solo funciones hash",
+        "Un certificado digital"
+      ],
+      "correct": "b",
+      "justification": "La criptografía simétrica comparte una única clave; es rápida y se usa para cifrar volúmenes y sesiones."
+    },
+    {
+      "stem": "¿Qué clave se usa para firmar electrónicamente?",
+      "options": [
+        "La clave pública del receptor",
+        "La clave pública del firmante",
+        "La clave privada del firmante",
+        "Una clave simétrica compartida"
+      ],
+      "correct": "c",
+      "justification": "El firmante firma con su clave privada; el receptor verifica con la clave pública del certificado."
+    },
+    {
+      "stem": "¿Qué aporta una función hash?",
+      "options": [
+        "Un certificado de identidad",
+        "Confidencialidad del documento",
+        "Una copia de seguridad",
+        "Una huella que permite detectar cambios en el contenido"
+      ],
+      "correct": "d",
+      "justification": "El hash detecta alteraciones; no cifra ni sustituye la firma."
+    },
+    {
+      "stem": "¿Qué algoritmo hash está obsoleto para seguridad?",
+      "options": [
+        "MD5",
+        "SHA-256",
+        "SHA-3",
+        "Argon2"
+      ],
+      "correct": "a",
+      "justification": "MD5 y SHA-1 tienen colisiones conocidas y no deben usarse para seguridad; SHA-256/SHA-3 son actuales."
+    },
+    {
+      "stem": "¿Qué es un certificado digital?",
+      "options": [
+        "Una contraseña cifrada",
+        "Un documento que vincula una clave pública con una identidad y lo emite una CA",
+        "Un algoritmo de compresión",
+        "Una copia de la clave privada"
+      ],
+      "correct": "b",
+      "justification": "El certificado lo emite una autoridad de certificación y permite verificar la identidad asociada a la clave pública."
+    },
+    {
+      "stem": "¿Qué garantiza TLS?",
+      "options": [
+        "Que no haya malware en el servidor",
+        "Que el sitio sea legalmente fiable",
+        "Confidencialidad e integridad de la conexión y autenticación del servidor",
+        "Que el usuario esté autenticado siempre"
+      ],
+      "correct": "c",
+      "justification": "TLS cifra e integra la comunicación y autentica el servidor con su certificado; no garantiza la honestidad del sitio."
+    },
+    {
+      "stem": "¿Qué tipo de firma tiene el equivalente legal de la firma manuscrita en los términos de la ley?",
+      "options": [
+        "Cualquier firma escaneada",
+        "La firma simple",
+        "La firma avanzada",
+        "La firma electrónica cualificada"
+      ],
+      "correct": "d",
+      "justification": "La Ley 6/2020 distingue simple, avanzada y cualificada; la cualificada tiene el equivalente legal de la manuscrita en los términos previstos."
+    },
+    {
+      "stem": "¿Para qué sirve un sellado de tiempo?",
+      "options": [
+        "Para fijar el momento en que se firmó o existió un documento",
+        "Para cifrar el documento",
+        "Para comprimir el archivo",
+        "Para renovar el certificado"
+      ],
+      "correct": "a",
+      "justification": "El sello de tiempo aporta evidencia temporal y complementa la firma."
+    },
+    {
+      "stem": "¿Qué diferencia hay entre cifrar y firmar?",
+      "options": [
+        "Son lo mismo",
+        "Cifrar oculta el contenido; firmar autentica e integra",
+        "Firmar oculta el contenido",
+        "Cifrar autentica al firmante"
+      ],
+      "correct": "b",
+      "justification": "El cifrado protege la confidencialidad; la firma acredita autoría e integridad. Son objetivos distintos."
+    },
+    {
+      "stem": "¿Qué debe hacerse con la clave privada?",
+      "options": [
+        "Guardarla en el repositorio",
+        "Publicarla para que todos la usen",
+        "Protegerla y no compartirla ni incluirla en el código",
+        "Enviarla por correo sin cifrar"
+      ],
+      "correct": "c",
+      "justification": "La clave privada es el secreto del firmante; su filtración rompe la autenticidad y la confianza."
+    },
+    {
+      "stem": "¿Qué propiedad de la seguridad garantiza que solo las personas autorizadas accedan a la información?",
+      "options": [
+        "Integridad",
+        "Trazabilidad",
+        "Disponibilidad",
+        "Confidencialidad"
+      ],
+      "correct": "d",
+      "justification": "La confidencialidad limita el acceso a las personas y sistemas autorizados. La integridad protege la exactitud y la disponibilidad garantiza el acceso cuando se necesita."
+    },
+    {
+      "stem": "En el análisis de riesgos, el nivel de riesgo se obtiene normalmente:",
+      "options": [
+        "Multiplicando probabilidad por impacto",
+        "Dividiendo el impacto entre las salvaguardas",
+        "Sumando amenaza y vulnerabilidad",
+        "Restando el riesgo residual al riesgo inicial"
+      ],
+      "correct": "a",
+      "justification": "El riesgo se estima combinando la probabilidad de que la amenaza aproveche una vulnerabilidad con el impacto o daño que causaría."
+    },
+    {
+      "stem": "¿Qué es el riesgo residual?",
+      "options": [
+        "El riesgo antes de aplicar salvaguardas",
+        "El riesgo que queda después de aplicar las salvaguardas",
+        "La suma de todas las amenazas identificadas",
+        "El riesgo que asume el proveedor externo"
+      ],
+      "correct": "b",
+      "justification": "Tras aplicar las salvaguardas queda un riesgo residual, que la dirección debe aceptar de forma consciente y documentada."
+    },
+    {
+      "stem": "¿Qué norma especifica los requisitos de un sistema de gestión de la seguridad de la información?",
+      "options": [
+        "MAGERIT",
+        "ISO/IEC 27002",
+        "ISO/IEC 27001",
+        "ISO/IEC 20000-1"
+      ],
+      "correct": "c",
+      "justification": "ISO/IEC 27001 contiene los requisitos del SGSI y es certificable. ISO/IEC 27002 es una guía de controles, MAGERIT una metodología de riesgos y 20000-1 se refiere a gestión de servicios."
+    },
+    {
+      "stem": "¿Qué contiene el Anexo A de ISO/IEC 27001?",
+      "options": [
+        "La plantilla de la declaración de aplicabilidad",
+        "El catálogo de activos de la organización",
+        "El procedimiento de auditoría interna",
+        "El catálogo de controles de referencia agrupados por temas"
+      ],
+      "correct": "d",
+      "justification": "El Anexo A recoge los controles de referencia agrupados en cuatro temas: organizativos, de personas, físicos y tecnológicos."
+    },
+    {
+      "stem": "En MAGERIT, ¿cómo se denomina una causa potencial de daño sobre un activo?",
+      "options": [
+        "Amenaza",
+        "Salvaguarda",
+        "Activo",
+        "Vulnerabilidad"
+      ],
+      "correct": "a",
+      "justification": "La amenaza es la causa potencial de daño; la vulnerabilidad es la debilidad que puede ser aprovechada y la salvaguarda la medida que reduce el riesgo."
+    },
+    {
+      "stem": "¿Qué opción de tratamiento del riesgo consiste en contratar un ciberseguro?",
+      "options": [
+        "Mitigar",
+        "Transferir",
+        "Aceptar",
+        "Evitar"
+      ],
+      "correct": "b",
+      "justification": "Transferir el riesgo consiste en trasladar total o parcialmente las consecuencias a un tercero, por ejemplo mediante un seguro o un contrato con garantías."
+    },
+    {
+      "stem": "Si un atacante modifica una factura sin ser detectado, ¿qué propiedad de la seguridad se ha vulnerado?",
+      "options": [
+        "Disponibilidad",
+        "Confidencialidad",
+        "Integridad",
+        "Autenticidad del usuario"
+      ],
+      "correct": "c",
+      "justification": "La integridad garantiza que la información es exacta y no se modifica sin control; una alteración no detectada es un fallo de integridad."
+    },
+    {
+      "stem": "¿Cuál de estas medidas es un control organizativo?",
+      "options": [
+        "El cortafuegos perimetral",
+        "El antivirus del puesto de trabajo",
+        "El cifrado del disco duro",
+        "La política de seguridad aprobada por la dirección"
+      ],
+      "correct": "d",
+      "justification": "La política de seguridad es un control organizativo; el cortafuegos, el antivirus y el cifrado son controles técnicos."
+    },
+    {
+      "stem": "¿Qué es ISO/IEC 27002?",
+      "options": [
+        "Una guía de buenas prácticas que detalla los controles",
+        "La metodología española de análisis de riesgos",
+        "El reglamento europeo de protección de datos",
+        "La norma certificable de requisitos del SGSI"
+      ],
+      "correct": "a",
+      "justification": "ISO/IEC 27002 es una guía de buenas prácticas que desarrolla y explica los controles; la norma certificable de requisitos es ISO/IEC 27001."
+    }
+  ]
+}

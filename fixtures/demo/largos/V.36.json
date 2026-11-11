@@ -1,0 +1,260 @@
+{
+  "tema": "V.36",
+  "title": "Criptografía y firma electrónica",
+  "difficulty": "media",
+  "topics": ["V.36", "V.34"],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema:** V.36, «Criptografía y firma electrónica», del bloque V (Seguridad y administración electrónica) del temario común de informática C1. **Materias que cubre:** criptografía simétrica y asimétrica, funciones hash, firma digital, certificados X.509, infraestructura de clave pública (PKI), revocación y validación de certificados, y TLS/HTTPS. **Relación con otros temas:** se apoya en V.34 (seguridad de la información) y sirve de base a V.39 (administración electrónica práctica) y a los servicios de identificación y firma. **Fuentes:** `Tema 14.docx` y `Bloque 4 Actualizado 2026.docx`, volcados en `data/fuentes/V.36.txt`.\n\n**Limitación de la fuente:** el volcado de V.36 desarrolla la criptografía, los certificados, la PKI y TLS, pero no contiene apartados específicos sobre el **sellado de tiempo** ni sobre el **DNI electrónico**, y tampoco el marco legal de la firma electrónica (Ley 59/2003 o eIDAS). Para no inventar, el tema no incluye esas materias y se limita a los contenidos que sí documenta la fuente.",
+      "table": {
+        "columns": ["Dato de la ficha", "Valor"],
+        "rows": [
+          ["Tema", "V.36 Criptografía y firma electrónica"],
+          ["Bloque", "V · Seguridad y administración electrónica"],
+          ["Materias", "Simétrica, asimétrica, hash, firma digital, X.509, PKI, CRL/OCSP y TLS"],
+          ["Temas relacionados", "V.34 Seguridad de la información; V.39 Administración electrónica"],
+          ["Fuente", "Tema 14.docx y Bloque 4 Actualizado 2026.docx"]
+        ]
+      }
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El desarrollo del tema se organiza en los epígrafes del apartado 4:\n\n- **4.1.** La criptografía simétrica.\n- **4.2.** La criptografía asimétrica o de clave pública.\n- **4.3.** Las funciones hash y la integridad.\n- **4.4.** La firma digital.\n- **4.5.** Los certificados digitales X.509.\n- **4.6.** La infraestructura de clave pública (PKI).\n- **4.7.** TLS y HTTPS.\n- **4.8.** Buenas prácticas y errores frecuentes.\n\nCompletan el tema la tabla comparativa (apartado 5), el ejemplo práctico (6), las trampas de examen (7), el resumen para memorizar (8), los quince casos tipo test (9) y las fuentes citadas (10)."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "La criptografía es la técnica que permite proteger la información mediante algoritmos de cifrado: transforma un texto inteligible en otro ininteligible para quien no posee la clave. En las redes de comunicaciones proporciona las propiedades básicas de la seguridad: **confidencialidad**, **integridad**, **autenticación** y **no repudio**.\n\nEl tema se organiza en tres capas. Primero, los algoritmos: la criptografía **simétrica**, rápida y adecuada para cifrar grandes volúmenes, y la **asimétrica**, que resuelve el intercambio de claves y la firma. Segundo, los mecanismos de integridad y autenticación: las **funciones hash**, la **firma digital** y los **certificados**. Tercero, la infraestructura que hace todo eso utilizable a escala: la **PKI**, con sus autoridades de certificación y registro, las listas de revocación y los protocolos de validación, y **TLS**, que protege las comunicaciones web y de correo.\n\nEn la Administración, esta cadena es la base de la identificación y la firma electrónica: sin certificados válidos y sin mecanismos de revocación no se puede confiar en un documento firmado.",
+      "table": {
+        "columns": ["Fuente", "Qué aporta"],
+        "rows": [
+          ["Tema 14.docx", "Criptografía simétrica y asimétrica, hash, firma digital, certificados X.509 y PKI"],
+          ["Bloque 4 Actualizado 2026.docx", "Criptografía asimétrica y simétrica, algoritmos, TLS y protocolos seguros"]
+        ]
+      }
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1. Criptografía simétrica.** Utiliza una **misma clave secreta** para cifrar y descifrar. Exige dos condiciones: que el algoritmo sea robusto (quien intercepte el mensaje no debe poder descifrarlo ni obtener la clave) y que la selección, el envío, el almacenamiento y el uso de la clave sean seguros. Los cifradores de **bloque** dividen el mensaje en bloques del mismo tamaño y los cifran con la misma clave. Los algoritmos principales son **DES** (bloques de 64 bits y clave de 56 bits), **3DES** (tres claves y tres ejecuciones, con clave efectiva de 168 bits y bloques de 64 bits) y **AES** (claves de 128, 192 o 256 bits y bloques de 128 bits). Su ventaja es la rapidez; su problema, la distribución segura de la clave.\n\n**4.2. Criptografía asimétrica o de clave pública.** Usa dos claves relacionadas: una **pública**, que se comparte, y una **privada**, que se mantiene en secreto. Lo cifrado con una se descifra con la otra, y los algoritmos se apoyan en problemas matemáticos difíciles. Se emplea para cifrar y descifrar mensajes, para intercambiar claves de sesión y para firmar digitalmente. Las familias principales son las basadas en la **factorización entera** (RSA, RW), en el **logaritmo discreto** (Diffie-Hellman) y en el **logaritmo elíptico** (DHE, DSAE, MQV y las variantes de curva elíptica). Es más lenta que la simétrica, por lo que en la práctica se combina: la asimétrica intercambia una clave de sesión y la simétrica cifra el grueso de los datos.\n\n**4.3. Funciones hash.** Una función hash toma datos de cualquier tamaño y devuelve una **huella** o resumen de tamaño fijo. Debe cumplir: salida de tamaño fijo, cálculo relativamente fácil, resistencia fuerte a colisiones (dos mensajes distintos no deben producir el mismo resumen), imposibilidad computacional de generar un mensaje con un resumen determinado y **unidireccionalidad** (no se puede recuperar la entrada desde el resumen). Proporcionan integridad: si el mensaje cambia, el resumen cambia. **MD5** procesa bloques de 512 bits y produce 128 bits; **SHA-1** procesa bloques de 512 bits y produce 160 bits; SHA-2 y SHA-3 son las alternativas más fuertes actuales.\n\n**4.4. La firma digital.** Es una transformación criptográfica que se añade a los datos y permite al receptor comprobar el emisor y la integridad del mensaje. Se basa en la criptografía de clave pública: para firmar se emplea la clave privada del firmante, mientras que la comprobación se realiza con su clave pública. Aporta **autenticación del origen**, **integridad** de los datos y **no repudio** en origen: el firmante no puede negar haber firmado. No es lo mismo que cifrar: firmar no oculta el contenido, lo autentica.\n\n**4.5. Certificados digitales X.509.** Un certificado digital es un documento que vincula una **clave pública** con una entidad (persona, organización o dispositivo). Para confiar en una clave pública sin conocer personalmente al titular se acude a una **tercera parte de confianza** (TTP) y, en concreto, a una **Autoridad de Certificación (AC)** que firma el certificado. El estándar **X.509** del ITU-T fija el formato: **version** (1, 2 o 3), **serialNumber** (único por AC), **signature** (algoritmo de firma), **issuer** (AC que lo firmó), **validity** (periodo de validez), **subject** (entidad asociada a la clave), **subjectPublicKeyInfo** (clave pública y algoritmo), identificadores únicos opcionales, **extensions** y la firma de la AC, que contiene el hash de los campos anteriores cifrado con su clave privada. X.509 es la base de SSL, TLS y S/MIME.\n\n**4.6. La infraestructura de clave pública (PKI).** Es el conjunto de componentes y políticas necesarios para crear, gestionar y revocar certificados digitales. Tiene cinco actores: **Autoridades de Certificación (CA)**, que emiten y revocan certificados; **Autoridades de Registro (RA)**, que verifican la identidad del solicitante; los **suscriptores** o usuarios certificados; los **clientes**, que comprueban la validez del certificado; y el **repositorio**, donde se almacenan los certificados. Sus funciones son la obtención, la **revocación** y la **validación**. La obtención se inicia con la solicitud a la RA, que verifica la identidad y pide la expedición a la CA, que almacena el certificado en el repositorio. La revocación anula la vigencia cuando hay sospecha de compromiso: la CA publica el certificado en una **CRL** (Lista de Certificados Revocados). La validación puede hacerse consultando las CRL, mediante **OCSP** (consulta en línea del estado del certificado) o delegando en un servidor **SCVP**.\n\n**4.7. TLS y HTTPS.** SSL y TLS son capas criptográficas que protegen las comunicaciones entre equipos. **SSL está obsoleto** (SSL 2.0 y 3.0 son inseguros) y **TLS es el estándar actual**, aunque se siga hablando de «SSL». TLS aporta cifrado (confidencialidad), integridad, autenticación del servidor (y opcionalmente del cliente) y protección frente a ataques de intermediario. Se usa en **HTTPS** (HTTP sobre TLS, puerto 443; HTTP sin cifrar usa el 80), en el correo (SMTP sobre TLS, IMAPS, POP3S y FTPS) y en DNS sobre TLS (DoT). En HTTPS el servidor presenta un certificado que el cliente valida contra las autoridades de confianza y contra el nombre del servidor.\n\n**4.8. Buenas prácticas y errores frecuentes.** La seguridad de la cadena depende de la gestión de claves: custodiar la clave privada, no reutilizarla y revocar el certificado si se compromete. Un certificado caducado, revocado o emitido a nombre de otro dominio debe rechazarse. No hay que confundir hash con cifrado (el hash no se descifra) ni firma con cifrado (la firma no oculta el mensaje). Tampoco debe usarse criptografía obsoleta (DES, MD5, SHA-1 o SSL) para nuevas implantaciones. En la práctica administrativa, la firma electrónica exige además comprobar la vigencia del certificado y el sello de tiempo, materias que el volcado de este tema no desarrolla.",
+      "table": {
+        "columns": ["Epígrafe", "Datos que hay que retener"],
+        "rows": [
+          ["Simétrica", "Una clave; DES (64/56), 3DES (clave efectiva 168) y AES (128, 192 o 256; bloque 128)"],
+          ["Asimétrica", "Clave pública y privada; RSA (factorización), Diffie-Hellman (logaritmo discreto), curvas elípticas"],
+          ["Hash", "Salida fija, unidireccional, resistente a colisiones; MD5 128 bits y SHA-1 160 bits"],
+          ["Firma digital", "Firma con clave privada, verifica con la pública; autenticación, integridad y no repudio"],
+          ["X.509", "version, serialNumber, signature, issuer, validity, subject, subjectPublicKeyInfo, extensions"],
+          ["PKI", "CA, RA, suscriptores, clientes y repositorio; obtención, revocación (CRL) y validación (OCSP)"],
+          ["TLS", "SSL obsoleto; TLS actual; HTTPS en 443; confidencialidad, integridad y autenticación"]
+        ]
+      }
+    },
+    {
+      "heading": "5. Tabla comparativa: criptografía simétrica y asimétrica",
+      "body": "La tabla resume la diferencia que más se pregunta: la simétrica usa una clave y es rápida; la asimétrica usa dos claves y resuelve el intercambio y la firma, pero es más lenta.",
+      "table": {
+        "columns": ["Aspecto", "Criptografía simétrica", "Criptografía asimétrica"],
+        "rows": [
+          ["Claves", "Una clave secreta compartida", "Par de claves: pública y privada"],
+          ["Velocidad", "Rápida y eficiente", "Más lenta"],
+          ["Uso principal", "Cifrar grandes volúmenes de datos", "Intercambiar claves, cifrar y firmar"],
+          ["Distribución", "Requiere un canal seguro para compartir la clave", "La clave pública se distribuye abiertamente"],
+          ["Ejemplos", "DES, 3DES, AES, RC4, Blowfish", "RSA, DSA, Diffie-Hellman, ECDSA"],
+          ["Firma digital", "No proporciona firma por sí sola", "Permite firmar y verificar"]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un organismo quiere que sus empleados firmen electrónicamente documentos y que la sede electrónica use HTTPS. El responsable de sistemas debe explicar qué hay detrás de la firma y del candado del navegador.\n\n**Resolución.**\n\n- **Cifrado de la sesión:** cuando el navegador conecta con la sede por **HTTPS** (443), se negocia **TLS**. Para ello se usa criptografía **asimétrica** en el intercambio de claves y **simétrica** para cifrar el grueso de la comunicación, porque es mucho más rápida.\n- **Certificado del servidor:** el servidor presenta un certificado **X.509** firmado por una **Autoridad de Certificación**. El navegador comprueba la cadena de confianza, el nombre del dominio y el periodo de validez; si el certificado está caducado o revocado, muestra un aviso.\n- **Firma del documento:** el empleado dispone de un certificado con su clave pública y su clave privada. Al firmar, se calcula el **hash** del documento y se firma ese resumen con la **clave privada**; el receptor calcula el hash y verifica la firma con la **clave pública** del firmante. Así se comprueba que el documento no ha cambiado y quién lo firmó, y se obtiene **no repudio**.\n- **Revocación:** si el empleado pierde el soporte donde guarda su clave privada, se solicita la **revocación** del certificado; la AC lo publica en la **CRL** y los validadores lo rechazan aunque el documento se hubiera firmado antes de la pérdida.\n\n**Conclusión.** La firma electrónica es una cadena: hash, clave privada, certificado, cadena de confianza y validación del estado. Si falla un eslabón, la firma no es fiable.",
+      "table": {
+        "columns": ["Necesidad", "Mecanismo", "Dato clave"],
+        "rows": [
+          ["Proteger la web", "HTTPS con TLS", "Puerto 443 y certificado del servidor"],
+          ["Comprobar el certificado", "PKI y X.509", "CA, validez y revocación"],
+          ["Firmar un documento", "Firma digital", "Hash firmado con la clave privada"],
+          ["Verificar la firma", "Clave pública del firmante", "Integridad, autenticación y no repudio"]
+        ]
+      }
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "Las confusiones más frecuentes de este tema son estas:\n\n- **Confundir cifrado simétrico y asimétrico**: la simétrica usa una clave y es rápida; la asimétrica usa dos claves y es más lenta.\n- **Confundir hash con cifrado**: el hash no se descifra; es una huella unidireccional que sirve para integridad.\n- **Confundir firma con cifrado**: firmar no oculta el contenido; para firmar se usa la clave privada del emisor y para comprobarlo, su clave pública.\n- **Confundir las claves en la firma**: para firmar se usa la clave privada y para comprobar la firma, la pública; en el cifrado, la pública cifra y la privada descifra.\n- **Confundir CA y RA**: la CA emite y revoca certificados; la RA verifica la identidad del solicitante.\n- **Confundir CRL y OCSP**: la CRL es una lista publicada; OCSP es una consulta en línea del estado del certificado.\n- **Creer que SSL es lo actual**: SSL está obsoleto; el estándar actual es TLS.\n- **Confundir los tamaños**: DES usa bloque de 64 y clave de 56 bits; 3DES tiene clave efectiva de 168; AES admite 128, 192 y 256 bits con bloque de 128.\n- **Confundir MD5 y SHA-1**: MD5 produce 128 bits y SHA-1 160 bits; ambos se consideran débiles frente a SHA-2 y SHA-3.",
+      "table": {
+        "columns": ["Confusión", "Lo correcto"],
+        "rows": [
+          ["Hash = cifrado", "El hash no se descifra; es un resumen unidireccional"],
+          ["Firma = cifrado", "Firmar autentica e integra; no oculta el contenido"],
+          ["CA = RA", "La CA emite/revoca; la RA verifica la identidad"],
+          ["SSL = actual", "SSL está obsoleto; TLS es el estándar"]
+        ]
+      }
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Simétrica.** Una clave secreta; cifradores de bloque; DES (64 bits de bloque y 56 de clave), 3DES (clave efectiva 168) y AES (128, 192 y 256 bits; bloque 128). Rápida, pero exige distribuir la clave de forma segura.\n\n**Asimétrica.** Clave pública y privada; RSA y RW (factorización), Diffie-Hellman (logaritmo discreto), curvas elípticas (DHE, DSAE, MQV). Usos: cifrar, intercambiar claves y firmar.\n\n**Hash.** Salida de tamaño fijo, fácil de calcular, resistente a colisiones, unidireccional; MD5 128 bits, SHA-1 160 bits, SHA-2 y SHA-3.\n\n**Firma digital.** Autenticación del origen, integridad y no repudio; firma con clave privada y verifica con clave pública.\n\n**Certificado X.509.** Vincula una clave pública a una entidad; campos: version, serialNumber, signature, issuer, validity, subject, subjectPublicKeyInfo, extensions y firma de la CA.\n\n**PKI.** CA, RA, suscriptores, clientes y repositorio; obtención, revocación (CRL) y validación (OCSP o SCVP).\n\n**TLS.** SSL obsoleto; TLS actual; HTTPS en 443; confidencialidad, integridad y autenticación; también en SMTP, IMAP, POP3, FTP y DNS."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos siguientes reproducen el estilo de pregunta del bloque V. Cada uno incluye la respuesta correcta y una explicación que recuerda el dato del temario; la referencia indica el epígrafe y la fuente donde está el contenido. Conviene contestarlos sin mirar la solución y revisar después solo los fallos."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "El tema se ha redactado a partir de `data/fuentes/V.36.txt`, que reúne el volcado de `Tema 14.docx` (criptografía, certificados, PKI y TLS) y de `Bloque 4 Actualizado 2026.docx` (criptografía simétrica y asimétrica, algoritmos y protocolos seguros). Las citas por apartado aparecen en la lista `sources` y en la referencia de cada caso tipo test. No se han copiado párrafos literales y no se han añadido datos que no figuren en esas fuentes; en particular, el volcado no desarrolla el sellado de tiempo, el DNI electrónico ni el marco legal de la firma electrónica, por lo que no se incluyen contenidos de esas materias."
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Qué tamaño de bloque y de clave utiliza DES?",
+      "options": ["Bloque de 64 bits y clave de 56 bits", "Bloque de 128 bits y clave de 128 bits", "Bloque de 64 bits y clave de 168 bits", "Bloque de 128 bits y clave de 256 bits"],
+      "answer": "a",
+      "explanation": "DES cifra bloques de 64 bits con una clave secreta de 56 bits. 3DES amplía la clave efectiva a 168 bits y AES usa bloques de 128 bits con claves de 128, 192 o 256.",
+      "reference": "Apdo. 4.1 · Tema 14.docx, cifrado simétrico"
+    },
+    {
+      "question": "¿Cuál es el tamaño efectivo de la clave en 3DES?",
+      "options": ["56 bits", "112 bits", "168 bits", "256 bits"],
+      "answer": "c",
+      "explanation": "3DES utiliza tres claves y tres ejecuciones del algoritmo, por lo que su clave efectiva pasa a ser de 168 bits, manteniendo bloques de 64 bits.",
+      "reference": "Apdo. 4.1 · Tema 14.docx, 3DES"
+    },
+    {
+      "question": "¿Qué longitudes de clave admite AES?",
+      "options": ["Solo 128 bits", "128, 192 y 256 bits", "56, 112 y 168 bits", "256 y 512 bits"],
+      "answer": "b",
+      "explanation": "AES admite claves de 128, 192 y 256 bits, con una longitud de bloque de 128 bits. Las longitudes de 56 y 168 corresponden a DES y 3DES.",
+      "reference": "Apdo. 4.1 · Tema 14.docx, AES"
+    },
+    {
+      "question": "En la criptografía asimétrica, ¿con qué clave se firma un mensaje?",
+      "options": ["Con la clave pública del emisor", "Con la clave pública del receptor", "Con la clave privada del receptor", "Con la clave privada del emisor"],
+      "answer": "d",
+      "explanation": "El emisor firma con su clave privada y el receptor verifica con la clave pública del emisor. Así se acredita la identidad del firmante y la integridad del mensaje.",
+      "reference": "Apdo. 4.2 y 4.4 · Bloque 4, criptografía asimétrica"
+    },
+    {
+      "question": "¿En qué problema matemático basa su seguridad RSA?",
+      "options": ["La factorización de números enteros", "El logaritmo discreto", "El logaritmo elíptico", "La resistencia a colisiones"],
+      "answer": "a",
+      "explanation": "RSA y RW se apoyan en la dificultad de factorizar números enteros. Diffie-Hellman se basa en el logaritmo discreto y las curvas elípticas en el logaritmo elíptico.",
+      "reference": "Apdo. 4.2 · Tema 14.docx, familias de criptografía pública"
+    },
+    {
+      "question": "¿Cuál de estas propiedades NO es propia de una función hash criptográfica?",
+      "options": ["Salida de tamaño fijo", "Unidireccionalidad", "Resistencia a colisiones", "Reversibilidad para recuperar la entrada"],
+      "answer": "d",
+      "explanation": "Una función hash es unidireccional: no se puede recuperar la entrada a partir del resumen. Debe producir una salida de tamaño fijo, ser fácil de calcular y resistente a colisiones.",
+      "reference": "Apdo. 4.3 · Tema 14.docx, funciones hash"
+    },
+    {
+      "question": "¿Qué tamaño tiene el resumen que produce MD5 y en qué bloques procesa la entrada?",
+      "options": ["128 bits y bloques de 512 bits", "160 bits y bloques de 512 bits", "128 bits y bloques de 128 bits", "160 bits y bloques de 1024 bits"],
+      "answer": "a",
+      "explanation": "MD5 procesa la entrada en bloques de 512 bits y produce un resumen de 128 bits. SHA-1 produce 160 bits y también procesa bloques de 512 bits.",
+      "reference": "Apdo. 4.3 · Tema 14.docx, MD5"
+    },
+    {
+      "question": "¿Qué propiedades aporta la firma digital?",
+      "options": [
+        "Solo confidencialidad",
+        "Autenticación del origen, integridad y no repudio",
+        "Solo compresión del mensaje",
+        "Cifrado del mensaje y ocultación del remitente"
+      ],
+      "answer": "b",
+      "explanation": "La firma digital proporciona autenticación del origen e integridad de los datos y facilita el no repudio en origen. No oculta el contenido: para eso se cifra.",
+      "reference": "Apdo. 4.4 · Tema 14.docx, firma digital"
+    },
+    {
+      "question": "¿Qué vincula un certificado digital?",
+      "options": [
+        "Una clave pública con una entidad",
+        "Una clave privada con un algoritmo",
+        "Un hash con una contraseña",
+        "Un dominio con una dirección IP"
+      ],
+      "answer": "a",
+      "explanation": "El certificado digital vincula una clave pública a una entidad (usuario, organización o dispositivo) y está firmado por una autoridad de certificación en la que se confía.",
+      "reference": "Apdo. 4.5 · Tema 14.docx, certificados digitales"
+    },
+    {
+      "question": "En un certificado X.509, ¿qué indica el campo issuer?",
+      "options": [
+        "El nombre del titular de la clave",
+        "El algoritmo de la firma",
+        "La autoridad de certificación que firmó el certificado",
+        "El periodo de validez"
+      ],
+      "answer": "c",
+      "explanation": "issuer identifica a la autoridad de certificación que emitió y firmó el certificado. subject es el titular, signature el algoritmo y validity el periodo de validez.",
+      "reference": "Apdo. 4.5 · Tema 14.docx, formato X.509"
+    },
+    {
+      "question": "En una PKI, ¿qué actor verifica la identidad del solicitante antes de que se emita el certificado?",
+      "options": ["La autoridad de certificación", "La autoridad de registro", "El repositorio", "El cliente"],
+      "answer": "b",
+      "explanation": "La Autoridad de Registro (RA) verifica la unión entre la clave pública y la identidad del solicitante; después pide a la Autoridad de Certificación (CA) que expida el certificado y la CA lo almacena en el repositorio.",
+      "reference": "Apdo. 4.6 · Tema 14.docx, actores de la PKI"
+    },
+    {
+      "question": "¿Qué es una CRL?",
+      "options": [
+        "Un protocolo en línea para consultar el estado de un certificado",
+        "Una lista de certificados revocados publicada por la autoridad de certificación",
+        "Un tipo de certificado X.509",
+        "Un algoritmo de firma digital"
+      ],
+      "answer": "b",
+      "explanation": "La CRL (Lista de Certificados Revocados) es la lista que publica la autoridad de certificación con los certificados que han perdido su vigencia. OCSP es el protocolo en línea de consulta del estado.",
+      "reference": "Apdo. 4.6 · Tema 14.docx, revocación de certificados"
+    },
+    {
+      "question": "¿Qué protocolo permite consultar en línea si un certificado está válido, revocado o desconocido?",
+      "options": ["CRL", "OCSP", "X.509", "AES"],
+      "answer": "b",
+      "explanation": "OCSP (Online Certificate Status Protocol) permite consultar en línea el estado de un certificado. La CRL es una lista publicada y X.509 es el formato del certificado.",
+      "reference": "Apdo. 4.6 · Tema 14.docx, validación de certificados"
+    },
+    {
+      "question": "¿Qué relación hay entre SSL y TLS?",
+      "options": [
+        "Son el mismo protocolo con dos nombres",
+        "SSL es el estándar actual y TLS el antiguo",
+        "SSL está obsoleto y TLS es su evolución y el estándar actual",
+        "TLS solo se usa en correo y SSL solo en web"
+      ],
+      "answer": "c",
+      "explanation": "SSL (2.0 y 3.0) está obsoleto por sus problemas de seguridad; TLS es su evolución y el estándar actual, aunque coloquialmente se siga diciendo «SSL».",
+      "reference": "Apdo. 4.7 · Bloque 4 Actualizado 2026.docx, TLS"
+    },
+    {
+      "question": "¿Qué puerto usa HTTPS y qué aporta frente a HTTP?",
+      "options": [
+        "80 y autenticación sin cifrado",
+        "443 y cifrado con TLS",
+        "8080 y compresión",
+        "443 y solo redirección"
+      ],
+      "answer": "b",
+      "explanation": "HTTPS es HTTP sobre TLS y usa el puerto 443; aporta confidencialidad, integridad y autenticación del servidor mediante certificados. HTTP usa el 80 y no cifra.",
+      "reference": "Apdo. 4.7 · Bloque 4 Actualizado 2026.docx, HTTP y HTTPS"
+    }
+  ],
+  "sources": [
+    {
+      "file": "data/fuentes/V.36.txt",
+      "page": "líneas 1-323 (Tema 14), 324-397 (Tema 8) y 398-1473 (Bloque 4)",
+      "use": "texto consolidado del que se extrajeron los datos; las citas concretas se detallan en las entradas siguientes"
+    },
+    {
+      "file": "Tema 14.docx",
+      "page": "DOCX, apartados de criptografía, integridad, autenticación, certificados y PKI",
+      "use": "cifrado simétrico y asimétrico, DES/3DES/AES, RSA/Diffie-Hellman, funciones hash, MD5/SHA, firma digital, certificados X.509, PKI, CRL y OCSP"
+    },
+    {
+      "file": "Bloque 4 Actualizado 2026.docx",
+      "page": "DOCX, apartados de criptografía y protocolos seguros (HTTP/HTTPS/TLS)",
+      "use": "algoritmos simétricos y asimétricos, HTTPS, TLS y puertos"
+    }
+  ]
+}

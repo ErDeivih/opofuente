@@ -1,0 +1,279 @@
+{
+  "tema": "I.12",
+  "title": "Transparencia y protección de datos en la Administración",
+  "difficulty": "media",
+  "topics": [
+    "I.12",
+    "V.37"
+  ],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema I.12 · Transparencia y protección de datos en la Administración.** Bloque I (Administración y normativa) del temario común de Técnicos Auxiliares de Informática. Se relaciona con el tema V.37 (protección de datos aplicada), que estudia el RGPD y la LOPDGDD desde la perspectiva de la seguridad de la información.\n\n**Objetivo de examen.** Distinguir la Ley 19/2013 de transparencia del régimen de protección de datos, manejar sus normas y autoridades (Consejo de Transparencia y Buen Gobierno y Agencia Española de Protección de Datos), aplicar los límites del derecho de acceso y el artículo 15 de la Ley 19/2013, y conocer los derechos y garantías básicos del RGPD y la LOPDGDD. Dificultad **media**: es materia muy literal y los artículos se confunden con facilidad.\n\n**Fuentes de este tema.** El consolidado data/fuentes/I.12.txt, cuyo contenido jurídico procede de Bloque 1 Actualizado 2026.docx (Constitución, TREBEP, Ley 19/2013, LOPDGDD y RGPD). El PDF Tema 4.2. Aspectos Legales.pdf no tiene texto extraíble y no se cita como leído. (Fuente: data/fuentes/I.12.txt.)"
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "Este tema se ordena en diez apartados:\n\n1. Ficha oficial del tema: ubicación, objetivo, dificultad y fuentes.\n2. Índice de epígrafes: el mapa que está leyendo.\n3. Introducción y contexto: dos derechos que se cruzan.\n4. Desarrollo por epígrafe: Ley 19/2013, publicidad activa, derecho de acceso, límites, artículo 15, Consejo de Transparencia, LOPDGDD y RGPD, DPD, AEPD y derechos digitales.\n5. Tabla comparativa: transparencia frente a protección de datos.\n6. Ejemplo práctico resuelto.\n7. Trampas típicas de examen.\n8. Resumen para memorizar.\n9. Casos tipo test comentados (15 preguntas).\n10. Fuentes citadas.\n\nLos epígrafes oficiales (Ley 19/2013, publicidad activa, derecho de acceso, límites, reclamación, protección de datos y DPO) se cubren en el apartado 4; los casos del apartado 9 coinciden con los quince testCases del fichero. (Fuente: data/fuentes/I.12.txt.)"
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "**Transparencia** y **protección de datos** son dos derechos que tiran en direcciones distintas y a la vez se necesitan. La transparencia busca que la ciudadanía conozca cómo actúan las administraciones; la protección de datos busca que la información personal no se use ni se difunda sin control. El ordenamiento español los regula con dos normas que conviene no mezclar: la **Ley 19/2013**, sobre transparencia y derecho de acceso a la información pública, y el **RGPD** (Reglamento UE 2016/679), aplicable directamente, desarrollado en España por la **LOPDGDD** (LO 3/2018).\n\nLa Ley 19/2013 desarrolla la previsión constitucional del artículo 105.b) sobre consulta de archivos y registros públicos. Su artículo 12 formula el derecho de acceso a la información pública, pero no es un derecho absoluto: el artículo 14 fija límites y el artículo 15 protege los datos personales que aparezcan en la información solicitada.\n\nLa clave es identificar qué norma responde cada pregunta: si se pregunta por el portal, los límites o el Consejo de Transparencia, la respuesta está en la Ley 19/2013; si se pregunta por la edad del consentimiento, las categorías especiales o la portabilidad, la respuesta está en el RGPD y la LOPDGDD. (Fuentes: Bloque 1 Actualizado 2026.docx, apartados de la Ley 19/2013, LOPDGDD y RGPD; Constitución, artículo 105.b.)"
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**1) Ley 19/2013: estructura y ámbito.** La norma se ordena en un título I (publicidad activa y derecho de acceso), un título II (buen gobierno) y un título III (Consejo de Transparencia y Buen Gobierno). Su artículo 2 fija el ámbito subjetivo: las administraciones, la Seguridad Social, las entidades públicas, las sociedades con capital público del 50 %, las fundaciones, los partidos y las entidades privadas que reciban ayudas por encima de 100.000 euros o del 40 %, con el umbral mínimo de 5.000 euros que recoge la fuente. El artículo 10 crea el Portal de la Transparencia de la Administración General del Estado, dependiente del Ministerio de la Presidencia, y el artículo 11 fija los principios técnicos: accesibilidad, interoperabilidad y reutilización.\n\n**2) Publicidad activa.** Es la obligación de publicar información de oficio, sin que nadie la solicite: información institucional y organizativa, normativa, planificación, contratos, presupuestos y retribuciones, entre otras. La fuente no enumera los artículos que la regulan, pero identifica el capítulo II del título I como el bloque de obligaciones de publicidad y atribuye al Consejo de Transparencia la función de velar por su cumplimiento (artículo 38).\n\n**3) Derecho de acceso.** El artículo 12 reconoce a cualquier persona el derecho de acceso a la información pública conforme al artículo 105.b) de la Constitución. El artículo 17 regula la solicitud: se dirige al titular del órgano que posee la información (o a la Administración de la que dependa, si la posee un particular que presta servicios públicos), se presenta por cualquier medio que deje constancia de la identidad, la información pedida, una dirección de contacto preferentemente electrónica y la modalidad de acceso, y **no exige motivación** (aunque el solicitante puede exponer sus motivos y estos se valoran al resolver). Puede presentarse en las lenguas cooficiales del territorio. La fuente cita además el artículo 24 como cauce de reclamación ante el Consejo de Transparencia.\n\n**4) Límites del artículo 14.** El acceso puede limitarse cuando suponga un perjuicio para la seguridad nacional, la defensa, las relaciones exteriores, la seguridad pública, la prevención, investigación y sanción de ilícitos penales, administrativos o disciplinarios, la igualdad de las partes en el proceso y la tutela judicial efectiva, las funciones de vigilancia, inspección y control, los intereses económicos y comerciales, la política económica y monetaria, el secreto profesional y la propiedad intelectual e industrial, la confidencialidad o el secreto en la toma de decisiones y la protección del medio ambiente. Son límites tasados: no valen razones genéricas.\n\n**5) Artículo 15: datos personales y acceso.** Si la información contiene datos que revelan ideología, afiliación sindical, religión o creencias, el acceso solo se autoriza con **consentimiento expreso y por escrito** del afectado, salvo que los hubiera hecho manifiestamente públicos antes. Si contiene origen racial, salud, vida sexual, datos genéticos o biométricos o datos sobre infracciones penales o administrativas sin amonestación pública, se exige consentimiento expreso o una norma con rango de ley. Con carácter general se concede el acceso a datos meramente identificativos ligados a la organización, funcionamiento o actividad pública, siempre que no prevalezca la protección de datos u otros derechos constitucionales. Si no hay datos especialmente protegidos, el órgano pondera el interés público y los derechos de los afectados, considerando el transcurso de los plazos de la Ley 16/1985 del Patrimonio Histórico, la condición de investigador o el ejercicio de un derecho, el carácter meramente identificativo y la afectación a la intimidad, la seguridad o los menores. El apartado 4 permite el acceso si los datos se disocian de modo que no se identifique a las personas, y el apartado 5 somete el tratamiento posterior a la normativa de protección de datos.\n\n**6) Consejo de Transparencia y Buen Gobierno.** El artículo 34 fija sus fines: promover la transparencia, velar por las obligaciones de publicidad, salvaguardar el derecho de acceso y garantizar la observancia del buen gobierno. Se compone de la Comisión de Transparencia y Buen Gobierno y de su Presidente (artículo 35); la Comisión incluye al Presidente, un Diputado, un Senador, un representante del Tribunal de Cuentas, uno del Defensor del Pueblo, uno de la Agencia Española de Protección de Datos, uno de la Secretaría de Estado de Administraciones Públicas y uno de la Autoridad Independiente de Responsabilidad Fiscal (artículo 36). El Presidente se nombra por un periodo **no renovable de cinco años** mediante Real Decreto (artículo 37) y asume, entre otras, la función de conocer las reclamaciones del artículo 24 (artículo 38).\n\n**7) LOPDGDD y RGPD.** El RGPD es directamente aplicable y la LOPDGDD lo desarrolla. La LOPDGDD regula el deber de confidencialidad (artículo 5), el consentimiento como manifestación libre, específica, informada e inequívoca (artículo 6), la edad de **catorce años** para el consentimiento del menor (artículo 7), el tratamiento por obligación legal o interés público con norma con rango de ley (artículo 8), el ejercicio de derechos (artículo 12), el derecho de acceso mediante consulta remota, directa y segura (artículo 13), la rectificación (artículo 14) y las obligaciones y riesgos del responsable y encargado (artículo 28). En el RGPD destacan las condiciones del consentimiento y su retirada (artículo 7), el consentimiento del niño en servicios de la sociedad de la información (artículo 8: dieciséis años, aunque los Estados pueden fijar una edad inferior no menor de trece), las categorías especiales de datos y sus excepciones (artículo 9), la rectificación (artículo 16), la portabilidad (artículo 20) y las decisiones individuales automatizadas (artículo 22).\n\n**8) DPD y AEPD.** El **delegado de protección de datos (DPD/DPO)** asesora y supervisa el cumplimiento y sirve de enlace con la autoridad de control; la fuente no desarrolla su régimen, por lo que se resume como concepto estándar. La **Agencia Española de Protección de Datos (AEPD)** es la autoridad de control en España; la fuente la menciona al regular la composición de la Comisión del Consejo de Transparencia, no sus funciones.\n\n**9) Derechos digitales.** La LOPDGDD dedica su título X a los derechos digitales (artículos 79 a 89): libertades en Internet, neutralidad de Internet, acceso universal, seguridad digital, educación digital, protección de los menores, rectificación en Internet, intimidad en el uso de dispositivos digitales del trabajo, desconexión digital, videovigilancia y geolocalización laborales, derechos digitales en la negociación colectiva y protección de datos de los menores, derecho al olvido en buscadores y redes sociales, portabilidad en redes sociales y testamento digital.\n\n**10) Cómo se cruzan ambos regímenes.** La transparencia no autoriza a publicar cualquier dato personal: cuando la información contiene datos personales, se aplica el artículo 15 de la Ley 19/2013 y, para el tratamiento posterior, el RGPD y la LOPDGDD (artículo 15.5). La disociación, la ponderación y los límites del artículo 14 son las herramientas para conciliar interés público y derechos de las personas. (Fuentes: Bloque 1 Actualizado 2026.docx, apartados de la Ley 19/2013, LOPDGDD y RGPD; Constitución, artículo 105.b.)"
+    },
+    {
+      "heading": "5. Tabla comparativa: transparencia frente a protección de datos",
+      "body": "Resumen de las dos normas que conviven en este tema, con lo que aporta cada una. (Fuentes: Bloque 1 Actualizado 2026.docx, apartados de la Ley 19/2013, LOPDGDD y RGPD.)",
+      "table": {
+        "columns": [
+          "Aspecto",
+          "Ley 19/2013 (transparencia)",
+          "RGPD / LOPDGDD (protección de datos)"
+        ],
+        "rows": [
+          [
+            "Finalidad",
+            "Que se conozca la actividad pública y se acceda a la información",
+            "Proteger a las personas frente al tratamiento de sus datos"
+          ],
+          [
+            "Objeto principal",
+            "Información pública y buen gobierno",
+            "Datos personales y derechos del interesado"
+          ],
+          [
+            "Autoridad",
+            "Consejo de Transparencia y Buen Gobierno",
+            "Agencia Española de Protección de Datos"
+          ],
+          [
+            "Norma clave",
+            "Artículos 12, 14, 15, 17 y 34-38",
+            "RGPD (arts. 7, 8, 9, 16, 20, 22) y LOPDGDD (arts. 5-14 y 28)"
+          ],
+          [
+            "Límite típico",
+            "Los límites tasados del artículo 14",
+            "Los principios y bases jurídicas del tratamiento"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un ayuntamiento recibe una solicitud de acceso a la lista de personas beneficiarias de unas ayudas, con nombre, DNI y, en algunos casos, datos de salud. Se pregunta cómo debe resolverse y qué límites y garantías se aplican.\n\n**Resolución.**\n\n- **Norma aplicable:** Ley 19/2013. La solicitud se dirige al órgano que posee la información (artículo 17) y no es obligatorio motivarla.\n- **¿Hay datos personales?** Sí: nombres, DNI y datos de salud. Se aplica el artículo 15.\n- **Datos de salud:** son una categoría especialmente protegida; solo se autoriza el acceso con consentimiento expreso del afectado o si lo ampara una norma con rango de ley.\n- **Datos meramente identificativos:** con carácter general se concede el acceso a los datos identificativos ligados a la actividad pública, salvo que prevalezca la protección de datos u otros derechos; el órgano debe ponderar interés público y derechos de los afectados.\n- **Límites:** si el acceso perjudicara alguno de los supuestos del artículo 14 (por ejemplo, la investigación de ilícitos o la seguridad pública), podría limitarse.\n- **Disociación:** si se eliminan los datos que identifican a las personas, el apartado 4 del artículo 15 permite el acceso sin las cautelas anteriores.\n- **Después del acceso:** el tratamiento posterior de los datos obtenidos queda sujeto al RGPD y a la LOPDGDD (artículo 15.5).\n\n**Qué se aprende.** La transparencia no es un permiso para publicar datos personales: el artículo 15 obliga a distinguir datos especialmente protegidos, identificativos y disociados, y a ponderar el interés público con los derechos de las personas. (Fuentes: Bloque 1 Actualizado 2026.docx, apartados de la Ley 19/2013 y LOPDGDD.)"
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "- **Transparencia no es protección de datos.** La Ley 19/2013 regula el acceso a la información pública; el RGPD y la LOPDGDD protegen los datos personales.\n- **El derecho de acceso no es absoluto.** Tiene los límites del artículo 14 y las reglas del artículo 15.\n- **El artículo 14 no es el 15.** El 14 enumera los límites; el 15 regula los datos personales que aparecen en la información.\n- **No todos los datos personales tienen el mismo régimen.** Los especialmente protegidos (ideología, salud, etc.) exigen consentimiento expreso o norma con rango de ley; los meramente identificativos tienen otra regla.\n- **La disociación cambia el régimen.** Si no se puede identificar a las personas, no se aplican las cautelas del artículo 15.\n- **Catorce no es dieciséis.** La LOPDGDD fija catorce años para el consentimiento del menor; el RGPD fija dieciséis para los servicios de la sociedad de la información, con posibilidad de bajarlo a trece.\n- **El consentimiento no siempre es la base.** También lo son la obligación legal, el interés público o el ejercicio de poderes públicos (LOPDGDD, artículo 8).\n- **Responsable no es encargado.** El responsable decide el tratamiento; el encargado lo realiza por cuenta del responsable, y la fuente recuerda que el responsable tiene mayor jerarquía.\n- **El Consejo de Transparencia no es la AEPD.** El primero vela por la transparencia y el acceso; la segunda es la autoridad de control de protección de datos.\n- **Publicidad activa no es derecho de acceso.** La primera es una obligación de publicar de oficio; el segundo exige solicitud.\n- **La solicitud no necesita motivación.** La falta de motivación no es causa de rechazo (artículo 17).\n- **Cinco años y no renovable.** Es el mandato del Presidente del Consejo de Transparencia (artículo 37).\n\n(Fuentes: Bloque 1 Actualizado 2026.docx, apartados de la Ley 19/2013, LOPDGDD y RGPD.)"
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "Lo que hay que retener:\n\n- Ley 19/2013: transparencia y derecho de acceso a la información pública (y buen gobierno); desarrolla el artículo 105.b) de la Constitución.\n- Ámbito (artículo 2): las administraciones, la Seguridad Social, las entidades públicas, las sociedades con capital público del 50 %, las fundaciones, los partidos y las entidades privadas con ayudas por encima de los umbrales (100.000 euros o 40 %, mínimo 5.000).\n- Portal de la Transparencia (artículo 10): Administración General del Estado, Ministerio de la Presidencia. Principios técnicos (artículo 11): accesibilidad, interoperabilidad y reutilización.\n- Derecho de acceso (artículo 12) y solicitud (artículo 17): cualquier medio con constancia, sin obligación de motivar, lenguas cooficiales.\n- Límites (artículo 14): seguridad nacional, defensa, relaciones exteriores, seguridad pública, ilícitos, tutela judicial, vigilancia, intereses económicos, política económica, secreto profesional, confidencialidad y medio ambiente.\n- Artículo 15: datos especialmente protegidos con consentimiento expreso (y por escrito en ideología, sindicato, religión o creencias); identificativos con regla general; ponderación; disociación; tratamiento posterior sometido al RGPD.\n- Consejo de Transparencia y Buen Gobierno (artículos 34-38): fines, composición, Presidente de cinco años no renovable, reclamaciones del artículo 24.\n- LOPDGDD: confidencialidad (5), consentimiento (6), catorce años (7), obligación legal/interés público (8), ejercicio de derechos (12), acceso (13), rectificación (14), obligaciones y riesgos (28).\n- RGPD: consentimiento y retirada (7), niño en servicios de la sociedad de la información (8), categorías especiales (9), rectificación (16), portabilidad (20), decisiones automatizadas (22).\n- DPD y AEPD; derechos digitales (LOPDGDD, artículos 79-89).\n\n(Fuentes: Bloque 1 Actualizado 2026.docx, apartados de la Ley 19/2013, LOPDGDD y RGPD; Constitución, artículo 105.b.)"
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos del fichero, comentados y con su referencia:\n\n**1.** Norma que regula la transparencia y el acceso a la información pública. **Respuesta: a)** La Ley 19/2013 (apartado 4, Ley 19/2013).\n\n**2.** Edad de consentimiento del menor en la LOPDGDD. **Respuesta: b)** Catorce años (apartado 4, LOPDGDD).\n\n**3.** Edad del RGPD para el consentimiento del niño en servicios de la sociedad de la información. **Respuesta: c)** Dieciséis años, con posibilidad de bajarla a trece (apartado 4, RGPD).\n\n**4.** Cuál figura entre los límites del artículo 14. **Respuesta: d)** La seguridad nacional (apartado 4, límites).\n\n**5.** Qué se exige para acceder a datos que revelan ideología o creencias. **Respuesta: a)** Consentimiento expreso y por escrito del afectado (apartado 4, artículo 15).\n\n**6.** De quién depende el Portal de la Transparencia de la AGE. **Respuesta: b)** Del Ministerio de la Presidencia (apartado 4, artículo 10).\n\n**7.** Principios técnicos del artículo 11. **Respuesta: c)** Accesibilidad, interoperabilidad y reutilización (apartado 4, Ley 19/2013).\n\n**8.** Duración del mandato del Presidente del Consejo de Transparencia. **Respuesta: d)** Cinco años no renovables (apartado 4, artículo 37).\n\n**9.** Ante quién se reclama en materia de acceso. **Respuesta: a)** Ante el Consejo de Transparencia y Buen Gobierno (apartado 4, artículo 24).\n\n**10.** Derecho de acceso en la LOPDGDD mediante sistema remoto. **Respuesta: b)** Acceso permanente, remoto y seguro (apartado 4, artículo 13 LOPDGDD).\n\n**11.** Derecho del RGPD a recibir los datos en formato estructurado. **Respuesta: c)** Portabilidad (apartado 4, artículo 20 RGPD).\n\n**12.** Derecho del RGPD frente a decisiones solo automatizadas. **Respuesta: d)** A no ser objeto de ellas (apartado 4, artículo 22 RGPD).\n\n**13.** Deber de los responsables y encargados de mantener la reserva. **Respuesta: a)** Deber de confidencialidad (apartado 4, artículo 5 LOPDGDD).\n\n**14.** Norma que prohíbe con carácter general el tratamiento de categorías especiales. **Respuesta: b)** El RGPD, artículo 9 (apartado 4, RGPD).\n\n**15.** Derecho digital recogido en la LOPDGDD. **Respuesta: c)** La neutralidad de Internet (apartado 4, derechos digitales).\n\nCada caso incluye su explicación completa y la referencia de fuente en el campo reference de testCases. (Fuente: Bloque 1 Actualizado 2026.docx, apartados de la Ley 19/2013, LOPDGDD y RGPD.)"
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "- **Bloque 1 Actualizado 2026.docx**, apartados de la Ley 19/2013 (artículos 2, 10, 11, 12, 14, 15, 17 y 34-38), de la LOPDGDD (artículos 5, 6, 7, 8, 12, 13, 14, 28 y 79-89) y del RGPD (artículos 7, 8, 9, 16, 20 y 22); también el artículo 105.b) de la Constitución Española.\n- **data/fuentes/I.12.txt**: texto consolidado de las fuentes anteriores, utilizado para verificar las citas.\n\nAviso de alcance: la fuente no desarrolla la publicidad activa artículo por artículo, el régimen del DPD ni las funciones de la AEPD; se resumen como concepto estándar. (Fuente: data/fuentes/I.12.txt.)"
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Qué norma regula la transparencia y el acceso a la información pública en España?",
+      "options": [
+        "La Ley 19/2013",
+        "La Ley 39/2015",
+        "La Ley 40/2015",
+        "La LOPDGDD"
+      ],
+      "answer": "a",
+      "explanation": "La Ley 19/2013 regula la transparencia, el acceso a la información pública y el buen gobierno. La 39/2015 regula el procedimiento administrativo, la 40/2015 el régimen jurídico del sector público y la LOPDGDD la protección de datos.",
+      "reference": "Apartado 4, Ley 19/2013."
+    },
+    {
+      "question": "Según la LOPDGDD, ¿a partir de qué edad puede el menor prestar su consentimiento para el tratamiento de sus datos?",
+      "options": [
+        "A los doce años",
+        "A los catorce años",
+        "A los dieciséis años",
+        "A los dieciocho años"
+      ],
+      "answer": "b",
+      "explanation": "La LOPDGDD fija los catorce años para el consentimiento del menor (artículo 7). Los dieciséis años son la edad del RGPD para los servicios de la sociedad de la información, con posibilidad de bajarla a trece.",
+      "reference": "Apartado 4, LOPDGDD; LOPDGDD, artículo 7."
+    },
+    {
+      "question": "¿Qué edad fija el RGPD para el consentimiento del niño en los servicios de la sociedad de la información?",
+      "options": [
+        "Trece años",
+        "Catorce años",
+        "Dieciséis años",
+        "Dieciocho años"
+      ],
+      "answer": "c",
+      "explanation": "El RGPD fija dieciséis años, aunque los Estados miembros pueden establecer por ley una edad inferior, nunca por debajo de trece (artículo 8).",
+      "reference": "Apartado 4, RGPD; RGPD, artículo 8."
+    },
+    {
+      "question": "¿Cuál de los siguientes figura entre los límites al derecho de acceso del artículo 14 de la Ley 19/2013?",
+      "options": [
+        "La protección de datos personales",
+        "La accesibilidad",
+        "La reutilización",
+        "La seguridad nacional"
+      ],
+      "answer": "d",
+      "explanation": "La seguridad nacional es uno de los límites del artículo 14. La protección de datos personales se regula en el artículo 15, y accesibilidad y reutilización son principios técnicos del artículo 11.",
+      "reference": "Apartado 4, límites; Ley 19/2013, artículo 14."
+    },
+    {
+      "question": "¿Qué se exige para autorizar el acceso a información con datos que revelan ideología, afiliación sindical, religión o creencias?",
+      "options": [
+        "Consentimiento expreso y por escrito del afectado",
+        "Una simple solicitud electrónica",
+        "La disociación de los datos",
+        "La autorización del Consejo de Transparencia"
+      ],
+      "answer": "a",
+      "explanation": "El artículo 15 exige consentimiento expreso y por escrito del afectado, salvo que este hubiera hecho manifiestamente públicos los datos antes de la solicitud.",
+      "reference": "Apartado 4, artículo 15; Ley 19/2013, artículo 15.1."
+    },
+    {
+      "question": "¿De quién depende el Portal de la Transparencia de la Administración General del Estado?",
+      "options": [
+        "Del Ministerio de Hacienda",
+        "Del Ministerio de la Presidencia",
+        "Del Consejo de Transparencia",
+        "De la AEPD"
+      ],
+      "answer": "b",
+      "explanation": "El artículo 10 atribuye al Ministerio de la Presidencia la dependencia del Portal de la Transparencia de la Administración General del Estado.",
+      "reference": "Apartado 4, Ley 19/2013; Ley 19/2013, artículo 10."
+    },
+    {
+      "question": "¿Qué principios técnicos fija el artículo 11 de la Ley 19/2013?",
+      "options": [
+        "Legalidad, igualdad y proporcionalidad",
+        "Minimización, exactitud y conservación",
+        "Accesibilidad, interoperabilidad y reutilización",
+        "Confidencialidad, integridad y disponibilidad"
+      ],
+      "answer": "c",
+      "explanation": "El artículo 11 enumera accesibilidad, interoperabilidad y reutilización. Los otros grupos corresponden a principios jurídicos o a la seguridad de la información.",
+      "reference": "Apartado 4, Ley 19/2013; Ley 19/2013, artículo 11."
+    },
+    {
+      "question": "¿Cuánto dura el mandato del Presidente del Consejo de Transparencia y Buen Gobierno?",
+      "options": [
+        "Tres años renovables",
+        "Cuatro años renovables",
+        "Seis años",
+        "Cinco años no renovables"
+      ],
+      "answer": "d",
+      "explanation": "El artículo 37 fija un periodo de cinco años no renovable, con nombramiento mediante Real Decreto.",
+      "reference": "Apartado 4, artículo 37; Ley 19/2013, artículo 37."
+    },
+    {
+      "question": "¿Ante qué órgano se presenta la reclamación en materia de derecho de acceso?",
+      "options": [
+        "Ante el Consejo de Transparencia y Buen Gobierno",
+        "Ante la Agencia Española de Protección de Datos",
+        "Ante el Defensor del Pueblo",
+        "Ante el Tribunal de Cuentas"
+      ],
+      "answer": "a",
+      "explanation": "El artículo 24 de la Ley 19/2013 regula la reclamación ante el Consejo de Transparencia y Buen Gobierno, que conoce de ellas a través de su Presidente.",
+      "reference": "Apartado 4, artículo 24; Ley 19/2013, artículo 24."
+    },
+    {
+      "question": "¿Qué modalidad de acceso regula la LOPDGDD para el derecho de acceso?",
+      "options": [
+        "Acceso por correo postal",
+        "Acceso permanente, remoto y seguro",
+        "Acceso previa autorización judicial",
+        "Acceso solo presencial"
+      ],
+      "answer": "b",
+      "explanation": "La LOPDGDD entiende otorgado el derecho de acceso si el responsable facilita una consulta remota, directa y segura de los datos (artículo 13).",
+      "reference": "Apartado 4, LOPDGDD; LOPDGDD, artículo 13."
+    },
+    {
+      "question": "¿Qué derecho del RGPD permite recibir los datos en un formato estructurado y transmitirlos a otro responsable?",
+      "options": [
+        "Rectificación",
+        "Supresión",
+        "Portabilidad",
+        "Limitación"
+      ],
+      "answer": "c",
+      "explanation": "La portabilidad (artículo 20 del RGPD) permite recibir los datos facilitados en un formato estructurado y legible por máquina, y transmitirlos a otro responsable.",
+      "reference": "Apartado 4, RGPD; RGPD, artículo 20."
+    },
+    {
+      "question": "¿Qué derecho reconoce el RGPD frente a las decisiones individuales automatizadas?",
+      "options": [
+        "A exigir una copia en papel",
+        "A recibir una indemnización automática",
+        "A que se publique la decisión",
+        "A no ser objeto de ellas cuando produzcan efectos jurídicos"
+      ],
+      "answer": "d",
+      "explanation": "El artículo 22 del RGPD reconoce el derecho a quedar fuera de las decisiones tomadas solo con medios automáticos, incluido el perfilado, cuando produzcan efectos jurídicos o afecten de forma significativa a la persona.",
+      "reference": "Apartado 4, RGPD; RGPD, artículo 22."
+    },
+    {
+      "question": "¿Qué deber impone la LOPDGDD a responsables, encargados y personas que intervienen en el tratamiento?",
+      "options": [
+        "El deber de confidencialidad",
+        "El deber de publicidad activa",
+        "El deber de motivación",
+        "El deber de disociación"
+      ],
+      "answer": "a",
+      "explanation": "El artículo 5 de la LOPDGDD impone el deber de confidencialidad, que se mantiene incluso después de finalizar la relación con el responsable o encargado.",
+      "reference": "Apartado 4, LOPDGDD; LOPDGDD, artículo 5."
+    },
+    {
+      "question": "¿Qué artículo del RGPD prohíbe con carácter general el tratamiento de categorías especiales de datos personales?",
+      "options": [
+        "El artículo 7",
+        "El artículo 9",
+        "El artículo 16",
+        "El artículo 20"
+      ],
+      "answer": "b",
+      "explanation": "El artículo 9 del RGPD prohíbe el tratamiento de categorías especiales (origen étnico o racial, opiniones políticas, convicciones religiosas o filosóficas, afiliación sindical, datos genéticos, biométricos, de salud, vida sexual u orientación sexual), salvo las excepciones que el propio artículo recoge.",
+      "reference": "Apartado 4, RGPD; RGPD, artículo 9."
+    },
+    {
+      "question": "¿Cuál de los siguientes es un derecho digital reconocido en la LOPDGDD?",
+      "options": [
+        "El derecho de acceso a la información pública",
+        "El derecho a la publicidad activa",
+        "El derecho a la neutralidad de Internet",
+        "El derecho a la reclamación ante el Consejo de Transparencia"
+      ],
+      "answer": "c",
+      "explanation": "La neutralidad de Internet es un derecho digital del título X de la LOPDGDD (artículo 80). Los otros tres son propios de la Ley 19/2013.",
+      "reference": "Apartado 4, derechos digitales; LOPDGDD, artículo 80."
+    }
+  ],
+  "sources": [
+    {
+      "file": "Bloque 1 Actualizado 2026.docx",
+      "page": "apartados de la Ley 19/2013 (arts. 2, 10, 11, 12, 14, 15, 17 y 34-38), LOPDGDD (arts. 5-8, 12-14, 28, 79-89) y RGPD (arts. 7, 8, 9, 16, 20 y 22)",
+      "use": "Transparencia, publicidad activa, derecho de acceso, límites, artículo 15, Consejo de Transparencia, protección de datos, derechos digitales y derechos del RGPD"
+    },
+    {
+      "file": "data/fuentes/I.12.txt",
+      "page": "texto consolidado",
+      "use": "Verificación de las citas del documento anterior; incluye el PDF Tema 4.2 sin texto extraíble, que no se usa como fuente"
+    }
+  ]
+}

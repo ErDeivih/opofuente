@@ -328,7 +328,7 @@ function FormatoBadge({ formato, words }: { readonly formato?: 'esquema' | 'desa
       </span>
     );
   }
-  return <span className="demo-status demo-status--formato-esquema">Esquema</span>;
+  return <span className="demo-status demo-status--formato-esquema">Esquema · {words ?? 0} palabras</span>;
 }
 
 function SourceLine({ source, official = false }: { source: DemoSource; official?: boolean }) {
@@ -1971,7 +1971,8 @@ function Tema({ path }: { path: string }) {
         <p className="page__lead demo-topic__badges">
           Tema {topic.path} · <ApuntesBadge status={topic.apuntesStatus} />{' '}
           <PracticaBadge status={topic.practicaStatus} />{' '}
-          <FormatoBadge formato={topic.longSections !== undefined ? 'desarrollado' : 'esquema'} words={topic.longSections?.reduce((total, section) => total + (section.body ?? '').split(/\s+/).length, 0) ?? 0} />
+          <FormatoBadge formato={topic.longSections !== undefined ? 'desarrollado' : 'esquema'} words={secciones.reduce((total, section) => total + (section.body ?? '').split(/\s+/).length, 0)} />{' '}
+          <span className="demo-status demo-status--revisado">Revisado 11/2026</span>
         </p>
         <p className="hint demo-vigencia">Vigente a 11/2026</p>
         {testIndex >= 0 && (

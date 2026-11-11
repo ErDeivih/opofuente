@@ -191,5 +191,220 @@
     "Confundir entre sí los derechos de supresión (olvido), portabilidad, limitación y oposición.",
     "Aplicar las 72 horas para atender los derechos: los derechos se atienden en un mes y las 72 horas son para notificar una brecha."
   ],
-  "reviewedAt": "2026-11-10"
+  "reviewedAt": "2026-11-10",
+  "longSections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema:** V.37, «Protección de datos aplicada», del bloque V (Seguridad y administración electrónica) del temario común de informática C1. **Materias que cubre:** marco normativo (RGPD y LOPDGDD), consentimiento, bases jurídicas, categorías especiales de datos, derechos del interesado, responsable y encargado del tratamiento, derechos digitales, riesgos y protección de datos en el acceso a la información pública. **Relación con otros temas:** se apoya en V.34 (seguridad de la información) y V.36 (criptografía) y conecta con V.39 (administración electrónica) y con la Ley 19/2013 de transparencia. **Fuentes:** `Bloque 1 Actualizado 2026.docx`, volcado en `data/fuentes/V.37.txt`, con los textos del RGPD y de la LO 3/2018.\n\n**Limitación de la fuente:** el volcado de V.37 contiene los artículos del RGPD y de la LOPDGDD que se citan, pero no desarrolla los seis principios del tratamiento, la figura del delegado de protección de datos (DPO), las medidas de seguridad del artículo 32, el régimen de brechas ni el capítulo de transferencias internacionales. Para no inventar, esas materias no se desarrollan aquí.",
+      "table": {
+        "columns": [
+          "Dato de la ficha",
+          "Valor"
+        ],
+        "rows": [
+          [
+            "Tema",
+            "V.37 Protección de datos aplicada"
+          ],
+          [
+            "Bloque",
+            "V · Seguridad y administración electrónica"
+          ],
+          [
+            "Materias",
+            "RGPD, LOPDGDD, consentimiento, derechos, responsable/encargado y derechos digitales"
+          ],
+          [
+            "Temas relacionados",
+            "V.34 Seguridad; V.36 Criptografía; V.39 Administración electrónica"
+          ],
+          [
+            "Fuente",
+            "Bloque 1 Actualizado 2026.docx (RGPD y LO 3/2018)"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El desarrollo del tema se organiza en los epígrafes del apartado 4:\n\n- **4.1.** Marco normativo: RGPD y LOPDGDD.\n- **4.2.** El consentimiento.\n- **4.3.** Bases jurídicas y categorías especiales de datos.\n- **4.4.** Los derechos del interesado.\n- **4.5.** Responsable y encargado del tratamiento.\n- **4.6.** Los derechos digitales.\n- **4.7.** Riesgos y protección de datos en la Administración.\n- **4.8.** Transparencia y acceso a la información pública.\n\nCompletan el tema la tabla de derechos (apartado 5), el ejemplo práctico (6), las trampas de examen (7), el resumen para memorizar (8), los quince casos tipo test (9) y las fuentes citadas (10)."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "La protección de datos es el conjunto de reglas que permiten tratar datos personales —cualquier información sobre una persona física identificada o identificable— sin vulnerar los derechos y libertades de las personas. En la Unión Europea la norma de referencia es el **Reglamento (UE) 2016/679 (RGPD)**, directamente aplicable, y en España se completa con la **Ley Orgánica 3/2018 (LOPDGDD)**, que adapta el régimen y regula los **derechos digitales**.\n\nEl RGPD se apoya en el binomio **responsable del tratamiento** (quien decide los fines y medios) y **encargado** (quien trata datos por cuenta del responsable), y reconoce al interesado un catálogo de derechos. La LOPDGDD precisa cuestiones como la edad para el consentimiento de los menores, las bases jurídicas en el sector público y los derechos digitales de la ciudadanía.\n\nPara un técnico de la Administración, la protección de datos aparece en la gestión de expedientes, en las solicitudes de acceso a información pública, en la videovigilancia, en los dispositivos de trabajo y en cualquier tratamiento que utilice datos de los ciudadanos.",
+      "table": {
+        "columns": [
+          "Fuente",
+          "Qué aporta"
+        ],
+        "rows": [
+          [
+            "data/fuentes/V.37.txt",
+            "Volcado con los artículos del RGPD, la LO 3/2018 y la Ley 19/2013"
+          ],
+          [
+            "Bloque 1 Actualizado 2026.docx",
+            "Tema 7 (LOPDGDD y RGPD) y Ley 19/2013 de transparencia"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1. Marco normativo.** El **RGPD** (Reglamento (UE) 2016/679) es la norma europea de protección de datos y se aplica directamente. La **LOPDGDD** (Ley Orgánica 3/2018, de 5 de diciembre) lo desarrolla en España, regula los derechos digitales y concreta el régimen de los tratamientos públicos. Ambas normas se relacionan con la **Ley 19/2013**, de transparencia, acceso a la información pública y buen gobierno, cuyo artículo 15 regula el acceso a información que contiene datos personales. La LOPDGDD establece además el **deber de confidencialidad**: responsables, encargados y todas las personas que intervengan en cualquier fase del tratamiento están sujetos a él, y esa obligación se mantiene incluso después de terminar la relación con el responsable o encargado.\n\n**4.2. El consentimiento.** Es la manifestación de voluntad que debe ser **libre, específica, informada e inequívoca**, expresada por el afectado mediante una declaración o una acción afirmativa clara, para aceptar el tratamiento de sus datos. El RGPD exige que el responsable pueda **demostrar** que el interesado consintió, que el consentimiento se distinga de otros asuntos en las declaraciones escritas y que pueda **retirarse** en cualquier momento, retirada que no afecta a la licitud del tratamiento anterior. En los menores, la LOPDGDD fija la edad de **catorce años** para consentir por sí mismos; el RGPD establece para los servicios de la sociedad de la información la edad de **dieciséis años**, salvo que el Estado miembro la rebaje por ley hasta un mínimo de trece, y los titulares de la patria potestad pueden ejercitar los derechos de los menores de catorce.\n\n**4.3. Bases jurídicas y categorías especiales.** El tratamiento necesita una base jurídica. La LOPDGDD permite basarlo en el cumplimiento de una **obligación legal** cuando una norma con rango de ley lo prevea, y en el cumplimiento de una **misión en interés público o en el ejercicio de poderes públicos** cuando derive de una competencia atribuida por norma con rango de ley. El RGPD prohíbe con carácter general tratar **categorías especiales** de datos: origen étnico o racial, opiniones políticas, convicciones religiosas o filosóficas, afiliación sindical, datos genéticos, biométricos dirigidos a identificar de forma unívoca, datos relativos a la salud, la vida sexual o la orientación sexual. La prohibición se levanta en supuestos tasados: consentimiento **explícito**, obligaciones laborales o de seguridad social con garantías, intereses vitales, actividades de fundaciones y asociaciones sin ánimo de lucro, datos hechos manifiestamente públicos, ejercicio de reclamaciones, interés público esencial, medicina preventiva o laboral y salud pública, y fines de archivo, investigación o estadística con garantías.\n\n**4.4. Los derechos del interesado.** El RGPD reconoce los derechos de acceso, rectificación, supresión, limitación, portabilidad y oposición, además del derecho a no ser objeto de decisiones individuales automatizadas. La LOPDGDD regula su ejercicio: pueden ejercerse directamente o por representante legal o voluntario; el responsable debe informar de los medios disponibles y no puede denegar la solicitud por el medio elegido; la prueba de haber respondido recae en el responsable; el encargado puede tramitar las solicitudes por cuenta del responsable si se establece en el contrato; y las actuaciones son **gratuitas**, sin perjuicio de los supuestos de reiteración. El **derecho de acceso** se entiende otorgado si el responsable facilita un sistema de acceso remoto, directo y seguro que garantice el acceso a la totalidad de los datos. En la **rectificación**, el afectado debe indicar qué datos y qué corrección procede, con la documentación justificativa cuando sea precisa. La **portabilidad** permite recibir los datos en un formato estructurado, de uso común y lectura mecánica y transmitirlos a otro responsable, incluso directamente cuando sea técnicamente posible. El derecho frente a **decisiones automatizadas**, incluida la elaboración de perfiles, impide someter al interesado a una decisión que produzca efectos jurídicos o le afecte significativamente, salvo las excepciones previstas.\n\n**4.5. Responsable y encargado.** El **responsable** decide los fines y medios del tratamiento y tiene más jerarquía que el **encargado**, que trata los datos por cuenta de aquel. La LOPDGDD obliga a ambos a tener en cuenta los mayores riesgos del tratamiento: discriminación, usurpación de identidad o fraude, pérdidas financieras, daño a la reputación, pérdida de confidencialidad, reversión no autorizada de la seudonimización, privación de derechos y control sobre los datos, evaluación de aspectos personales o elaboración de perfiles, tratamiento de colectivos vulnerables (menores y personas con discapacidad), tratamientos masivos y transferencias habituales a terceros Estados sin nivel adecuado de protección.\n\n**4.6. Los derechos digitales.** La LOPDGDD incorpora un catálogo de derechos digitales: neutralidad de Internet, acceso universal a Internet, seguridad digital, educación digital, protección de los menores en Internet, rectificación en Internet, actualización de informaciones en medios digitales, intimidad y uso de dispositivos digitales en el ámbito laboral, desconexión digital, intimidad frente a videovigilancia y grabación de sonido en el trabajo, intimidad ante sistemas de geolocalización laboral, derechos digitales en la negociación colectiva, protección de datos de los menores, derecho al olvido en búsquedas y en redes sociales, portabilidad en servicios de redes sociales y testamento digital. En el ámbito laboral, el tratamiento de imágenes por videovigilancia exige informar previamente y de forma expresa, clara y concisa a los trabajadores o empleados públicos y, en su caso, a sus representantes.\n\n**4.7. Riesgos y protección en la Administración.** Los riesgos del artículo 28 de la LOPDGDD sirven de guía para priorizar medidas: los tratamientos masivos, los perfiles, los colectivos vulnerables, la pérdida de confidencialidad y las transferencias internacionales sin nivel adecuado son los supuestos que más atención requieren. La fuente no desarrolla las medidas técnicas del artículo 32 del RGPD, el régimen de brechas ni las garantías de las transferencias internacionales, por lo que este tema no inventa su contenido; se limita a identificarlos como materias que hay que estudiar aparte.\n\n**4.8. Transparencia y acceso a la información pública.** La Ley 19/2013 reconoce el derecho de acceso a la información pública, pero el artículo 15 protege los datos personales. Si la información contiene datos que revelan **ideología, afiliación sindical, religión o creencias**, el acceso solo se autoriza con **consentimiento expreso y por escrito** del afectado, salvo que los hubiera hecho manifiestamente públicos antes de la solicitud. Si contiene origen racial, salud, vida sexual, datos genéticos o biométricos, o datos de infracciones penales o administrativas no sancionadas con amonestación pública, se exige consentimiento expreso o una norma con rango de ley. Para los datos meramente identificativos se concede el acceso salvo que prevalezca la protección de datos u otros derechos; para el resto se hace una **ponderación razonada** entre el interés público y los derechos de los afectados, con criterios como el tiempo transcurrido, la condición de investigador, la naturaleza identificativa de los datos y la especial protección de la intimidad, la seguridad o los menores. No se aplica esa protección si el acceso se realiza con **disociación** de los datos, y el tratamiento posterior queda sujeto a la normativa de protección de datos.",
+      "table": {
+        "columns": [
+          "Epígrafe",
+          "Datos que hay que retener"
+        ],
+        "rows": [
+          [
+            "Normas",
+            "RGPD (UE) 2016/679 y LO 3/2018 (LOPDGDD); Ley 19/2013 en el acceso"
+          ],
+          [
+            "Consentimiento",
+            "Libre, específico, informado e inequívoco; demostrable y retirable"
+          ],
+          [
+            "Menores",
+            "14 años en la LOPDGDD; 16 en el RGPD (rebajable a 13)"
+          ],
+          [
+            "Especiales",
+            "Origen étnico, política, religión, sindicación, genética, biometría, salud, vida sexual"
+          ],
+          [
+            "Derechos",
+            "Acceso, rectificación, supresión, limitación, portabilidad, oposición y decisiones automatizadas"
+          ],
+          [
+            "Responsable",
+            "Decide fines y medios; el encargado trata por su cuenta; confidencialidad permanente"
+          ],
+          [
+            "Digitales",
+            "Neutralidad, acceso, seguridad, desconexión, videovigilancia, olvido, portabilidad y testamento"
+          ],
+          [
+            "Transparencia",
+            "Datos especialmente protegidos: consentimiento expreso; resto: ponderación o disociación"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "5. Tabla de derechos del interesado",
+      "body": "La tabla resume los derechos que el temario cita y el contenido esencial que hay que recordar en cada uno.",
+      "table": {
+        "columns": [
+          "Derecho",
+          "Contenido esencial"
+        ],
+        "rows": [
+          [
+            "Acceso",
+            "Conocer si se tratan sus datos y obtener una copia; puede facilitarse por acceso remoto, directo y seguro"
+          ],
+          [
+            "Rectificación",
+            "Corregir datos inexactos o completar los incompletos, indicando qué datos y qué corrección"
+          ],
+          [
+            "Supresión",
+            "Eliminar los datos cuando ya no sean necesarios o el tratamiento sea ilícito"
+          ],
+          [
+            "Limitación",
+            "Conservar los datos sin tratarlos en los supuestos previstos"
+          ],
+          [
+            "Portabilidad",
+            "Recibir los datos en formato estructurado, de uso común y lectura mecánica y transmitirlos a otro responsable"
+          ],
+          [
+            "Oposición",
+            "Oponerse al tratamiento por motivos personales en los supuestos legalmente previstos"
+          ],
+          [
+            "Decisiones automatizadas",
+            "No ser objeto de una decisión basada únicamente en el tratamiento automatizado que produzca efectos significativos"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un ciudadano solicita a un ayuntamiento copia de un expediente de subvenciones en el que figuran nombres, DNIs, datos de salud de varios solicitantes y la afiliación sindical de una empleada municipal. Además, uno de los solicitantes pide saber qué datos suyos tiene el ayuntamiento.\n\n**Resolución.**\n\n- **Solicitud de acceso a información pública:** se aplica el artículo 15 de la Ley 19/2013. Los datos de **salud** y de **afiliación sindical** son categorías especialmente protegidas: solo se autoriza el acceso con **consentimiento expreso** de los afectados (por escrito en el caso de ideología, religión o creencias) o con una norma con rango de ley que lo ampare. Si no hay consentimiento, se puede entregar la información **disociada**, sin datos que permitan identificar a las personas.\n- **Datos meramente identificativos:** para nombres y DNIs vinculados al funcionamiento del órgano se concede el acceso salvo que prevalezca la protección de datos; si no son meramente identificativos, se hace una **ponderación razonada** entre interés público y derechos de los afectados, considerando la intimidad, la seguridad y la posible afectación a menores.\n- **Derecho de acceso del interesado:** el solicitante puede ejercer su derecho de acceso ante el **responsable** del tratamiento, que debe informarle de los medios disponibles y responder de forma gratuita, sin que la solicitud pueda denegarse por el medio elegido. Si el ayuntamiento ofrece un sistema de acceso remoto, directo y seguro a todos sus datos, el derecho se entiende otorgado.\n- **Confidencialidad:** el personal que tramita el expediente está sujeto al deber de confidencialidad, que se mantiene incluso después de terminar su relación con el ayuntamiento.\n\n**Conclusión.** La protección de datos no impide el acceso a la información pública: obliga a aplicar consentimiento, ponderación o disociación, y a respetar los derechos y la confidencialidad de los afectados.",
+      "table": {
+        "columns": [
+          "Situación",
+          "Regla aplicable",
+          "Resultado"
+        ],
+        "rows": [
+          [
+            "Datos de salud o sindicación",
+            "Art. 15 Ley 19/2013",
+            "Consentimiento expreso o norma con rango de ley"
+          ],
+          [
+            "Datos identificativos",
+            "Art. 15.2",
+            "Acceso salvo que prevalezca la protección de datos"
+          ],
+          [
+            "Resto de datos personales",
+            "Art. 15.3",
+            "Ponderación razonada"
+          ],
+          [
+            "Derecho de acceso del titular",
+            "RGPD y LOPDGDD",
+            "Respuesta gratuita y acceso remoto seguro"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "Las confusiones más frecuentes de este tema son estas:\n\n- **Confundir RGPD y LOPDGDD**: el RGPD es el reglamento europeo directamente aplicable; la LOPDGDD es la ley orgánica que lo desarrolla en España.\n- **Confundir las edades de los menores**: la LOPDGDD fija 14 años para el consentimiento; el RGPD fija 16 para los servicios de la sociedad de la información, rebajable a 13 por ley nacional.\n- **Confundir responsable y encargado**: el responsable decide fines y medios; el encargado trata por cuenta del responsable y no tiene su jerarquía.\n- **Creer que el consentimiento lo es todo**: hay otras bases jurídicas, como la obligación legal o el interés público con norma con rango de ley.\n- **Confundir derechos**: la portabilidad no es lo mismo que el acceso; la supresión no es la limitación; las decisiones automatizadas tienen su propio derecho.\n- **Confundir el derecho de acceso del interesado con el acceso a la información pública**: el primero se ejerce ante el responsable del tratamiento; el segundo, ante la Administración que posee la información, con las reglas de la Ley 19/2013.\n- **Creer que la protección de datos impide siempre el acceso público**: se puede acceder con consentimiento, con norma habilitante, con ponderación o con disociación.\n- **Olvidar el deber de confidencialidad**: se mantiene después de terminar la relación con el responsable o encargado.\n- **Confundir los derechos digitales con los derechos fundamentales**: los derechos digitales son los que la LOPDGDD reconoce en el entorno digital (neutralidad, desconexión, olvido, testamento digital…).",
+      "table": {
+        "columns": [
+          "Confusión",
+          "Lo correcto"
+        ],
+        "rows": [
+          [
+            "RGPD = LOPDGDD",
+            "Reglamento europeo frente a ley orgánica de desarrollo"
+          ],
+          [
+            "14 años = 16 años",
+            "14 en la LOPDGDD; 16 en el RGPD (rebajable a 13)"
+          ],
+          [
+            "Responsable = encargado",
+            "El responsable decide fines y medios; el encargado trata por su cuenta"
+          ],
+          [
+            "Acceso del interesado = acceso público",
+            "Uno es derecho de protección de datos; el otro, acceso a información pública"
+          ]
+        ]
+      }
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Normas.** RGPD (Reglamento (UE) 2016/679) y LOPDGDD (LO 3/2018); la Ley 19/2013 regula el acceso a la información pública y su artículo 15 protege los datos personales.\n\n**Consentimiento.** Libre, específico, informado e inequívoco; demostrable, separable de otros asuntos y retirable; 14 años en la LOPDGDD y 16 en el RGPD (rebajable a 13).\n\n**Bases y especiales.** Obligación legal o interés público con norma con rango de ley; categorías especiales prohibidas salvo consentimiento explícito, salud, interés público, fines de archivo o investigación y otros supuestos tasados.\n\n**Derechos.** Acceso, rectificación, supresión, limitación, portabilidad, oposición y decisiones automatizadas; ejercicio gratuito, por el titular o representante, con prueba a cargo del responsable; acceso remoto directo y seguro.\n\n**Responsable y encargado.** El responsable decide fines y medios; el encargado trata por su cuenta; confidencialidad permanente; riesgos del artículo 28 (perfiles, colectivos vulnerables, tratamientos masivos, transferencias sin nivel adecuado).\n\n**Derechos digitales.** Neutralidad, acceso universal, seguridad digital, educación digital, menores, rectificación, desconexión, videovigilancia, geolocalización, olvido, portabilidad en redes sociales y testamento digital.\n\n**Transparencia.** Datos especialmente protegidos: consentimiento expreso (por escrito para ideología, religión o creencias); datos identificativos: acceso salvo ponderación; resto: ponderación razonada; disociación como alternativa."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "Los quince casos siguientes reproducen el estilo de pregunta del bloque V. Cada uno incluye la respuesta correcta y una explicación que recuerda el dato del temario; la referencia indica el epígrafe y la fuente donde está el contenido. Conviene contestarlos sin mirar la solución y revisar después solo los fallos."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "El tema se ha redactado a partir de `data/fuentes/V.37.txt`, que reúne el volcado de `Bloque 1 Actualizado 2026.docx` con el Tema 7 (LO 3/2018 y RGPD) y la Ley 19/2013 de transparencia. Las citas por apartado aparecen en la lista `sources` y en la referencia de cada caso tipo test. No se han copiado párrafos literales y no se han añadido datos que no figuren en esas fuentes; el volcado no desarrolla los principios del tratamiento, el DPO, las medidas de seguridad, las brechas ni las transferencias internacionales, por lo que no se incluyen contenidos de esas materias."
+    }
+  ]
 }

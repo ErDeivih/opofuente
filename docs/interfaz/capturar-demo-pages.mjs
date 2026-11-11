@@ -155,7 +155,7 @@ check(
 );
 
 // Revisión de los dos temas de la tanda: contenido, tabla y 10 preguntas.
-for (const temaId of ['II.15', 'II.16', 'II.17', 'III.19', 'III.20', 'III.24', 'III.25', 'III.26', 'IV.30', 'IV.33', 'V.40']) {
+for (const temaId of ['II.15', 'II.16', 'II.17', 'III.19', 'III.20', 'III.24', 'III.25', 'III.26', 'IV.30', 'IV.33', 'V.36', 'V.37', 'V.38', 'V.40']) {
   const nombre = temaId.toLowerCase().replace('.', '-');
   const texto = await captura(`tema/${temaId}`, `tema-${nombre}`, 390);
   check(
@@ -232,6 +232,7 @@ if (completo !== undefined) {
   );
   await page.setViewportSize({ width: 390, height: 844 });
   const indiceBoton = page.getByRole('button', { name: /Índice/ }).first();
+  check('la ficha muestra desarrollado, palabras, revisado y vigencia', /Desarrollado ·/.test(texto) && /palabras/.test(texto) && /Revisado 11\/2026/.test(texto) && /Vigente a 11\/2026/.test(texto));
   check('el tema tiene barra de índice', (await indiceBoton.count()) > 0);
   await indiceBoton.click();
   check('el índice despliega los epígrafes', (await page.locator('.demo-indexbar__item').count()) >= 5);

@@ -2,16 +2,16 @@
 
 **Fecha:** 11/11/2026 · **Referencia:** `data/sources/temario-c1.md` (40 temas, 5 bloques). Estado calculado desde `data.json`:
 
-- **completo:** desarrollo largo con 10 apartados y 15 test (25 temas).
-- **parcial:** ficha corta de 6-7 apartados y práctica de 10 preguntas (15 temas).
+- **completo:** desarrollo largo con 10 apartados y 15 test (30 temas).
+- **parcial:** ficha corta de 6-7 apartados y práctica de 10 preguntas (10 temas).
 - **ausente:** sin contenido (0 temas).
 
 ## Resumen
 
 | Estado | Temas |
 |---|---|
-| Completo | **25** |
-| Parcial | **15** |
+| Completo | **30** |
+| Parcial | **10** |
 | Ausente | **0** |
 | **Total** | **40** |
 
@@ -30,7 +30,7 @@
 | I | I.9 | Las haciendas locales y el presupuesto | **parcial** | 6 apartados cortos · 10 test |
 | I | I.10 | La contratación del sector público (Ley 9/2017) | **parcial** | 6 apartados cortos · 10 test |
 | I | I.11 | Igualdad y violencia de género | **parcial** | 6 apartados cortos · 10 test |
-| I | I.12 | Transparencia y protección de datos en la Administración | **parcial** | 6 apartados cortos · 10 test |
+| I | I.12 | Transparencia y protección de datos en la Administración | **completo** | 10 apartados · 15 test |
 | II | II.13 | Arquitectura de ordenadores | **completo** | 10 apartados · 15 test |
 | II | II.14 | Sistemas operativos de usuario | **completo** | 10 apartados · 15 test |
 | II | II.15 | Ofimática | **completo** | 10 apartados · 15 test |
@@ -54,14 +54,14 @@
 | IV | IV.33 | Informes y explotación de datos | **completo** | 10 apartados · 15 test |
 | V | V.34 | Seguridad de la información | **completo** | 14 apartados · 15 test |
 | V | V.35 | El Esquema Nacional de Seguridad (ENS, RD 311/2022) | **completo** | 14 apartados · 15 test |
-| V | V.36 | Criptografía y firma electrónica | **parcial** | 7 apartados cortos · 10 test |
-| V | V.37 | Protección de datos aplicada | **parcial** | 7 apartados cortos · 10 test |
-| V | V.38 | Ciberseguridad | **parcial** | 7 apartados cortos · 10 test |
+| V | V.36 | Criptografía y firma electrónica | **completo** | 10 apartados · 15 test |
+| V | V.37 | Protección de datos aplicada | **completo** | 10 apartados · 15 test |
+| V | V.38 | Ciberseguridad | **completo** | 10 apartados · 15 test |
 | V | V.39 | Administración electrónica práctica | **completo** | 14 apartados · 15 test |
-| V | V.40 | Accesibilidad y usabilidad | **parcial** | 7 apartados cortos · 10 test |
+| V | V.40 | Accesibilidad y usabilidad | **completo** | 10 apartados · 15 test |
 
 ## Qué falta
 
-Los **15 temas parciales** tienen apuntes y práctica, pero no el desarrollo de 10 apartados con 15 test. La prioridad es aplicarlos la misma plantilla que I.1, II.13 y III.21. No hay ningún tema ausente: los 40 tienen contenido publicado.
+Los **10 temas parciales** tienen apuntes y práctica, pero no el desarrollo de 10 apartados con 15 test. La prioridad es aplicarlos la misma plantilla que I.1, II.13 y III.21. No hay ningún tema ausente: los 40 tienen contenido publicado.
 
-La cobertura de los 25 completos es: I.1, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26, IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, IV.33, V.34, V.35 y V.39.
+La cobertura de los 30 completos es: I.1, I.12, II.13-17, III.18-26, IV.27-33, V.34-V.40 (salvo V.39 con 12 apartados).

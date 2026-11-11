@@ -1,0 +1,219 @@
+{
+  "tema": "V.40",
+  "title": "Accesibilidad y usabilidad",
+  "difficulty": "media",
+  "topics": ["V.40", "V.39"],
+  "steps": [
+    "Leer la ficha oficial y situar el tema en el bloque V, relacionándolo con la administración electrónica (V.39) y con el desarrollo web (IV.31).",
+    "Recorrer los epígrafes en orden: accesibilidad frente a usabilidad, principios POUR, estructura de las WCAG, HTML semántico, formularios y multimedia, evaluación y normativa.",
+    "Escribir de memoria los cuatro principios POUR y el nivel de conformidad que suele exigirse en las administraciones.",
+    "Construir una tabla POUR propia con un ejemplo de cada principio y repasar los plazos y obligaciones del RD 1112/2018.",
+    "Probar mentalmente un formulario sin ratón: orden de tabulación, foco visible, etiquetas, errores y contraste.",
+    "Hacer los 15 testCases y anotar las trampas en las que se falla para el repaso final."
+  ],
+  "sections": [
+    {
+      "heading": "1. Ficha oficial del tema",
+      "body": "**Tema V.40 — Accesibilidad y usabilidad.** Bloque V del temario común C1. Se estudia con la **ficha publicada del tema** y con las fuentes oficiales: la **W3C Web Accessibility Initiative** (WCAG 2.0, 2.1 y 2.2), el **Real Decreto 1112/2018** de accesibilidad de sitios web y aplicaciones del sector público y la norma armonizada **EN 301 549**. Su núcleo es: diferencia entre **accesibilidad y usabilidad**; principios **POUR** (perceptible, operable, comprensible y robusto); estructura y **niveles de las WCAG** (A, AA y AAA); **HTML semántico** y navegación por teclado; **formularios, contenido y multimedia** accesibles; **evaluación** automática, manual y con personas usuarias; **marco normativo** (Directiva 2016/2102, RD 1112/2018, EN 301 549, declaración de accesibilidad y mecanismos de queja) y **diseño para todas las personas**. Conecta con **V.39** (administración electrónica) y con el desarrollo web (IV.31)."
+    },
+    {
+      "heading": "2. Índice de epígrafes",
+      "body": "El tema se estudia en este orden: (1) accesibilidad y usabilidad: definición y diferencias; (2) perfiles afectados y productos de apoyo; (3) los principios POUR; (4) las WCAG: estructura, versiones y niveles de conformidad; (5) HTML semántico y estructura de la página; (6) navegación por teclado y foco; (7) formularios accesibles; (8) contenido, imágenes, tablas, multimedia y contraste; (9) evaluación y mejora continua; (10) marco normativo: Directiva 2016/2102, RD 1112/2018, EN 301 549, declaración de accesibilidad y quejas; (11) usabilidad y diseño para todas las personas. Para el test pesan los **principios POUR**, los **niveles A/AA/AAA**, el **texto alternativo**, la **navegación por teclado** y el **RD 1112/2018**."
+    },
+    {
+      "heading": "3. Introducción y contexto",
+      "body": "La **accesibilidad** garantiza que cualquier persona pueda usar un producto, incluidas las personas con discapacidad; la **usabilidad** mide la facilidad para lograr un objetivo con eficacia, eficiencia y satisfacción. No son lo mismo, pero se refuerzan: una web accesible suele ser más usable para todo el mundo.\n\nLa accesibilidad no es solo para personas ciegas: afecta a baja visión, sordera, movilidad reducida, dislexia, personas mayores o quien usa el móvil con mala cobertura. Los **productos de apoyo** (lectores de pantalla, ampliadores, conmutadores, teclados especiales) solo funcionan si el contenido está bien construido: un encabezado de verdad, un campo con su etiqueta, una imagen con texto alternativo.\n\nEn el sector público no es una opción: el **Real Decreto 1112/2018** exige que los sitios web y las aplicaciones móviles del sector público sean perceptibles, operables, comprensibles y robustos, y establece una **declaración de accesibilidad** y mecanismos de comunicación y queja. Por eso el tema une técnica (WCAG), evaluación y normativa."
+    },
+    {
+      "heading": "4. Desarrollo por epígrafe",
+      "body": "**4.1 Accesibilidad y usabilidad.** La **accesibilidad** elimina barreras para que cualquier persona pueda percibir, entender, navegar e interactuar con el producto; la **usabilidad** se ocupa de que la tarea se realice con **eficacia** (se logra el objetivo), **eficiencia** (con el menor esfuerzo) y **satisfacción**. Un producto puede ser usable para la mayoría y, a la vez, inaccesible para una persona con lector de pantalla; y una web accesible no es automáticamente usable. El objetivo es que ambas se refuercen, no que se sustituyan.\n\n**4.2 Perfiles y productos de apoyo.** La accesibilidad beneficia a personas con discapacidad visual, auditiva, motriz o cognitiva, a personas mayores y a cualquier usuario en situaciones límite (pantalla pequeña, mala cobertura, ruido). Los **lectores de pantalla**, los ampliadores, los conmutadores y los teclados especiales dependen de que el contenido tenga estructura y etiquetas: si todo son `div`, el lector no tiene mapa; si un icono no tiene texto alternativo, no se anuncia.\n\n**4.3 Principios POUR.** Las WCAG organizan sus requisitos en cuatro principios: **Perceptible** (la información y los componentes se presentan de forma que se puedan percibir: texto alternativo, contraste, subtítulos); **Operable** (se puede usar con teclado y otros dispositivos, sin trampas de foco); **Comprensible** (lenguaje claro, comportamiento predecible y errores explicados); y **Robusto** (funciona con tecnologías de apoyo y navegadores distintos). A partir de los principios se despliegan las **pautas** y, de ellas, los **criterios de conformidad** medibles.\n\n**4.4 Las WCAG: estructura y versiones.** Las **WCAG** son el estándar internacional del W3C para la accesibilidad del contenido web. WCAG 2.2 se organiza en **4 principios**, **13 pautas** y **criterios de conformidad** con **tres niveles** (A, AA y AAA); el nivel AA es el objetivo habitual de las administraciones. Las versiones son compatibles hacia atrás: WCAG 2.0 (2008) tiene 12 pautas; WCAG 2.1 (2018) añade una pauta y 17 criterios, y WCAG 2.2 (2023) añade 9 criterios y deja obsoleto un criterio (4.1.1 Parsing). No se cambian los criterios anteriores. WCAG 2.2 es norma ISO/IEC 40500 y la versión de 2026 de EN 301 549 se basa en WCAG 2.2.\n\n**4.5 HTML semántico y navegación.** El **HTML semántico** da estructura: encabezados jerárquicos, listas, tablas con cabeceras, formularios con `label` y regiones identificables. Un lector de pantalla navega por encabezados y regiones; si todo son `div`, no hay mapa. La **navegación por teclado** debe funcionar sin ratón: orden lógico, **foco visible**, enlaces con texto descriptivo y sin trampas de foco; los textos «haz clic aquí» no informan del destino. El **contraste** mínimo, el tamaño de texto y la posibilidad de ampliar sin perder contenido son requisitos básicos.\n\n**4.6 Formularios, contenido y multimedia.** Cada campo debe tener **etiqueta** asociada, instrucciones claras y mensajes de error que indiquen qué corregir y a qué campo se refieren. No se debe usar el **color como única forma** de transmitir información. Las imágenes necesitan **texto alternativo** si aportan información; las decorativas, `alt=\"\"`. Los vídeos necesitan **subtítulos** y, si es posible, audiodescripción. Las tablas deben tener **cabeceras** y no usarse para maquetar. El **lenguaje claro** reduce la carga cognitiva y ayuda a todas las personas, no solo a las que tienen una discapacidad.\n\n**4.7 Evaluación y mejora.** La evaluación combina **herramientas automáticas** (detectan parte de los problemas), **revisión manual** (teclado, lector de pantalla, contraste, zoom) y **pruebas con personas usuarias**. La accesibilidad es un proceso continuo: se integra en el diseño, el desarrollo y las pruebas, no se añade al final; un informe de auditoría sin corrección no mejora el producto. La norma **EN 301 549** armoniza los requisitos de accesibilidad de productos y servicios TIC en la Unión Europea.\n\n**4.8 Marco normativo.** La **Directiva (UE) 2016/2102** exige que los sitios web y aplicaciones móviles del sector público cumplan requisitos comunes de accesibilidad. En España se transpone por el **Real Decreto 1112/2018**, que se aplica a la Administración General del Estado, las comunidades autónomas, las entidades locales, el sector público institucional y la Administración de Justicia. El real decreto exige que los contenidos sean **perceptibles, operables, comprensibles y robustos**, presume la conformidad con las normas armonizadas (EN 301 549) y regula la **declaración de accesibilidad** (actualizada al menos una vez al año y publicada con un enlace denominado «Accesibilidad»), los mecanismos de comunicación, las quejas y reclamaciones (con plazos de **20 días hábiles** para responder y **2 meses** para la reclamación, y silencio desestimatorio), y la **carga desproporcionada** como excepción motivada y limitada. Algunos de sus apartados fueron anulados por el Tribunal Constitucional por invadir competencias autonómicas, aunque el marco de requisitos y declaración se mantiene.\n\n**4.9 Usabilidad y diseño para todas las personas.** La usabilidad se evalúa con **pruebas de usuario** y **evaluación heurística**: se observan tareas reales, se miden errores y tiempos y se pregunta por la satisfacción. El **diseño para todas las personas** busca que el producto lo use el mayor número posible de personas sin adaptaciones especiales: no se diseña para el «usuario medio», sino para la diversidad real. Accesibilidad y usabilidad comparten métodos (pruebas con personas) y objetivos (que la tarea se complete), y ambas deben incorporarse desde el inicio del proyecto."
+    },
+    {
+      "heading": "5. Tabla comparativa: los principios POUR",
+      "body": "Una forma rápida de no confundir los principios es asociar cada uno a una pregunta y a un ejemplo concreto.",
+      "table": {
+        "columns": ["Principio", "Qué exige", "Ejemplo"],
+        "rows": [
+          ["Perceptible", "Que la información se pueda percibir", "Texto alternativo, subtítulos y contraste suficiente"],
+          ["Operable", "Que se pueda usar con distintos dispositivos", "Navegación por teclado y foco visible, sin trampas"],
+          ["Comprensible", "Que el funcionamiento y el lenguaje sean claros", "Mensajes de error que explican cómo corregir"],
+          ["Robusto", "Que funcione con tecnologías de apoyo y navegadores distintos", "HTML semántico interpretable por lectores de pantalla"]
+        ]
+      }
+    },
+    {
+      "heading": "6. Ejemplo práctico resuelto",
+      "body": "**Supuesto.** Un ayuntamiento publica un formulario de cita previa que solo funciona con ratón y usa iconos sin texto. Los usuarios con lector de pantalla no pueden completarlo. Propón la corrección y explica cómo comprobarla.\n\n**Resolución.** (1) **Perceptible:** se sustituyen los iconos por controles con **etiqueta** y texto alternativo; las imágenes decorativas pasan a `alt=\"\"`; se revisa el **contraste** y el tamaño de texto. (2) **Operable:** se garantiza la **navegación por teclado** con orden lógico y **foco visible**; se eliminan las trampas de foco y se revisan los enlaces para que su texto describa el destino. (3) **Comprensible:** se añaden mensajes de error claros asociados a cada campo y se redactan instrucciones con lenguaje sencillo. (4) **Robusto:** se usa **HTML semántico** (etiquetas, encabezados y regiones) para que el lector de pantalla interprete el formulario. (5) **Evaluación:** se pasa una herramienta automática, se revisa manualmente con teclado, lector de pantalla y contraste, se prueba a 200 % de zoom y, si es posible, con personas usuarias. (6) **Cumplimiento:** se actualiza la **declaración de accesibilidad** y se comprueba que el formulario completo puede usarse sin ratón.\n\n**Conclusión.** La accesibilidad se demuestra usando el formulario sin ratón y con un lector; el cumplimiento formal no basta si la persona no puede completar la cita."
+    },
+    {
+      "heading": "7. Trampas típicas de examen",
+      "body": "- Confundir **accesibilidad** (elimina barreras) con **usabilidad** (eficacia, eficiencia y satisfacción).\n- Creer que las **herramientas automáticas** son suficientes: solo detectan parte de los problemas; hacen falta revisión manual y pruebas con personas.\n- Dar por suficiente el nivel **A** de WCAG o confundirlo con el **AA**, que es el objetivo habitual de las administraciones.\n- Confundir los principios **POUR**: Perceptible (percibir), Operable (usar), Comprensible (entender) y Robusto (interpretable por tecnologías de apoyo).\n- Poner **texto alternativo a imágenes decorativas**: deben llevar `alt=\"\"` para no ser anunciadas.\n- Usar el **color como única** forma de transmitir información: hay que añadir texto, forma o icono con etiqueta.\n- Usar **tablas para maquetar**: las tablas de datos deben tener cabeceras.\n- Creer que un **lector de pantalla** funciona igual con cualquier HTML: si todo son `div`, no hay estructura ni mapa de navegación.\n- Olvidar el **foco visible** y el orden lógico de tabulación: la navegación por teclado es un requisito, no un extra.\n- Confundir las versiones de **WCAG**: 2.1 añade 17 criterios y 2.2 añade 9; los criterios anteriores no se cambian (salvo la obsolescencia 4.1.1).\n- Creer que **EN 301 549** es una ley española: es una norma armonizada europea que sirve de referencia para presumir conformidad.\n- Confundir el **RD 1112/2018** (accesibilidad de sitios web y apps del sector público) con la normativa de protección de datos.\n- Olvidar que la **declaración de accesibilidad** se actualiza al menos una vez al año y se enlaza desde todas las páginas como «Accesibilidad».\n- Pensar que la accesibilidad es solo para personas ciegas: afecta a baja visión, sordera, movilidad reducida, dislexia y personas mayores."
+    },
+    {
+      "heading": "8. Resumen para memorizar",
+      "body": "**Lo que hay que memorizar.**\n\n1. **Accesibilidad** elimina barreras; **usabilidad** mide eficacia, eficiencia y satisfacción; no son sinónimos.\n2. **POUR**: Perceptible, Operable, Comprensible y Robusto.\n3. **WCAG 2.2**: 4 principios, 13 pautas y criterios en **tres niveles** (A, AA y AAA); **AA** es el objetivo habitual de las administraciones.\n4. **Versiones**: WCAG 2.0 (2008), 2.1 (2018, +1 pauta y 17 criterios) y 2.2 (2023, +9 criterios); WCAG 2.2 es ISO/IEC 40500.\n5. **HTML semántico**: encabezados jerárquicos, listas, tablas con cabeceras y campos con `label`; sin estructura no hay navegación por lector.\n6. **Teclado y foco**: orden lógico, foco visible, enlaces descriptivos y sin trampas.\n7. **Imágenes**: informativas con texto alternativo; decorativas con `alt=\"\"`. **Vídeos**: subtítulos y audiodescripción cuando proceda.\n8. **Formularios**: etiquetas, instrucciones y errores claros asociados al campo; nunca el color como única información.\n9. **Evaluación**: automática + manual + pruebas con personas; proceso continuo, no auditoría final.\n10. **Normativa**: Directiva 2016/2102; **RD 1112/2018** (sector público, declaración de accesibilidad anual, quejas y reclamaciones); **EN 301 549** (norma armonizada TIC; la versión de 2026 usa WCAG 2.2)."
+    },
+    {
+      "heading": "9. Casos tipo test comentados (15 preguntas)",
+      "body": "**1.** ¿Cuál es la diferencia entre accesibilidad y usabilidad? **Respuesta: a)** La accesibilidad elimina barreras y la usabilidad mide eficacia, eficiencia y satisfacción (ficha V.40).\n\n**2.** ¿Qué principio exige poder usar el contenido con teclado y sin trampas de foco? **Respuesta: b)** Operable (WCAG, POUR).\n\n**3.** ¿Qué principio exige que el contenido funcione con tecnologías de apoyo y navegadores distintos? **Respuesta: c)** Robusto (WCAG, POUR).\n\n**4.** ¿Qué nivel de conformidad WCAG es el objetivo habitual de las administraciones? **Respuesta: d)** El nivel AA (ficha V.40).\n\n**5.** ¿Cuántas pautas tiene WCAG 2.2? **Respuesta: a)** Trece pautas (W3C WAI).\n\n**6.** ¿Cuántos criterios de conformidad añade WCAG 2.2 respecto a WCAG 2.1? **Respuesta: b)** Nueve criterios (W3C WAI).\n\n**7.** ¿Qué valor debe tener el texto alternativo de una imagen decorativa? **Respuesta: c)** `alt=\"\"` (ficha V.40).\n\n**8.** ¿Qué necesita una imagen que aporta información? **Respuesta: d)** Un texto alternativo que la describa (ficha V.40).\n\n**9.** ¿Qué exige la navegación por teclado? **Respuesta: a)** Orden lógico, foco visible y ausencia de trampas (ficha V.40).\n\n**10.** ¿Cómo deben ser los mensajes de error de un formulario? **Respuesta: b)** Claros, indicando qué corregir y asociados al campo (ficha V.40).\n\n**11.** ¿Se puede usar el color como única forma de transmitir información? **Respuesta: c)** No: hay que añadir texto, forma u otro indicador (ficha V.40).\n\n**12.** ¿Cómo deben usarse las tablas en contenido accesible? **Respuesta: d)** Con cabeceras y solo para datos, no para maquetar (ficha V.40).\n\n**13.** ¿Cómo se evalúa la accesibilidad? **Respuesta: a)** Con herramientas automáticas, revisión manual y pruebas con personas usuarias (ficha V.40).\n\n**14.** ¿Qué regula el Real Decreto 1112/2018? **Respuesta: b)** La accesibilidad de los sitios web y aplicaciones móviles del sector público (BOE-A-2018-12699).\n\n**15.** ¿Qué es la norma EN 301 549? **Respuesta: c)** La norma armonizada europea de requisitos de accesibilidad de productos y servicios TIC, que en su versión de 2026 se basa en WCAG 2.2 (W3C WAI)."
+    },
+    {
+      "heading": "10. Fuentes citadas",
+      "body": "- **Ficha publicada del tema V.40** (`fixtures/demo/temas/V.40.json`): accesibilidad y usabilidad, POUR, estructura y navegación, formularios y multimedia, evaluación, tabla POUR y ejemplo resuelto.\n- **W3C WAI — WCAG 2 Overview** (w3.org/WAI/standards-guidelines/wcag/): estructura de las WCAG (4 principios, 13 pautas, niveles A/AA/AAA), versiones 2.0/2.1/2.2, ISO/IEC 40500 y relación con EN 301 549.\n- **Real Decreto 1112/2018, de 7 de septiembre** (BOE-A-2018-12699): ámbito, requisitos de perceptibilidad, operabilidad, comprensibilidad y robustez, presunción de conformidad con EN 301 549, carga desproporcionada, declaración de accesibilidad y mecanismos de comunicación, quejas y reclamaciones.\n- **`data/fuentes/V.40.txt`**: texto consolidado de trabajo. **Aviso:** este fichero no contiene el apartado de accesibilidad (recoge administración de sistemas, seguridad y redes), por lo que el tema se ha elaborado con la ficha publicada y las fuentes oficiales anteriores; no se copian párrafos literales."
+    }
+  ],
+  "testCases": [
+    {
+      "question": "¿Cuál es la diferencia entre accesibilidad y usabilidad?",
+      "options": [
+        "La accesibilidad elimina barreras para cualquier persona; la usabilidad mide eficacia, eficiencia y satisfacción",
+        "Son exactamente lo mismo",
+        "La accesibilidad se refiere solo al color y la usabilidad al texto",
+        "La usabilidad solo se aplica a las aplicaciones móviles"
+      ],
+      "answer": "a",
+      "explanation": "La accesibilidad garantiza que cualquier persona pueda usar el producto y la usabilidad mide la facilidad para lograr el objetivo con eficacia, eficiencia y satisfacción; no son sinónimos. Ref.: ficha V.40, accesibilidad y usabilidad."
+    },
+    {
+      "question": "¿Qué principio POUR exige poder usar el contenido con teclado y sin trampas de foco?",
+      "options": ["Perceptible", "Operable", "Comprensible", "Robusto"],
+      "answer": "b",
+      "explanation": "Operable exige que los componentes y la navegación se puedan utilizar por cualquier persona, incluida la navegación por teclado con foco visible. Ref.: WCAG, principios POUR."
+    },
+    {
+      "question": "¿Qué principio POUR exige que el contenido funcione con tecnologías de apoyo y navegadores distintos?",
+      "options": ["Perceptible", "Operable", "Robusto", "Comprensible"],
+      "answer": "c",
+      "explanation": "Robusto exige que el contenido sea suficientemente sólido para ser interpretado de forma fiable por diversos agentes de usuario, incluidas las tecnologías de asistencia. Ref.: WCAG, principios POUR."
+    },
+    {
+      "question": "¿Qué nivel de conformidad WCAG es el objetivo habitual de las administraciones?",
+      "options": ["Nivel A", "Nivel AAA", "Ninguno", "Nivel AA"],
+      "answer": "d",
+      "explanation": "Los niveles son A (mínimo), AA (recomendado y el objetivo habitual de las administraciones) y AAA (máximo, no siempre exigible). Ref.: ficha V.40."
+    },
+    {
+      "question": "¿Cuántas pautas tiene WCAG 2.2?",
+      "options": ["Trece pautas", "Doce pautas", "Diecisiete pautas", "Nueve pautas"],
+      "answer": "a",
+      "explanation": "WCAG 2.2 tiene 13 pautas organizadas bajo los cuatro principios; WCAG 2.0 tenía 12 y WCAG 2.1 añadió una pauta más. Ref.: W3C WAI, WCAG 2 Overview."
+    },
+    {
+      "question": "¿Cuántos criterios de conformidad añade WCAG 2.2 respecto a WCAG 2.1?",
+      "options": ["Diecisiete", "Nueve", "Doce", "Trece"],
+      "answer": "b",
+      "explanation": "WCAG 2.2 añade nueve criterios de conformidad respecto a 2.1; WCAG 2.1 había añadido 17 respecto a 2.0. Ref.: W3C WAI, WCAG 2 Overview."
+    },
+    {
+      "question": "¿Qué valor debe llevar el texto alternativo de una imagen decorativa?",
+      "options": ["Un texto descriptivo largo", "El nombre del archivo", "Un valor vacío: alt=\"\"", "No debe tener atributo alt"],
+      "answer": "c",
+      "explanation": "Las imágenes decorativas deben llevar alt=\"\" para que las tecnologías de asistencia las ignoren; las informativas necesitan un texto alternativo descriptivo. Ref.: ficha V.40."
+    },
+    {
+      "question": "¿Qué necesita una imagen que aporta información?",
+      "options": ["Solo un pie de foto", "Nada especial", "Un enlace", "Un texto alternativo que la describa"],
+      "answer": "d",
+      "explanation": "Las imágenes informativas necesitan un texto alternativo que transmita la información que aportan, para quien no puede verlas. Ref.: ficha V.40."
+    },
+    {
+      "question": "¿Qué exige la navegación por teclado de una página accesible?",
+      "options": [
+        "Orden lógico, foco visible y ausencia de trampas",
+        "Que solo funcione con ratón",
+        "Que oculte el foco",
+        "Que use imágenes en lugar de botones"
+      ],
+      "answer": "a",
+      "explanation": "La navegación por teclado debe funcionar sin ratón, con orden lógico, foco visible y sin trampas; los enlaces deben tener texto descriptivo. Ref.: ficha V.40."
+    },
+    {
+      "question": "¿Cómo deben ser los mensajes de error de un formulario accesible?",
+      "options": [
+        "Solo un icono rojo",
+        "Claros, indicando qué corregir y asociados al campo",
+        "Un código numérico sin explicación",
+        "Ocultos hasta que el usuario los busque"
+      ],
+      "answer": "b",
+      "explanation": "Los errores deben explicar qué corregir y asociarse al campo correspondiente; no basta con un cambio de color. Ref.: ficha V.40."
+    },
+    {
+      "question": "¿Se puede usar el color como única forma de transmitir información?",
+      "options": [
+        "Sí, siempre que sea un color llamativo",
+        "Sí, si el usuario no tiene discapacidad visual",
+        "No: hay que añadir texto, forma u otro indicador",
+        "Solo en formularios"
+      ],
+      "answer": "c",
+      "explanation": "El color no puede ser la única forma de transmitir información; hay que añadir texto, forma u otro indicador perceptible. Ref.: ficha V.40."
+    },
+    {
+      "question": "¿Cómo deben usarse las tablas en un contenido accesible?",
+      "options": [
+        "Para maquetar la página",
+        "Sin cabeceras para que ocupen menos",
+        "Solo con imágenes dentro",
+        "Con cabeceras y solo para datos, no para maquetar"
+      ],
+      "answer": "d",
+      "explanation": "Las tablas de datos deben tener cabeceras que permitan asociar cada celda con su encabezado, y no deben usarse para maquetar la página. Ref.: ficha V.40."
+    },
+    {
+      "question": "¿Cómo se evalúa la accesibilidad de un sitio web?",
+      "options": [
+        "Con herramientas automáticas, revisión manual y pruebas con personas usuarias",
+        "Solo con una herramienta automática",
+        "Solo con una auditoría de código",
+        "Únicamente con una encuesta de satisfacción"
+      ],
+      "answer": "a",
+      "explanation": "Las herramientas automáticas detectan solo parte de los problemas; se completan con revisión manual (teclado, lector, contraste) y pruebas con personas usuarias. Ref.: ficha V.40."
+    },
+    {
+      "question": "¿Qué regula el Real Decreto 1112/2018?",
+      "options": [
+        "La protección de datos personales",
+        "La accesibilidad de los sitios web y aplicaciones móviles del sector público",
+        "La contratación del sector público",
+        "El procedimiento administrativo común"
+      ],
+      "answer": "b",
+      "explanation": "El RD 1112/2018 regula la accesibilidad de los sitios web y aplicaciones para dispositivos móviles del sector público (BOE-A-2018-12699). Ref.: BOE, RD 1112/2018."
+    },
+    {
+      "question": "¿Qué es la norma EN 301 549?",
+      "options": [
+        "Una ley orgánica española",
+        "Un protocolo de red",
+        "La norma armonizada europea de accesibilidad de productos y servicios TIC, basada en su versión de 2026 en WCAG 2.2",
+        "Un formato de documento"
+      ],
+      "answer": "c",
+      "explanation": "EN 301 549 es la norma armonizada europea de requisitos de accesibilidad para productos y servicios TIC; la versión de 2026 se basa en WCAG 2.2. Ref.: W3C WAI, WCAG 2 Overview."
+    }
+  ],
+  "sources": [
+    {
+      "file": "fixtures/demo/temas/V.40.json",
+      "page": "ficha publicada del tema: accesibilidad y usabilidad, POUR, estructura y navegación, formularios y multimedia, evaluación y ejemplo",
+      "use": "base de contenido del tema"
+    },
+    {
+      "file": "W3C WAI — WCAG 2 Overview (w3.org/WAI/standards-guidelines/wcag/)",
+      "page": "Summary, What is in WCAG 2 y WCAG 2.0/2.1/2.2, ISO/IEC 40500 y EN 301 549",
+      "use": "estructura de WCAG, principios, pautas, niveles, versiones y relación con la norma europea"
+    },
+    {
+      "file": "Real Decreto 1112/2018 (BOE-A-2018-12699)",
+      "page": "arts. 1-15 (ámbito, requisitos, presunción de conformidad, carga desproporcionada, declaración de accesibilidad y quejas)",
+      "use": "obligaciones del sector público, requisitos POUR, declaración de accesibilidad y plazos de quejas y reclamaciones"
+    },
+    {
+      "file": "data/fuentes/V.40.txt",
+      "page": "texto consolidado de fuentes del tema (no contiene el apartado de accesibilidad)",
+      "use": "consolidado de trabajo; comprobado que no desarrolla accesibilidad, por lo que no se usa para datos concretos"
+    }
+  ]
+}

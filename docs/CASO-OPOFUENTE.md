@@ -13,12 +13,12 @@ casos prácticos y 40 prácticas**, publicado como demo estática, sin cuentas n
 | Temas con apuntes completos | **40/40 (100 %)** |
 | Preguntas razonadas | **400** (10 por tema) |
 | Casos prácticos | **5** casos · **50** preguntas |
-| Supuestos resueltos | **15** · **300** preguntas |
+| Supuestos resueltos | **17** · **340** preguntas |
 | Preguntas totales | **450** (400 de temario + 50 de casos) |
 | Prácticas | **40** (una por tema) |
 | Bloques | **5** (I-IV al 100 %; V 7/7) |
 | Convocatorias C1 | **12** (10 draft, 2 archivadas) |
-| Comprobaciones Playwright | **109/109** en la URL pública |
+| Comprobaciones Playwright | **113/113** en la URL pública |
 | Enlaces de convocatoria | **12/12** (HTTP 200) |
 | Pruebas | **517** unitarias backend · **225** web |
 | Capturas | 390 y 1280 px en `docs/capturas/demo-pages/` |
@@ -58,8 +58,7 @@ las opciones de test están equilibrados: 100 respuestas correctas por cada letr
   II.17, III.18 y III.22), con su propio runner y registro en el historial.
 - **Temas largos**: I.1, III.21, IV.27, V.34 y V.35 con 2.488-3.064 palabras, 70 test cases, tablas
   y 3 SVG propios; página autosuficiente y fuentes citadas por apartado/página.
-- **Supuestos resueltos**: 10 casos (7 oficiales del INAP y 3 propios), 200 preguntas con resolución,
-  justificación y modo examen de 20 preguntas.
+- **Supuestos resueltos**: 17 casos (7 oficiales del INAP y 10 propios), 340 preguntas con resolución, justificación y modo examen de 20 preguntas.
 - **Guía de estudio** con orden de bloques y temas flojos (<70 % en la última práctica).
 - **Examen por bloque** y **examen completo** que mezcla los cinco bloques, con tiempo total,
   penalización por fallo, nota y revisión de fallos. El perfil TAI usa 120 min y −1/3; las C1 locales

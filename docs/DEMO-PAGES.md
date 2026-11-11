@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **109/109**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **113/113**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -74,7 +74,7 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **109/109** y capturas.
+   → **113/113** y capturas.
 
 ## Verificación y capturas
 

@@ -1,0 +1,250 @@
+{
+  "slug": "tai-propio-v-data",
+  "year": 2026,
+  "conv": "Supuesto propio · OpoFuente 2026",
+  "block": "V",
+  "title": "Brecha de datos en una aplicación municipal",
+  "difficulty": "media",
+  "official": false,
+  "estimatedMinutes": 30,
+  "statement": "Una aplicación municipal sufre una brecha y el equipo debe evaluar el riesgo, notificar a la AEPD, informar a los afectados y corregir las medidas de seguridad. El tribunal pide justificar bases jurídicas, plazos y medidas.",
+  "steps": [
+    "1. Delimitar datos y base jurídica.",
+    "2. Evaluar riesgo y alcance.",
+    "3. Notificar a la AEPD y afectados.",
+    "4. Aplicar medidas y documentar.",
+    "5. Revisar encargados y transferencias."
+  ],
+  "topics": [
+    "V.37",
+    "V.35",
+    "V.38"
+  ],
+  "source": {
+    "label": "Elaboración propia · OpoFuente",
+    "url": "https://erdeivih.github.io/opofuente-demo/",
+    "pages": "Material propio de la demo"
+  },
+  "questions": [
+    {
+      "stem": "¿Qué norma principal regula la protección de datos en la UE?",
+      "options": [
+        "La Ley 9/2017",
+        "La Ley 39/2015",
+        "El RGPD",
+        "El ENS"
+      ],
+      "correct": "c",
+      "justification": "El RGPD (Reglamento UE 2016/679) es la norma principal, desarrollada en España por la LOPDGDD."
+    },
+    {
+      "stem": "¿Qué exige el principio de minimización?",
+      "options": [
+        "Publicar todos los datos",
+        "Recoger cuantos más datos mejor",
+        "Conservar los datos indefinidamente",
+        "Recoger solo los datos necesarios para la finalidad"
+      ],
+      "correct": "d",
+      "justification": "La minimización limita los datos a lo adecuado, pertinente y necesario para el fin."
+    },
+    {
+      "stem": "¿Cuál es una base jurídica habitual para una administración pública?",
+      "options": [
+        "El cumplimiento de una obligación legal o el ejercicio de potestades públicas",
+        "El consentimiento siempre",
+        "El interés comercial",
+        "La venta de datos"
+      ],
+      "correct": "a",
+      "justification": "Las administraciones tratan datos, sobre todo, por obligación legal o misión de interés público; el consentimiento no siempre es la base adecuada."
+    },
+    {
+      "stem": "¿Qué caracteriza al consentimiento válido?",
+      "options": [
+        "Genérico y tácito",
+        "Libre, específico, informado e inequívoco",
+        "Obligatorio para cualquier servicio",
+        "Verbal y sin información"
+      ],
+      "correct": "b",
+      "justification": "El consentimiento debe ser una manifestación libre, específica, informada e inequívoca de la voluntad."
+    },
+    {
+      "stem": "¿En qué plazo general deben atenderse los derechos?",
+      "options": [
+        "Un año",
+        "24 horas",
+        "Un mes",
+        "No hay plazo"
+      ],
+      "correct": "c",
+      "justification": "Con carácter general, el plazo es de un mes, ampliable en casos complejos según el RGPD."
+    },
+    {
+      "stem": "¿Qué es el derecho de portabilidad?",
+      "options": [
+        "Cambiar de administración",
+        "Borrar todos los datos",
+        "Oponerse a cualquier tratamiento",
+        "Recibir los datos en un formato estructurado y transmitirlos a otro responsable"
+      ],
+      "correct": "d",
+      "justification": "La portabilidad permite obtener y reutilizar los datos en un formato interoperable cuando se cumplen los requisitos."
+    },
+    {
+      "stem": "¿Qué es una evaluación de impacto (EIPD)?",
+      "options": [
+        "Un análisis del riesgo de un tratamiento que puede afectar gravemente a los derechos",
+        "Una auditoría contable",
+        "Un test de velocidad",
+        "Una copia de seguridad"
+      ],
+      "correct": "a",
+      "justification": "La EIPD evalúa riesgos de tratamientos de alto riesgo y define medidas para mitigarlos."
+    },
+    {
+      "stem": "¿Cuándo debe notificarse una brecha de seguridad a la autoridad de control?",
+      "options": [
+        "Solo si afecta a más de un millón de personas",
+        "Cuando supone un riesgo para los derechos, en un plazo de 72 horas",
+        "Nunca",
+        "Al año siguiente"
+      ],
+      "correct": "b",
+      "justification": "La brecha con riesgo debe notificarse sin dilación indebida y, a más tardar, en 72 horas."
+    },
+    {
+      "stem": "¿Qué significa privacidad desde el diseño?",
+      "options": [
+        "Cifrar solo el disco",
+        "Añadir una política al final",
+        "Incorporar la protección de datos desde el inicio del proyecto",
+        "Ocultar el formulario"
+      ],
+      "correct": "c",
+      "justification": "La privacidad desde el diseño y por defecto se integra en el diseño del sistema y en la configuración inicial."
+    },
+    {
+      "stem": "¿Qué debe hacer una administración antes de recoger datos personales?",
+      "options": [
+        "Compartirlos con terceros sin contrato",
+        "Recogerlos y decidir después",
+        "Publicarlos en abierto",
+        "Definir finalidad, base jurídica, plazo y medidas de seguridad"
+      ],
+      "correct": "d",
+      "justification": "La licitud y la transparencia exigen definir el tratamiento antes de recoger los datos."
+    },
+    {
+      "stem": "¿Qué es el ransomware?",
+      "options": [
+        "Una técnica de compresión",
+        "Un protocolo de correo",
+        "Un tipo de copia de seguridad",
+        "Malware que cifra datos y exige un rescate"
+      ],
+      "correct": "d",
+      "justification": "El ransomware cifra o bloquea datos y pide un pago; la recuperación debe basarse en copias y contención, no en pagar."
+    },
+    {
+      "stem": "¿Qué principio combina varias capas de seguridad?",
+      "options": [
+        "Defensa en profundidad",
+        "Mínimo privilegio",
+        "Alta disponibilidad",
+        "Balanceo de carga"
+      ],
+      "correct": "a",
+      "justification": "La defensa en profundidad coordina identidad, red, endpoints, copias y formación para que un fallo no lo rompa todo."
+    },
+    {
+      "stem": "¿Qué reduce el riesgo de robo de credenciales?",
+      "options": [
+        "Compartir contraseñas",
+        "MFA y mínimo privilegio",
+        "Desactivar los registros",
+        "Usar la misma cuenta para todo"
+      ],
+      "correct": "b",
+      "justification": "La autenticación multifactor y el mínimo privilegio limitan el impacto de una credencial comprometida."
+    },
+    {
+      "stem": "¿Qué es un SIEM?",
+      "options": [
+        "Un protocolo de correo",
+        "Un tipo de firewall físico",
+        "Un sistema que centraliza y correlaciona eventos de seguridad",
+        "Un formato de imagen"
+      ],
+      "correct": "c",
+      "justification": "El SIEM recoge logs y correlaciona eventos para detectar y alertar sobre incidentes."
+    },
+    {
+      "stem": "¿Cuál es el primer paso ante un incidente confirmado?",
+      "options": [
+        "Publicar el incidente en redes",
+        "Formatear todos los equipos",
+        "Pagar el rescate",
+        "Contener el incidente y preservar la evidencia"
+      ],
+      "correct": "d",
+      "justification": "Contener evita la propagación y preservar evidencia permite investigar; formatear destruye pruebas."
+    },
+    {
+      "stem": "¿Qué fase del ciclo de respuesta corrige la causa del incidente?",
+      "options": [
+        "Erradicación",
+        "Detección",
+        "Preparación",
+        "Recuperación"
+      ],
+      "correct": "a",
+      "justification": "La erradicación elimina la causa y las puertas de entrada; la recuperación restaura el servicio."
+    },
+    {
+      "stem": "¿Por qué no se debe pagar un rescate?",
+      "options": [
+        "Porque siempre es ilegal",
+        "Porque no garantiza la recuperación y financia a los atacantes",
+        "Porque las copias no existen",
+        "Porque el ransomware no cifra"
+      ],
+      "correct": "b",
+      "justification": "Pagar no asegura recuperar los datos, puede financiar el delito y no elimina la persistencia del ataque."
+    },
+    {
+      "stem": "¿Qué plazo general hay para notificar una brecha de datos personales?",
+      "options": [
+        "30 días",
+        "24 horas",
+        "72 horas",
+        "No hay plazo"
+      ],
+      "correct": "c",
+      "justification": "El RGPD exige notificar a la autoridad de control sin dilación indebida y, a más tardar, en 72 horas cuando hay riesgo."
+    },
+    {
+      "stem": "¿Qué es una vulnerabilidad?",
+      "options": [
+        "Un tipo de usuario",
+        "Un ataque ya ejecutado",
+        "Una copia de seguridad",
+        "Una debilidad que puede ser explotada por una amenaza"
+      ],
+      "correct": "d",
+      "justification": "La vulnerabilidad es la debilidad; la amenaza es quien puede explotarla y el riesgo combina ambos con el impacto."
+    },
+    {
+      "stem": "¿Qué debe hacerse con las copias para sobrevivir a un ransomware?",
+      "options": [
+        "Mantener copias externas, inmutables y probadas",
+        "Guardarlas solo en el servidor cifrado",
+        "Conectarlas permanentemente a la red",
+        "No cifrarlas nunca"
+      ],
+      "correct": "a",
+      "justification": "Las copias aisladas o inmutables no se pueden cifrar desde el servidor comprometido y permiten restaurar."
+    }
+  ]
+}
