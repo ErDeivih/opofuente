@@ -105,7 +105,9 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
     for path in largos:
         contenido = data["topics"][path]
         assert "longSections" in contenido, f"{path}: falta longSections"
-        assert len(contenido["longSections"]) >= 12, f"{path}: pocos apartados largos"
+        assert len(contenido["longSections"]) >= 10, f"{path}: pocos apartados largos"
+        if path == "I.1":
+            assert len(contenido["longSections"]) == 10, "I.1 debe tener 10 apartados"
         palabras = len(
             " ".join(seccion.get("body", "") for seccion in contenido["longSections"]).split()
         )

@@ -39,7 +39,7 @@ servidor.
 - **Calidad revisada**: 40/40 fichas con «Lo que hay que memorizar» y «Errores típicos»; 5 temas
   reforzados (II.15, II.16, II.17, III.18, III.22) y letra correcta equilibrada (100 a/b/c/d).
   Detalle en [CALIDAD-TEMARIO.md](docs/CALIDAD-TEMARIO.md).
-- **Temas largos**: I.1, III.21, IV.27, V.34, V.35 y V.39 reescritos con 2.448-3.064 palabras, 85 casos
+- **Temas largos**: I.1, III.21, IV.27, V.34, V.35 y V.39 reescritos con 1.543-3.064 palabras, 86 casos
   tipo test y 3 SVG propios; fuentes citadas y páginas de estudio autosuficientes. Detalle en
   [TEMAS-LARGOS.md](docs/TEMAS-LARGOS.md).
 - **Supuestos oficiales**: 5 supuestos del INAP (2024-A-S1, 2024-B-S1, 2024-A-S2, 2023-L-S1 y 2023-L-S2), **100 preguntas**, resolución paso a paso, justificaciones y modo examen de 20 preguntas. Detalle en

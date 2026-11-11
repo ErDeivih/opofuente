@@ -3,24 +3,23 @@
 **Fecha:** 11/11/2026 · **Objetivo:** que cada tema se pueda estudiar sin abrir otro PDF, con
 redacción propia y fuentes citadas.
 
-## Los cinco temas
+## Los seis temas
 
 | Tema | Título | Palabras | Apartados | Test cases | Tablas | Diagrama |
 |---|---|---|---|---|---|---|
-| I.1 | La Constitución Española de 1978 | **2.693** | 12 | 14 | 11 | SVG de estructura |
+| I.1 | La Constitución Española de 1978 | **1.543** | 10 | 15 | 1 | SVG de estructura |
 | III.21 | Redes | **2.988** | 12 | 15 | 6 | SVG pila OSI |
 | IV.27 | Bases de datos relacionales | **3.006** | 12 | 14 | 2 | — |
 | V.34 | Seguridad de la información | **3.064** | 12 | 13 | 5 | SVG triada CIA |
 | V.35 | ENS (RD 311/2022) | **2.488** | 12 | 14 | 3 | — |
 | V.39 | Administración electrónica práctica | **2.448** | 12 | 15 | 3 | — |
 
-**Media:** 2.781 palabras por tema · **85 casos tipo test** en total (10-15 por tema) · **30 tablas**
+**Media:** 2.590 palabras por tema · **86 casos tipo test** en total (10-15 por tema) · **20 tablas**
 comparativas · **3 diagramas SVG propios**.
 
-Cada tema sigue la estructura pedida: introducción y contexto → apartados numerados → tablas
-comparativas → ejemplos prácticos → casos tipo test con respuesta razonada → resumen de memorización →
-fuentes citadas. Se ha integrado en la demo como `longSections` y sustituye a la ficha corta en la
-página del tema.
+I.1 se ha reescrito con la **estructura definitiva de 10 apartados**: ficha oficial, epígrafes,
+introducción, desarrollo por epígrafe con norma al artículo, tabla, ejemplo, trampas, resumen, test
+comentado y fuentes. Los demás temas siguen la misma idea y se irán adaptando a ese formato.
 
 ## Fuentes usadas
 
