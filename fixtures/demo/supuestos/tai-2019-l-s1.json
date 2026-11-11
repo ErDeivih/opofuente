@@ -1,0 +1,211 @@
+{
+  "slug": "tai-2019-l-s1",
+  "year": 2019,
+  "conv": "TAI-L 2019 · Supuesto I",
+  "block": "IV",
+  "title": "Gestión de procesos selectivos de oposiciones",
+  "difficulty": "media",
+  "official": true,
+  "estimatedMinutes": 30,
+  "statement": "En el departamento TIC al que acaba de incorporarse se va a desarrollar, para la Subdirección de Selección, un sistema de información que gestione los procesos selectivos y las convocatorias de oposiciones de la Administración General del Estado. El sistema cubrirá la inscripción de aspirantes, la gestión de colaboradores, la generación de listados, estadísticas y cuadros de mando, y la emisión de certificados para aspirantes y colaboradores.\n\nEl proyecto convive con lenguajes y tecnologías ya implantados: Java, C# y Python, varios gestores de bases de datos y Git como repositorio de código. El diagrama de clases simplificado del sistema relaciona cuatro entidades: **Opositor** (identificador y NIF), **Solicitud** (identificador, opositor y proceso), **Proceso** (identificador y forma de acceso) y **Ejercicio** (identificador, proceso y duración). Un opositor puede presentar varias solicitudes y cada solicitud pertenece a un proceso; un proceso consta de uno o varios ejercicios.\n\nEl enunciado del examen advierte de que el código de las preguntas tiene las clases, librerías y variables ya declaradas, que el HTML es HTML5 y que las sentencias SQL siguen el estándar ANSI SQL. La metodología de referencia del organismo es Métrica v3. Las preguntas se reparten entre desarrollo web (HTML, CSS, XML, JSON, JavaScript), programación en Python, Java y C#, bases de datos relacionales y SQL, y el uso de Git.",
+  "steps": [
+    "Leer el caso y quedarse con el reparto de áreas: desarrollo web (HTML, CSS, JavaScript, XML y JSON), programación (Java, C# y Python), bases de datos (normalización y SQL) y Git.",
+    "Repasar el diagrama de clases para saber qué tablas y relaciones se citan en las preguntas de SQL: Opositor, Solicitud, Proceso y Ejercicio.",
+    "Resolver primero las preguntas de sintaxis (HTML, CSS, XML, JSON, Java, C# y Python) comprobando la forma exacta de cada opción, no solo su intención.",
+    "En las preguntas de SQL, fijarse en el orden de las cláusulas (SELECT, FROM, WHERE, GROUP BY, HAVING) y en el uso de comodines y funciones de agregado.",
+    "Corregir con la plantilla oficial del Supuesto I y anotar los errores de sintaxis que más se repiten para repasarlos."
+  ],
+  "topics": ["IV.27", "IV.28", "IV.30", "IV.31", "IV.32"],
+  "source": {
+    "label": "INAP — Cuestionario TAI-L 2019 (OEP 2019), Supuesto I",
+    "url": "https://sede.inap.gob.es/documents/59312/1925774/cues_1er_ejer_TAI-L_oep19_154AB89SD658.pdf/ac7ec9d6-3ac6-4457-6687-6ecf53aa158e",
+    "pages": "pp. 9-12"
+  },
+  "questions": [
+    {
+      "stem": "En una tabla HTML5, ¿qué etiqueta define la celda de encabezado de la columna «Proceso», con un formato de letra diferenciado?",
+      "options": [
+        "<th>Proceso</th>",
+        "<tableheader>Proceso</tableheader>",
+        "<theader>Proceso</theader>",
+        "<tableh>Proceso</tableh>"
+      ],
+      "correct": "a",
+      "justification": "th define una celda de encabezado dentro de una tabla y el navegador le aplica un formato diferenciado. tableheader, theader y tableh no son elementos HTML válidos."
+    },
+    {
+      "stem": "Se quiere mostrar un opositor con una lista anidada de sus dos primeras notas: el opositor como elemento principal y las notas como sublista. ¿Cuál es el código HTML5 correcto?",
+      "options": [
+        "<ul><li>Opositor<ul><li>Nota 1</li><li>Nota 2</li></ul></li></ul>",
+        "<ul><li>Opositor</li></ul><ul><li>Nota 1</li><li>Nota 2</li></ul>",
+        "<ul><li1>Opositor</li1><li2>Nota 1</li2><li2>Nota 2</li2></ul>",
+        "<ul><li>Opositor<li>Nota 1</li><li>Nota 2</li></li></ul>"
+      ],
+      "correct": "a",
+      "justification": "La lista anidada se consigue metiendo una segunda ul, con sus li, dentro del li del opositor. La opción b crea dos listas hermanas, la c inventa etiquetas li1 y li2 y la d deja un li sin cerrar antes de abrir los siguientes."
+    },
+    {
+      "stem": "En el formulario de inscripción se exige que el nombre del opositor sea obligatorio. ¿Qué código completa correctamente el campo de texto?",
+      "options": [
+        "<input type=\"text\" name=\"username\" required/>",
+        "<input type=\"text\" name=\"username\" enforced/>",
+        "<input type=\"text\" name=\"username\" mandatory/>",
+        "<input type=\"text\" name=\"username\" compulsory/>"
+      ],
+      "correct": "a",
+      "justification": "required es el atributo booleano de HTML5 que impide enviar el formulario si el campo está vacío. enforced, mandatory y compulsory no existen como atributos HTML; solo parecen traducciones de «obligatorio»."
+    },
+    {
+      "stem": "Se quiere aplicar color verde a todos los enlaces (etiqueta a) que sean hijos directos de un elemento li. ¿Qué selector CSS es el correcto?",
+      "options": ["li.a {color: green;}", "li>a {color: green;}", "li#a {color: green;}", "li_a {color: green;}"],
+      "correct": "b",
+      "justification": "El combinador > selecciona los hijos directos del elemento de la izquierda, de modo que li>a alcanza solo a los enlaces que cuelgan directamente de un li. li.a busca una clase, li#a un identificador y li_a no es un combinador válido."
+    },
+    {
+      "stem": "¿Qué regla CSS aplica el modelo Flexbox a un div cuyo id es «principal»?",
+      "options": [
+        "div#principal {display: flex;}",
+        "div#principal {display: flexbox;}",
+        "div#principal {display: flex-container;}",
+        "div#principal {display:flexible;}"
+      ],
+      "correct": "a",
+      "justification": "El valor que activa el modelo de caja flexible es display: flex. flexbox, flex-container y flexible no son valores válidos de la propiedad display."
+    },
+    {
+      "stem": "Se detectan errores en la exportación a XML de los listados de notas. Sin valorar si la información está bien representada, ¿cuál de estos fragmentos XML está bien formado?",
+      "options": [
+        "<Opositor>Winston Churchill<Nota1>95</nota1><Nota2>65</nota2></opositor>",
+        "<Opositor>Winston Churchill<Nota1>95</Nota1><Nota2>65</Opositor></Nota2>",
+        "<Opositor>Winston Churchill<Nota1/>95<Nota2/>65</Opositor>",
+        "<Opositor>Winston Churchill<Nota1>95</><Nota2>65</></>"
+      ],
+      "correct": "c",
+      "justification": "La opción c usa etiquetas equilibradas y autocerradas correctamente. La a mezcla mayúsculas y minúsculas en los nombres de etiqueta, la b cierra Opositor antes de cerrar Nota2 y la d emplea el cierre vacío </>, que no es XML bien formado."
+    },
+    {
+      "stem": "La Subdirección va a intercambiar datos en JSON. ¿Cuál de estos fragmentos es un JSON válido?",
+      "options": [
+        "{\"nombre\": \"Juana\", \"apellido\": \"Ruiz\"}",
+        "{'nombre': 'Juana', 'apellido': 'Ruiz'}",
+        "{nombre: \"Juana\", apellido: \"Ruiz\"}",
+        "{nombre: \"Juana\"; apellido: \"Ruiz\"}"
+      ],
+      "correct": "a",
+      "justification": "JSON exige comillas dobles tanto en las claves como en los valores de tipo cadena y separa los pares con comas. Las comillas simples, las claves sin comillas y el punto y coma como separador no son sintaxis JSON válida."
+    },
+    {
+      "stem": "¿Qué valor devuelve esta función JavaScript? (Con i = 1 y j = 0, mientras i sea menor que 7 se suma i a j y se incrementa i en 2).",
+      "options": ["2", "9", "6", "0"],
+      "correct": "b",
+      "justification": "El bucle se ejecuta con i = 1, 3 y 5: j acumula 1 + 3 + 5 = 9; al llegar i = 7 la condición i < 7 deja de cumplirse y se devuelve 9. Las demás opciones no coinciden con esa traza."
+    },
+    {
+      "stem": "Con la variable Python «opositor = {'nombre': 'Sandra Gomez', 'notas': [27, 36, 12]}», ¿qué expresión asigna 36 a la variable notaSegundoEjercicio?",
+      "options": [
+        "notaSegundoEjercicio = opositor.notas.Value.Item2",
+        "notaSegundoEjercicio = opositor['notas'][1]",
+        "notaSegundoEjercicio = opositor.Key[notas].Value[1]",
+        "notaSegundoEjercicio = opositor(notas(2))"
+      ],
+      "correct": "b",
+      "justification": "Se accede al diccionario por la clave 'notas', que devuelve la lista, y después al índice 1 de la lista, que es 36 porque los índices empiezan en 0. Las otras sintaxis no son propias de Python y la d, además, contaría el tercer elemento."
+    },
+    {
+      "stem": "Se valoran desarrollos de Machine Learning en Python. ¿Cuál de las siguientes es una librería válida para ese fin?",
+      "options": ["Keras", "Yum", "Mahotas", "Openpyxl"],
+      "correct": "a",
+      "justification": "Keras es una librería de aprendizaje profundo para Python. Yum es un gestor de paquetes de sistemas Linux, Mahotas se orienta al procesamiento de imágenes y Openpyxl sirve para leer y escribir hojas de Excel."
+    },
+    {
+      "stem": "En uno de los módulos Java hay un bucle que une muchísimas cadenas de texto y lastra el rendimiento. ¿Qué clase de java.lang conviene usar para mejorarlo?",
+      "options": ["StringConcat", "StringConstruct", "StringBuilder", "StringCreator"],
+      "correct": "c",
+      "justification": "StringBuilder permite construir cadenas mutables y evita crear un objeto String nuevo en cada concatenación. StringConcat, StringConstruct y StringCreator no son clases de la API de Java."
+    },
+    {
+      "stem": "¿Cómo debe declarar el equipo en Java una clase llamada Ejercicio para impedir que se herede de ella?",
+      "options": ["closed class Ejercicio", "final class Ejercicio", "private class Ejercicio", "immutable class Ejercicio"],
+      "correct": "b",
+      "justification": "El modificador final aplicado a una clase impide que otras clases la extiendan. closed e immutable no son modificadores de Java y private no impide la herencia, sino que limita la visibilidad de la clase."
+    },
+    {
+      "stem": "En C# hay que crear un objeto SqlConnection y asegurar que se llama a Dispose al salir del bloque. ¿Qué instrucción se utiliza?",
+      "options": [
+        "using (SqlConnection conn = new SqlConnection(connString)) {conn.Open();}",
+        "scope (SqlConnection conn = new SqlConnection(connString)) {conn.Open();}",
+        "dispose (SqlConnection conn = new SqlConnection(connString)) {conn.Open();}",
+        "internal (SqlConnection conn = new SqlConnection(connString)) {conn.Open();}"
+      ],
+      "correct": "a",
+      "justification": "La instrucción using garantiza que el objeto se libere y se llame a Dispose al terminar el bloque, aunque se produzca una excepción. scope, dispose e internal no son instrucciones de control de C# para ese fin."
+    },
+    {
+      "stem": "¿Cuál es la forma correcta de declarar e inicializar un array de enteros en C#?",
+      "options": [
+        "int[] arrayEnteros = new {1, 2, 3};",
+        "int arrayEnteros[] = new() {1, 2, 3};",
+        "int[] arrayEnteros = new[] {1, 2, 3};",
+        "int arrayEnteros[] = new {1, 2, 3};"
+      ],
+      "correct": "c",
+      "justification": "En C# el tipo se escribe int[] antes del nombre y la inicialización implícita usa new[] con los valores. La opción a usa new sin corchetes, la b coloca los corchetes detrás del nombre al estilo de Java y la d combina ambas incorrecciones."
+    },
+    {
+      "stem": "En una base de datos antigua se guarda un registro con NIF, nombre, dos apellidos, dirección y el campo Teléfonos con el valor «916666666;917777777». ¿En qué forma normal está la tabla?",
+      "options": ["En primera forma normal", "En segunda forma normal", "En tercera forma normal", "No está en ninguna forma normal"],
+      "correct": "d",
+      "justification": "La primera forma normal exige valores atómicos, y el campo Teléfonos almacena dos números separados por punto y coma. Al incumplirse la 1NF no puede estar en 2NF ni en 3NF, por lo que no está en ninguna forma normal."
+    },
+    {
+      "stem": "El campo IdFormaAcceso de la tabla Proceso es char(1) y toma «L» o «P». ¿Qué sentencia obtiene el identificador del proceso junto al nombre descriptivo de la forma de acceso?",
+      "options": [
+        "SELECT IdProceso, IF IdFormaAcceso = 'L' THEN 'Ingreso Libre' ELSE 'Promocion Interna' ENDIF AS FormaAcceso FROM Proceso",
+        "SELECT IdProceso, CASE IdFormaAcceso WHEN 'L' THEN 'Ingreso Libre' WHEN 'P' THEN 'Promocion Interna' END AS FormaAcceso FROM Proceso",
+        "SELECT IdProceso, SWITCH IdFormaAcceso ('L' = 'Ingreso Libre', 'P' = 'Promocion Interna') AS FormaAcceso FROM Proceso",
+        "SELECT IdProceso, IIF(IdFormaAcceso, 'L' = 'Ingreso Libre', 'P' = 'Promocion Interna') AS FormaAcceso FROM Proceso"
+      ],
+      "correct": "b",
+      "justification": "CASE WHEN ... THEN ... END es la expresión condicional del estándar ANSI SQL y permite devolver un texto distinto según el código. IF ... ENDIF, SWITCH e IIF no forman parte del estándar SQL."
+    },
+    {
+      "stem": "¿Qué sentencia devuelve el identificador de los opositores con más de una solicitud en la tabla Solicitud?",
+      "options": [
+        "SELECT IdOpositor, COUNT(IdSolicitud) AS NumeroSolicitudes FROM Solicitud GROUP BY IdOpositor WHERE NumeroSolicitudes > 1",
+        "SELECT IdOpositor, IdSolicitud FROM Solicitud WHERE COUNT(IdSolicitud) > 1",
+        "SELECT IdOpositor, COUNT(IdSolicitud) FROM Solicitud WHERE COUNT(IdSolicitud) > 1 GROUP BY IdOpositor",
+        "SELECT IdOpositor, COUNT(IdSolicitud) FROM Solicitud GROUP BY IdOpositor HAVING COUNT(IdSolicitud) > 1"
+      ],
+      "correct": "d",
+      "justification": "La condición sobre una función de agregado se filtra con HAVING después de GROUP BY, que es lo que hace la opción d. WHERE no puede usarse con COUNT, el alias del SELECT no se puede utilizar en WHERE y la opción a coloca WHERE en un lugar sintácticamente incorrecto."
+    },
+    {
+      "stem": "¿Con qué sentencia ANSI SQL se incrementa un 10 % la columna Duracion de todos los registros de la tabla Ejercicio?",
+      "options": [
+        "UPDATE Duracion = Duracion + (0.10 * Duracion) FROM Ejercicio",
+        "UPDATE Ejercicio SET Duracion = Duracion * 1.1",
+        "UPDATE TABLE Ejercicio (Duracion = Duracion + 10%)",
+        "UPDATE SET Duracion *= 1.10 FROM Ejercicio"
+      ],
+      "correct": "b",
+      "justification": "UPDATE indica la tabla con SET y asigna a la columna su valor multiplicado por 1,1, que equivale a sumarle el 10 %. Las otras opciones usan orden de cláusulas incorrecto, UPDATE TABLE o el operador *= y el porcentaje dentro del cálculo, que no son válidos en ANSI SQL."
+    },
+    {
+      "stem": "El campo DNI de la tabla Opositor es char(9). ¿Qué sentencia devuelve los registros cuyo DNI empieza por 3?",
+      "options": [
+        "SELECT * FROM Opositor WHERE DNI = 3*",
+        "SELECT * FROM Opositor WHERE DNI IN ('3.')",
+        "SELECT * FROM Opositor WHERE DNI LIKE '3%'",
+        "SELECT DNI(3*) FROM Opositor"
+      ],
+      "correct": "c",
+      "justification": "LIKE con el comodín % al final busca todas las cadenas que comienzan por el carácter 3. El asterisco no es comodín SQL, IN ('3.') busca el valor literal 3. y la última opción no es una consulta válida."
+    },
+    {
+      "stem": "El repositorio de código de la unidad es Git. ¿Qué comando muestra una lista de los commits anteriores?",
+      "options": ["git commit", "git fetch", "git status", "git log"],
+      "correct": "d",
+      "justification": "git log muestra el historial de commits del repositorio. git commit crea una confirmación nueva, git fetch descarga referencias del remoto y git status resume el estado del árbol de trabajo, pero ninguno lista el historial."
+    }
+  ]
+}

@@ -1,0 +1,257 @@
+{
+  "slug": "tai-2019-l-s2",
+  "year": 2019,
+  "conv": "TAI-L 2019 · Supuesto II",
+  "block": "III",
+  "title": "Integración de dos organismos y traslado al CPD",
+  "difficulty": "media",
+  "official": true,
+  "estimatedMinutes": 30,
+  "statement": "La pandemia de la COVID-19 obligó a las administraciones públicas a impulsar el teletrabajo y a replantear su estrategia TIC. En ese contexto, a su departamento le asignan la integración de dos organismos que no pueden asumir por sí solos las nuevas demandas de servicios y conexiones: la Demarcación de Carreteras de Madrid (DCM), con máquinas físicas Red Hat Enterprise Linux (RHEL) organizadas en tres áreas de 20 personas cada una, y la Confederación Hidrográfica del Tajo (CHT), con máquinas físicas Solaris organizadas en cinco áreas de 50 personas cada una. Ambos organismos tienen además bastantes equipos Windows 10 y equipamiento específico que hay que trasladar al CPD. La salvaguarda de los datos es crítica: una pérdida o inconsistencia durante el proceso sería inasumible. Salvo que la pregunta indique lo contrario, se dispone de los permisos adecuados de sistema operativo y de red.",
+  "steps": [
+    "Leer el caso y fijar el escenario: dos organismos (DCM con RHEL y CHT con Solaris), equipos Windows 10, traslado al CPD y prioridad absoluta a la integridad de los datos.",
+    "Resolver primero el direccionamiento: máscara y clase de 10.0.4.0/255.255.255.128, y capacidad y rango de hosts de 10.0.0.0/21.",
+    "Repasar los comandos de los tres sistemas operativos: versión de RHEL, rutas persistentes en Solaris, fichero de contraseñas, grupos locales, políticas de cuentas y caché DNS en Windows.",
+    "Abordar la infraestructura: capacidad de RAID 6, copias comprimidas con tar, creación y listado de contenedores Docker, alimentación PoE y categoría de cableado.",
+    "Cerrar con seguridad y servicios de red (firewall de Windows, tipo de IPS y puerto de SMTPS) y corregir el intento con la plantilla oficial."
+  ],
+  "topics": [
+    "II.14",
+    "III.18",
+    "III.19",
+    "III.20",
+    "III.21",
+    "III.22",
+    "III.23",
+    "IV.28",
+    "IV.29",
+    "V.38"
+  ],
+  "source": {
+    "label": "INAP — Cuestionario TAI-L 2019, Supuesto II",
+    "url": "https://sede.inap.gob.es/documents/59312/1925774/cues_1er_ejer_TAI-L_oep19_154AB89SD658.pdf/ac7ec9d6-3ac6-4457-6687-6ecf53aa158e",
+    "pages": "pp. 13-15"
+  },
+  "questions": [
+    {
+      "stem": "La DCM recibe de comunicaciones la red 10.0.4.0/255.255.255.128. Si se cuenta en binario, ¿cuántos bits a 1 tiene esa máscara?",
+      "options": [
+        "24",
+        "26",
+        "25",
+        "23"
+      ],
+      "correct": "c",
+      "justification": "255.255.255.128 equivale a 11111111.11111111.11111111.10000000: hay 25 bits a 1, luego es un /25. Las opciones 24, 26 y 23 no corresponden a esa máscara."
+    },
+    {
+      "stem": "Esa misma red 10.0.4.0, ¿en qué clase de direccionamiento IPv4 se encuadra?",
+      "options": [
+        "Clase A.",
+        "Clase B.",
+        "Clase C.",
+        "Clase D."
+      ],
+      "correct": "a",
+      "justification": "El primer octeto, 10, empieza por 0 y cae dentro del rango 1-126 de la clase A. La clase B comienza en 128, la C en 192 y la D en 224."
+    },
+    {
+      "stem": "La CHT recibe el bloque 10.0.0.0/21. ¿Cuántos hosts se pueden direccionar como máximo en él?",
+      "options": [
+        "1024",
+        "2046",
+        "32",
+        "256"
+      ],
+      "correct": "b",
+      "justification": "Un /21 deja 32 − 21 = 11 bits de host: 2^11 = 2048 direcciones, menos la de red y la de broadcast, quedan 2046 hosts. Las otras cifras se corresponden con prefijos distintos o no descuentan las dos direcciones reservadas."
+    },
+    {
+      "stem": "¿Qué direcciones puede ocupar un host dentro del bloque 10.0.0.0/21 que se ha asignado a la CHT?",
+      "options": [
+        "10.0.3.1 - 10.0.3.254",
+        "10.0.0.1 - 10.0.0.254",
+        "10.0.3.0 - 10.0.3.255",
+        "10.0.0.1 - 10.0.7.254"
+      ],
+      "correct": "d",
+      "justification": "El bloque de un /21 avanza de 8 en 8 en el tercer octeto: la red 10.0.0.0/21 abarca de 10.0.0.0 a 10.0.7.255. Por tanto, los hosts utilizables van de 10.0.0.1 a 10.0.7.254; los rangos de las otras opciones pertenecen a subredes más pequeñas."
+    },
+    {
+      "stem": "La DCM no sabe qué versión de RHEL tiene instalada. ¿Qué comando permite averiguarlo?",
+      "options": [
+        "rm -f /etc/redhat-release",
+        "cat /etc/redhat-version",
+        "cat /etc/redhat-release",
+        "mv /etc/redhat-release"
+      ],
+      "correct": "c",
+      "justification": "La versión de Red Hat se consulta leyendo /etc/redhat-release. rm y mv modifican o borran el fichero, y /etc/redhat-version no existe como ruta habitual."
+    },
+    {
+      "stem": "En una máquina Solaris de la CHT hay que dejar una ruta persistente hacia la red 10.0.5.0/24, con máscara 255.255.255.0 y puerta de enlace 10.0.5.150. ¿Cuál es el comando correcto?",
+      "options": [
+        "route -p add -net 10.0.5.0/24 -gateway 10.0.5.150",
+        "route new -p -net 10.0.5.0/24 -gateway 10.0.5.150",
+        "route -static add -net 10.0.5.0/24 -gateway 10.0.5.150",
+        "route add -static -net 10.0.5.0/24 -gateway 10.0.5.150"
+      ],
+      "correct": "a",
+      "justification": "En Solaris la opción -p hace permanente la ruta y la sintaxis es «route -p add -net ... -gateway ...». Las otras tres formas no son válidas: no existen los verbos new ni las opciones -static en esa posición."
+    },
+    {
+      "stem": "En una auditoría de un servidor Linux se pregunta dónde se guardan las contraseñas cifradas de los usuarios. ¿Cuál es la ubicación correcta?",
+      "options": [
+        "/etc/passwd",
+        "/etc/users",
+        "/etc/shadow",
+        "/etc/groups"
+      ],
+      "correct": "c",
+      "justification": "Los hashes de las contraseñas se almacenan en /etc/shadow, accesible solo con privilegios. /etc/passwd ya no guarda las contraseñas, y /etc/users y /etc/groups no son ficheros del sistema."
+    },
+    {
+      "stem": "Tanto la DCM como la CHT utilizan Oracle, pero se desconoce la versión. ¿Qué consulta permite obtenerla?",
+      "options": [
+        "SELECT * FROM V$VERSION",
+        "SELECT * FROM V$VERSIONADO",
+        "SELECT * FROM V$VERSIONDB",
+        "SELECT * FROM V$VERSIONTABLE"
+      ],
+      "correct": "a",
+      "justification": "La vista V$VERSION devuelve la versión y los componentes de Oracle. Las otras tres vistas no existen en el diccionario de datos."
+    },
+    {
+      "stem": "Se quiere crear un backup comprimido con gzip del directorio /home/opositor/temas/ en RHEL. ¿Qué comando es el correcto?",
+      "options": [
+        "tar -czf TEMAS.tar.gz /home/opositor/temas/",
+        "tar -xzf TEMAS.tar.gz /home/opositor/temas/",
+        "tar -xzf /home/opositor/temas/ TEMAS.tar.gz",
+        "tar -cjf /home/opositor/temas/ TEMAS.tar.gz"
+      ],
+      "correct": "a",
+      "justification": "tar -czf crea un archivo con compresión gzip, indicando primero el nombre del fichero y después el directorio. -xzf sirve para extraer, -cjf usa bzip2 y la tercera opción invierte el orden de los argumentos."
+    },
+    {
+      "stem": "En un Windows hay que consultar qué usuarios forman parte del grupo local de administradores. ¿Qué orden lo muestra?",
+      "options": [
+        "net local administradores",
+        "net localgroup admin",
+        "net local admin",
+        "net localgroup administradores"
+      ],
+      "correct": "d",
+      "justification": "El comando «net localgroup» seguido del nombre del grupo local lista sus miembros; el grupo es «administradores». Las otras variantes usan verbos o nombres de grupo que no existen."
+    },
+    {
+      "stem": "También se necesita revisar cómo están configuradas las políticas de contraseñas y bloqueo de cuentas en un Windows local. ¿Qué orden de consola las muestra?",
+      "options": [
+        "net computer",
+        "net localgroup",
+        "net config",
+        "net accounts"
+      ],
+      "correct": "d",
+      "justification": "«net accounts» muestra y permite modificar la política de contraseñas y de bloqueo de cuentas. net computer y net localgroup hacen otras funciones y net config se refiere a la configuración de servicios."
+    },
+    {
+      "stem": "Se montan cinco discos de 6 TB en RAID 6. ¿Qué capacidad útil queda tras reservar la paridad?",
+      "options": [
+        "12 TB",
+        "18 TB",
+        "24 TB",
+        "30 TB"
+      ],
+      "correct": "b",
+      "justification": "En RAID 6 la capacidad útil es (n − 2) × tamaño del disco, porque se dedican dos discos a paridad: (5 − 2) × 6 TB = 18 TB. 24 TB correspondería a RAID 5 y 30 TB a RAID 0."
+    },
+    {
+      "stem": "No se dispone de un Windows Server 2008, pero hay Docker instalado. ¿Qué sentencia crea y arranca un contenedor a partir de la imagen SW2008?",
+      "options": [
+        "docker run SW2008",
+        "docker start SW2008",
+        "start docker SW2008",
+        "docker start run SW2008"
+      ],
+      "correct": "a",
+      "justification": "«docker run» crea un contenedor a partir de la imagen y lo arranca. «docker start» solo arranca un contenedor que ya existe, y las otras dos sentencias no son sintaxis válida de Docker."
+    },
+    {
+      "stem": "Para comprobar si el contenedor se ha arrancado, ¿qué comando lista todos los contenedores, estén o no en marcha?",
+      "options": [
+        "docker ps",
+        "docker ps -a",
+        "docker list",
+        "docker list-container -all"
+      ],
+      "correct": "b",
+      "justification": "«docker ps» muestra solo los contenedores en ejecución, mientras que «docker ps -a» incluye también los detenidos. «docker list» y «docker list-container» no existen."
+    },
+    {
+      "stem": "Hay que trasladar una sonda de unos 70 W que se usa una hora a la semana y debe poder encenderse de forma remota por red. ¿Es posible y con qué tecnología?",
+      "options": [
+        "No, no sería posible.",
+        "Si, mediante PoE IEEE 802.3ct",
+        "Si, mediante PoE IEEE 802.3bt",
+        "Si, mediante PoE IEEE 802.3dt"
+      ],
+      "correct": "c",
+      "justification": "802.3bt (4PPoE) es el estándar PoE que cubre potencias de hasta 90 W en el dispositivo alimentado, suficiente para 70 W. 802.3ct y 802.3dt no son estándares PoE, y las variantes anteriores no llegan a esa potencia."
+    },
+    {
+      "stem": "Un medidor alojado en las instalaciones exige un enlace Ethernet de 30 Gbps. De acuerdo con ANSI/TIA-568, ¿qué categoría de cable hay que instalar?",
+      "options": [
+        "Categoría 6.",
+        "Categoría 7.",
+        "Categoría 7A.",
+        "Categoría 8."
+      ],
+      "correct": "d",
+      "justification": "La categoría 8 es la que el estándar asocia a 25/40GBASE-T (hasta 30 m), adecuada para ese caudal. Las categorías 6, 7 y 7A están orientadas a 10GBASE-T."
+    },
+    {
+      "stem": "Algunos equipos Windows no tienen habilitado el firewall. ¿Qué comando lo habilita?",
+      "options": [
+        "netsh advfirewall set allprofiles enable",
+        "netsh advfirewall set allprofiles state on",
+        "netsh advfirewall set allprofiles state online",
+        "netsh advfirewall set allprofiles on"
+      ],
+      "correct": "b",
+      "justification": "La sintaxis de netsh para activar el firewall es «set allprofiles state on». «enable», «online» y «on» sin la palabra state no son valores aceptados por el comando."
+    },
+    {
+      "stem": "En el CPD se busca un IPS que vigile el comportamiento del tráfico y detecte anomalías propias de DoS o malware. ¿Qué variante de IPS encaja?",
+      "options": [
+        "DIPS",
+        "WIPS",
+        "NBA",
+        "HIPS"
+      ],
+      "correct": "c",
+      "justification": "NBA (Network Behavior Analysis) analiza el comportamiento del tráfico de red para detectar anomalías como DoS o malware. DIPS y HIPS actúan sobre el host y WIPS se centra en redes inalámbricas."
+    },
+    {
+      "stem": "En la DCM se quiere usar SMTPS en lugar de SMTP. ¿Qué puerto por defecto debe solicitarse para SMTPS?",
+      "options": [
+        "25",
+        "465",
+        "443",
+        "425"
+      ],
+      "correct": "b",
+      "justification": "SMTPS usa por defecto el puerto 465. El 25 es el SMTP sin cifrar, el 443 corresponde a HTTPS y el 425 no es el puerto de ese servicio."
+    },
+    {
+      "stem": "Para evitar problemas de resolución de nombres en equipos Windows, se quiere limpiar la caché DNS. ¿Cuál es el comando adecuado?",
+      "options": [
+        "ifconfig /flushdns",
+        "ipconfig /flushdns",
+        "ipconfig /cleardns",
+        "ifconfig /cleardns"
+      ],
+      "correct": "b",
+      "justification": "En Windows la caché DNS se vacía con «ipconfig /flushdns». ifconfig es una utilidad de Unix/Linux y «/cleardns» no existe como parámetro."
+    }
+  ]
+}

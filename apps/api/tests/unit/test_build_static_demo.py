@@ -39,15 +39,15 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
         "questions": counts["questions"],
         "cases": 5,
         "caseQuestions": 50,
-        "supuestos": 5,
-        "supuestoQuestions": 100,
+        "supuestos": 7,
+        "supuestoQuestions": 140,
         "convocatorias": 12,
     }
     assert data["convocatorias"]["total"] == 12
     assert len(data["cases"]) == 5
     assert sum(len(caso["questions"]) for caso in data["cases"]) == 50
-    assert len(data["supuestos"]) == 5
-    assert sum(len(item["questions"]) for item in data["supuestos"]) == 100
+    assert len(data["supuestos"]) == 7
+    assert sum(len(item["questions"]) for item in data["supuestos"]) == 140
     for supuesto in data["supuestos"]:
         assert len(supuesto["questions"]) == 20
         assert supuesto["source"]["url"].startswith("https://")
@@ -101,7 +101,7 @@ def test_la_demo_estatica_tiene_temario_progreso_y_contenido_real(tmp_path: Path
             assert pregunta["source"]["label"].strip() != ""
 
     # Temas largos: cinco temas con desarrollo extenso y diagramas propios.
-    largos = ["I.1", "III.21", "IV.27", "V.34", "V.35", "V.39"]
+    largos = ["I.1", "II.13", "III.21", "IV.27", "V.34", "V.35", "V.39"]
     for path in largos:
         contenido = data["topics"][path]
         assert "longSections" in contenido, f"{path}: falta longSections"
