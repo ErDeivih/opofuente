@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 11/11: cobertura 32/40 con I.2 e I.3 largos, 1.923-3.152 palabras y 15 test; 19 supuestos/380 preguntas; enlace dinamico "Ver cobertura (32/40)" desde el temario; indice/test a un toque en los temas nuevos. 120/120 comprobaciones.
+resumen: Sesion 11/11: cobertura 35/40 con I.4, I.5 e I.6 largos (10 apartados y 15 test), 21 supuestos/420 preguntas; enlace dinamico "Ver cobertura (35/40)" desde el temario; indice/test comprobados a un toque. 129/129 comprobaciones.
 estado: completado
-tarea: cobertura 32, I.2/I.3 y supuestos administrativos
+tarea: cobertura 35, I.4-I.6 y dos supuestos
 nivel: 2
-siguiente: aplicar la plantilla a los 8 temas parciales restantes
+siguiente: aplicar la plantilla a los 5 temas parciales restantes
 bloqueado: ninguno
 fecha: 2026-11-11

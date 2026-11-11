@@ -155,7 +155,7 @@ check(
 );
 
 // Revisión de los dos temas de la tanda: contenido, tabla y 10 preguntas.
-for (const temaId of ['I.2', 'I.3', 'II.15', 'II.16', 'II.17', 'III.19', 'III.20', 'III.24', 'III.25', 'III.26', 'IV.30', 'IV.33', 'V.36', 'V.37', 'V.38', 'V.40']) {
+for (const temaId of ['I.2', 'I.3', 'I.4', 'I.5', 'I.6', 'II.15', 'II.16', 'II.17', 'III.19', 'III.20', 'III.24', 'III.25', 'III.26', 'IV.30', 'IV.33', 'V.36', 'V.37', 'V.38', 'V.40']) {
   const nombre = temaId.toLowerCase().replace('.', '-');
   const texto = await captura(`tema/${temaId}`, `tema-${nombre}`, 390);
   check(
@@ -176,7 +176,7 @@ check('la portada del temario enlaza la cobertura en un toque', (await page.loca
 check('el boton indica la cobertura actual', (await page.locator('main').innerText()).includes('Cobertura por epígrafe'));
 
 // Índice y test a un toque en los temas nuevos.
-for (const temaId of ['I.2', 'I.3']) {
+for (const temaId of ['I.2', 'I.3', 'I.4', 'I.5', 'I.6']) {
   await page.goto(`${BASE}/#/tema/${temaId}`, { waitUntil: 'networkidle' });
   await page.waitForSelector('h1');
   await page.getByRole('button', { name: /Índice/ }).first().click();

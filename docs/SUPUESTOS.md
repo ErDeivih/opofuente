@@ -4,8 +4,8 @@
 
 ## Qué se ha construido
 
-Diecinueve supuestos resueltos del **Cuerpo de Técnicos Auxiliares de Informática (TAI)** del INAP, cada uno
-con **20 preguntas** y **380 preguntas en total**, resolución paso a paso, justificación de cada respuesta y referencia a la
+Veintiún supuestos resueltos del **Cuerpo de Técnicos Auxiliares de Informática (TAI)** del INAP, cada uno
+con **20 preguntas** y **420 preguntas en total**, resolución paso a paso, justificación de cada respuesta y referencia a la
 plantilla oficial. Todos se pueden resolver en modo examen: sin corrección hasta el final.
 
 | Supuesto | Año | Bloque | Dificultad | Estado | Plantilla |
@@ -29,6 +29,8 @@ plantilla oficial. Todos se pueden resolver en modo examen: sin corrección hast
 | Brecha de datos municipal (propio V) | 2026 | V | media | Resuelto | Propio (20/20) |
 | Tramitación de expediente (propio I) | 2026 | I | media | Resuelto | Propio (20/20) |
 | Contratación de servicio municipal (propio I) | 2026 | I | media | Resuelto | Propio (20/20) |
+| Procedimiento sancionador municipal (propio I) | 2026 | I | media | Resuelto | Propio (20/20) |
+| Aprobación del presupuesto municipal (propio I) | 2026 | I | media | Resuelto | Propio (20/20) |
 
 **Fuentes oficiales:**
 
@@ -77,6 +79,6 @@ cálculo de la nota excluye las anuladas.
 
 ## Verificación
 
-- **120/120** comprobaciones Playwright en la URL pública, incluidas la pestaña Supuestos, el filtro por
+- **129/129** comprobaciones Playwright en la URL pública, incluidas la pestaña Supuestos, el filtro por
   año, el enunciado/resolución y una resolución completa de 20 preguntas.
 - Build y test validan **3 supuestos × 20 preguntas** y las opciones sin prefijo duplicado.

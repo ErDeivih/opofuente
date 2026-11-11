@@ -1,0 +1,250 @@
+{
+  "slug": "tai-propio-i-presupuesto",
+  "year": 2026,
+  "conv": "Supuesto propio · OpoFuente 2026",
+  "block": "I",
+  "title": "Aprobación del presupuesto municipal",
+  "difficulty": "media",
+  "official": false,
+  "estimatedMinutes": 30,
+  "statement": "Un municipio debe aprobar su presupuesto y la plantilla, cuadrar las bases de ejecución y publicar la información. El tribunal revisa competencias, plazos y control.",
+  "steps": [
+    "1. Elaborar el anteproyecto.",
+    "2. Informar y aprobar inicialmente.",
+    "3. Exponer al público y resolver alegaciones.",
+    "4. Aprobar definitivamente y publicar.",
+    "5. Ejecutar y controlar."
+  ],
+  "topics": [
+    "I.9",
+    "I.4",
+    "I.6"
+  ],
+  "source": {
+    "label": "Elaboración propia · OpoFuente",
+    "url": "https://erdeivih.github.io/opofuente-demo/",
+    "pages": "Material propio de la demo"
+  },
+  "questions": [
+    {
+      "stem": "¿Cuál es el texto vigente que regula las haciendas locales en el régimen común?",
+      "options": [
+        "La Ley 39/1988, de 28 de diciembre, en su redacción original",
+        "La Ley 7/1985, de 2 de abril, reguladora de las Bases del Régimen Local",
+        "El texto refundido aprobado por el Real Decreto Legislativo 2/2004, de 5 de marzo",
+        "La Ley Orgánica 2/2012, de 27 de abril"
+      ],
+      "correct": "c",
+      "justification": "La Ley 39/1988 fue refundida: su texto vigente es el aprobado por el Real Decreto Legislativo 2/2004 (TRLRHL), que es la norma que se maneja hoy."
+    },
+    {
+      "stem": "¿Qué recurso se exige por la utilización privativa o el aprovechamiento especial del dominio público local?",
+      "options": [
+        "El precio público",
+        "El impuesto",
+        "La contribución especial",
+        "La tasa"
+      ],
+      "correct": "d",
+      "justification": "La tasa grava la utilización privativa o el aprovechamiento especial del dominio público y la prestación de servicios o actividades de solicitud o recepción obligatoria."
+    },
+    {
+      "stem": "¿Cuál es el límite máximo de la base imponible de las contribuciones especiales?",
+      "options": [
+        "El 90 % del coste soportado por la entidad",
+        "El 75 % del coste soportado por la entidad",
+        "El 50 % del coste soportado por la entidad",
+        "El 100 % del coste de la obra"
+      ],
+      "correct": "a",
+      "justification": "La base imponible de las contribuciones especiales no puede superar el 90 % del coste que soporta la entidad, descontadas las subvenciones."
+    },
+    {
+      "stem": "¿Cuándo se devengan las contribuciones especiales?",
+      "options": [
+        "Cuando se aprueba la ordenanza fiscal",
+        "Cuando se ejecutan las obras o comienza a prestarse el servicio",
+        "Cuando el beneficiario presenta la solicitud de licencia",
+        "El 1 de enero de cada ejercicio"
+      ],
+      "correct": "b",
+      "justification": "El devengo se produce al ejecutarse las obras o al iniciarse el servicio, sin perjuicio de que la entidad pueda exigir anticipos conforme a la ley."
+    },
+    {
+      "stem": "¿Cuál de los siguientes impuestos municipales tiene carácter potestativo?",
+      "options": [
+        "El Impuesto sobre Bienes Inmuebles",
+        "El Impuesto sobre Actividades Económicas",
+        "El Impuesto sobre Construcciones, Instalaciones y Obras",
+        "El Impuesto sobre Vehículos de Tracción Mecánica"
+      ],
+      "correct": "c",
+      "justification": "El ICIO es potestativo: el ayuntamiento decide si lo exige. El IBI, el IAE y el IVTM son impuestos obligatorios del régimen común."
+    },
+    {
+      "stem": "¿Qué órgano aprueba el presupuesto general de una entidad local?",
+      "options": [
+        "La Intervención",
+        "El presidente de la corporación",
+        "La diputación provincial",
+        "El Pleno de la corporación"
+      ],
+      "correct": "d",
+      "justification": "El Pleno aprueba el presupuesto; la Intervención lo prepara y el presidente lo presenta, pero la competencia para aprobarlo corresponde al Pleno."
+    },
+    {
+      "stem": "Si el presupuesto de la entidad local no está aprobado antes del 1 de enero, ¿qué ocurre?",
+      "options": [
+        "Se prorroga automáticamente el presupuesto del ejercicio anterior",
+        "Se aplica directamente el presupuesto del Estado",
+        "La entidad queda disuelta hasta aprobar el nuevo",
+        "Se aprueba por el Pleno sin información pública"
+      ],
+      "correct": "a",
+      "justification": "La prórroga automática del presupuesto anterior garantiza que la entidad pueda seguir funcionando hasta que se apruebe el nuevo."
+    },
+    {
+      "stem": "¿Qué norma orgánica somete a las entidades locales a la estabilidad presupuestaria y la sostenibilidad financiera?",
+      "options": [
+        "La Ley 39/1988, de 28 de diciembre",
+        "La Ley Orgánica 2/2012, de 27 de abril",
+        "La Ley 7/1985, de 2 de abril",
+        "La Ley 19/2013, de 9 de diciembre"
+      ],
+      "correct": "b",
+      "justification": "La Ley Orgánica 2/2012, de Estabilidad Presupuestaria y Sostenibilidad Financiera, extiende sus principios a todas las administraciones, incluidas las entidades locales."
+    },
+    {
+      "stem": "Cuando surge un gasto necesario no previsto y no existe crédito suficiente, ¿qué modificación presupuestaria procede?",
+      "options": [
+        "Una transferencia de crédito",
+        "Una incorporación de remanentes",
+        "Un suplemento de crédito o un crédito extraordinario",
+        "Una baja por anulación"
+      ],
+      "correct": "c",
+      "justification": "Los créditos extraordinarios y los suplementos de crédito cubren gastos no previstos o insuficientemente dotados; la transferencia solo mueve crédito entre partidas y la incorporación de remanentes se refiere a créditos del ejercicio anterior."
+    },
+    {
+      "stem": "¿A quién corresponde el control externo de las cuentas de las entidades locales?",
+      "options": [
+        "A la Intervención municipal",
+        "Al Pleno de la corporación",
+        "Al Consejo de Ministros",
+        "Al Tribunal de Cuentas, sin perjuicio de las cámaras de cuentas autonómicas"
+      ],
+      "correct": "d",
+      "justification": "La Intervención ejerce el control interno; el control externo corresponde al Tribunal de Cuentas, sin perjuicio de las competencias de las cámaras de cuentas de las comunidades autónomas."
+    },
+    {
+      "stem": "¿Cuáles son los elementos del municipio?",
+      "options": [
+        "El Pleno, el Alcalde y la Junta de Gobierno Local",
+        "El territorio, la población y la organización",
+        "La provincia, la comarca y la mancomunidad",
+        "El presupuesto, la plantilla y el reglamento orgánico"
+      ],
+      "correct": "b",
+      "justification": "El artículo 11 de la Ley 7/1985 fija como elementos del municipio el territorio, la población y la organización."
+    },
+    {
+      "stem": "¿En qué municipios existe obligatoriamente la Junta de Gobierno Local?",
+      "options": [
+        "En todos, sin excepción",
+        "Solo en los de más de 20.000 habitantes",
+        "En los de más de 5.000 habitantes y, en los de menos, si lo prevé su reglamento orgánico o lo acuerda el Pleno",
+        "Solo en los de más de 50.000 habitantes"
+      ],
+      "correct": "c",
+      "justification": "La Ley 7/1985 la exige por encima de 5.000 habitantes y permite crearla en los demás por decisión organizativa."
+    },
+    {
+      "stem": "¿Qué órgano aprueba las ordenanzas municipales?",
+      "options": [
+        "El Alcalde",
+        "La Junta de Gobierno Local",
+        "El secretario municipal",
+        "El Pleno"
+      ],
+      "correct": "d",
+      "justification": "El artículo 22 atribuye al Pleno la aprobación de las ordenanzas y del reglamento orgánico."
+    },
+    {
+      "stem": "¿Quién dirige el gobierno y la administración municipal y representa al Ayuntamiento?",
+      "options": [
+        "El Alcalde",
+        "El Pleno",
+        "El interventor",
+        "La Comisión Especial de Cuentas"
+      ],
+      "correct": "a",
+      "justification": "El Alcalde preside la corporación, dirige el gobierno y la administración y representa al municipio (artículo 21)."
+    },
+    {
+      "stem": "¿Cómo se forma la Junta de Gobierno Local?",
+      "options": [
+        "Por todos los concejales de la corporación",
+        "Por el Alcalde y los concejales que él nombra y cesa libremente",
+        "Por los portavoces de los grupos, elegidos por el Pleno",
+        "Por el secretario y el interventor"
+      ],
+      "correct": "b",
+      "justification": "La Junta se compone del Alcalde y de concejales nombrados y cesados libremente por él; asiste al Alcalde y ejerce sus delegaciones."
+    },
+    {
+      "stem": "¿Quién nombra a los Tenientes de Alcalde?",
+      "options": [
+        "El Pleno por mayoría absoluta",
+        "La Junta de Gobierno Local",
+        "El Alcalde entre los concejales",
+        "El órgano autonómico competente"
+      ],
+      "correct": "c",
+      "justification": "Los Tenientes de Alcalde son concejales nombrados y cesados por el Alcalde; lo sustituyen y pueden recibir delegaciones."
+    },
+    {
+      "stem": "¿Cuál de estas funciones corresponde al Pleno?",
+      "options": [
+        "Ejecutar el presupuesto y ordenar los pagos",
+        "Nombrar al interventor",
+        "Dirigir la policía local",
+        "Controlar y fiscalizar a los órganos de gobierno"
+      ],
+      "correct": "d",
+      "justification": "El Pleno controla y fiscaliza a los órganos de gobierno; ejecutar el presupuesto y dirigir los servicios es tarea del Alcalde."
+    },
+    {
+      "stem": "¿Cada cuánto tiempo se eligen los concejales?",
+      "options": [
+        "Cada cuatro años",
+        "Cada dos años",
+        "Cada cinco años",
+        "Cada seis años"
+      ],
+      "correct": "a",
+      "justification": "Las elecciones municipales se celebran cada cuatro años por sufragio universal, libre, igual, directo y secreto."
+    },
+    {
+      "stem": "¿En qué municipios existe la Comisión Especial de Cuentas?",
+      "options": [
+        "Solo en los de más de 5.000 habitantes",
+        "En todos los municipios",
+        "Solo en los de más de 20.000 habitantes",
+        "Solo donde lo acuerde el Pleno"
+      ],
+      "correct": "b",
+      "justification": "La Comisión Especial de Cuentas existe en todos los municipios y examina las cuentas antes de su aprobación por el Pleno."
+    },
+    {
+      "stem": "¿Puede la Junta de Gobierno Local aprobar las ordenanzas municipales?",
+      "options": [
+        "Sí, siempre que se lo delegue el Pleno",
+        "Sí, si el municipio tiene más de 5.000 habitantes",
+        "No, porque la aprobación de ordenanzas corresponde al Pleno",
+        "Sí, cuando el Alcalde esté ausente"
+      ],
+      "correct": "c",
+      "justification": "La Junta ejerce competencias delegadas por el Alcalde, pero no puede asumir las que la ley atribuye expresamente al Pleno, como las ordenanzas."
+    }
+  ]
+}
